@@ -333,7 +333,6 @@
                 },
                 dataType: "json",
                 success: function(response) {
-                    console.log(response);
                     if (response.data) {
                         $('#kabupaten').html(response.data);
                         $('#kabupaten').prop('disabled', false);
@@ -349,13 +348,12 @@
             let kabupaten = $('#kabupaten').val()
             $.ajax({
                 type: "POST",
-                url: "<?= base_url('pagawai/getKec') ?>",
+                url: "<?= base_url('pegawai/getKec') ?>",
                 data: {
                     kabupaten: kabupaten
                 },
                 dataType: "json",
                 success: function(response) {
-                    console.log(response);
                     if (response.data) {
                         $('#kecamatan').html(response.data);
                         $('#kecamatan').prop('disabled', false);
@@ -371,7 +369,7 @@
             let kecamatan = $('#kecamatan').val()
             $.ajax({
                 type: "POST",
-                url: "<?= base_url('pagawai/getKel') ?>",
+                url: "<?= base_url('pegawai/getKel') ?>",
                 data: {
                     kecamatan: kecamatan
                 },
