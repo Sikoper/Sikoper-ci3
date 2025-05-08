@@ -49,6 +49,13 @@
                                 <span>Pegawai</span>
                             </a>
                         </li>
+
+                        <li class="sidebar-item <?= $this->uri->segment(1) == 'user' ? 'active' : '' ?>">
+                            <a href="<?= base_url('users') ?>" class='sidebar-link'>
+                                <i class="fa fa-users"></i>
+                                <span>User</span>
+                            </a>
+                        </li>
                         
                     </ul>
                 </div>
