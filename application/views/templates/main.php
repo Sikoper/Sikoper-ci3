@@ -14,10 +14,13 @@
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/css/app.css">
     <link rel="shortcut icon" href="<?= base_url('assets') ?>/images/favicon.svg" type="image/x-icon">
+    <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/datatables/datatables.min.css">
+    <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
+    <script src="<?= base_url('assets') ?>/vendors/jquery/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="<?= base_url('assets') ?>/vendors/datatables/datatables.min.js"></script>
+    <script src="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.all.min.js"></script>
 <body>
     <div id="app">
         <div id="sidebar" class="active">
@@ -56,7 +59,7 @@
                                 <span>User</span>
                             </a>
                         </li>
-                        
+
                     </ul>
                 </div>
                 <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
@@ -153,7 +156,6 @@
         </div>
     </div>
     <script src="<?= base_url('assets') ?>/js/main.js"></script>
-    <script src="<?= base_url('assets') ?>/vendors/jquery/jquery.min.js"></script>
     <script src="<?= base_url('assets') ?>/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="<?= base_url('assets') ?>/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>

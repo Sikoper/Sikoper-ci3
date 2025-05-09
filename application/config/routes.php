@@ -54,10 +54,12 @@ $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
 $route['pegawai'] = 'pegawai';
+$route['pegawai/fetchData'] = 'pegawai/fetchData';
 $route['pegawai/add'] = 'pegawai/add';
 $route['pegawai/getKab'] = 'pegawai/getKab';
 $route['pagawai/getKec'] = 'pagawai/getKec';
 $route['pagawai/getKel'] = 'pagawai/getKel';
+$route['pagawai/simpanData'] = 'pagawai/simpanData';
 
 $route['users'] = 'users';
 $route['users/add'] = 'users/add';
