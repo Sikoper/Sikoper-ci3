@@ -7,29 +7,72 @@
         </h4>
     </div>
     <div class="card-body">
-        <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
-            <div class="dataTable-container">
-                <table class="table table-striped dataTable-table" id="table1">
-                    <thead>
-                        <tr>
-                            <th data-sortable="" style="width: 11.7991%;"><a href="#" class="dataTable-sorter">Name</a></th>
-                            <th data-sortable="" style="width: 41.8224%;"><a href="#" class="dataTable-sorter">Email</a></th>
-                            <th data-sortable="" style="width: 18.8084%;"><a href="#" class="dataTable-sorter">Phone</a></th>
-                            <th data-sortable="" style="width: 16.472%;"><a href="#" class="dataTable-sorter">City</a></th>
-                            <th data-sortable="" style="width: 11.0981%;"><a href="#" class="dataTable-sorter">Status</a></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        
-                    </tbody>
-                </table>
-            </div>
-            <div class="dataTable-bottom">
-                <div class="dataTable-info">Showing 1 to 10 of 26 entries</div>
-                <ul class="pagination pagination-primary float-end dataTable-pagination">
-                    
-                </ul>
-            </div>
-        </div>
+        <table class="table table-striped dataTable-table" id="tabel_pegawai">
+            <thead>
+                <tr>
+                    <th class="text-center" width="40px">No</th>
+                    <th>NIK</th>
+                    <th>Nama Pegawai</th>
+                    <th>Nomer Telepon</th>
+                    <th>Jabatan</th>
+                    <th>#</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+    <div class="dataTable-bottom">
+        <ul class="pagination pagination-primary float-end dataTable-pagination">
+
+        </ul>
     </div>
 </div>
+<script>
+    table = $('#tabel_pegawai').DataTable({
+        responsive: true,
+        "destroy": true,
+        "processing": true,
+        "serverSide": true,
+        "order": [],
+        autoWidth: false,
+
+        "ajax": {
+            "url": "<?= site_url('pegawai/fetchData') ?>",
+            "type": "POST"
+        },
+
+        "columns": [{
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "orderable": false
+            }
+        ],
+
+        "columnDefs": [{
+                "targets": 0,
+                "orderable": false,
+                "width": "5%"
+            },
+            {
+                "targets": 5,
+                "orderable": false,
+                "width": "15%"
+            }
+        ],
+    });
+</script>
