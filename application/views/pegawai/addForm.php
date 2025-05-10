@@ -313,13 +313,6 @@
                 success: function(response) {
                     if (response.error) {
                         let dataError = response.error;
-                        if (dataError.errorKtp) {
-                            $('#errorKtp').html(dataError.errorKtp).show();
-                            $('#ktp').addClass('is-invalid');
-                        } else {
-                            $('#errorKtp').fadeOut();
-                            $('#ktp').removeClass('is-invalid').addClass('is-valid');
-                        }
                         if (dataError.errorNik) {
                             $('#errorNik').html(dataError.errorNik).show();
                             $('#nik').addClass('is-invalid');

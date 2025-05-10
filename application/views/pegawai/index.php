@@ -7,26 +7,30 @@
         </h4>
     </div>
     <div class="card-body">
-        <table class="table table-striped dataTable-table" id="tabel_pegawai">
-            <thead>
-                <tr>
-                    <th class="text-center" width="40px">No</th>
-                    <th>NIK</th>
-                    <th>Nama Pegawai</th>
-                    <th>Nomer Telepon</th>
-                    <th>Jabatan</th>
-                    <th>#</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
+            <div class="dataTable-container">
+                <table class="table table-striped dataTable-table" id="tabel_pegawai">
+                    <thead>
+                        <tr>
+                            <th class="text-center" width="40px">No</th>
+                            <th>NIK</th>
+                            <th>Nama Pegawai</th>
+                            <th>Nomer Telepon</th>
+                            <th>Jabatan</th>
+                            <th>#</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 
-            </tbody>
-        </table>
-    </div>
-    <div class="dataTable-bottom">
-        <ul class="pagination pagination-primary float-end dataTable-pagination">
+                    </tbody>
+                </table>
+            </div>
+            <div class="dataTable-bottom">
+                <ul class="pagination pagination-primary float-end dataTable-pagination">
 
-        </ul>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
 <script>
@@ -116,6 +120,6 @@
     }
 
     function detail(id) {
-        
+
     }
 </script>

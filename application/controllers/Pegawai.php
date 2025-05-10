@@ -308,8 +308,7 @@ class Pegawai extends CI_Controller
         }
 
         $nik = safe_base64_decode($encoded_nik);
-
-        $this->load->model('Pegawai_model');
+;
         $pegawai = $this->Pegawai_model->get_data_by_nik($nik);
 
         if (!$pegawai) {

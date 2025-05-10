@@ -11,17 +11,17 @@
                 <div class="col-md-3"></div>
                 <div class="col-md-6">
                     <?= form_open('', ['id' => 'form_simpan']) ?>
-
+                    <input type="hidden" id="id" name="id" value="<?= $users->id ?>">
                     <div class="form-group" style="height: 80px;">
                         <label for="nama">Nama</label>
-                        <input type="text" class="form-control" id="nama" name="nama" placeholder="Gunakan nama panggilan">
+                        <input type="text" class="form-control" id="nama" name="nama" value="<?= $users->nama ?>" placeholder="Gunakan nama panggilan">
                         <div id="errorNama" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="username">Username</label>
-                        <input type="text" id="username" name="username" class="form-control" placeholder="Gunakan kombinasi huruf dan angka">
+                        <input type="text" id="username" name="username" class="form-control" value="<?= $users->username ?>" placeholder="Gunakan kombinasi huruf dan angka">
                         <div id="errorUserName" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -29,7 +29,7 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="password">Password</label>
                         <div class="input-group">
-                            <input type="password" id="password" name="password" class="form-control" placeholder="Gunakan password yang kuat">
+                            <input type="password" id="password" name="password" class="form-control" placeholder="Kosongkan bila tidak ingin mengganti password">
                             <div class="input-group-append">
                                 <button type="button" class="btn btn-outline-secondary" id="togglePassword" style="border-radius: 0 5px 5px 0;">
                                     <i class="fa fa-eye-slash fa-fw"></i>
@@ -75,7 +75,7 @@
 
             $.ajax({
                 type: "POST",
-                url: "<?= base_url('users/simpanData') ?>",
+                url: "<?= base_url('users/updateData') ?>",
                 data: data,
                 dataType: "json",
                 processData: false,
@@ -131,4 +131,5 @@
             });
         });
     });
+
 </script>

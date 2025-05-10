@@ -66,4 +66,8 @@ $route['pagawai/updateData'] = 'pagawai/updateData';
 $route['pagawai/detail'] = 'pagawai/detail';
 
 $route['users'] = 'users';
+$route['users/fetchData'] = 'users/fetchData';
 $route['users/add'] = 'users/add';
+$route['users/simpanData'] = 'users/simpanData';
+$route['users/delete'] = 'users/delete';
+$route['users/edit/(:any)'] = 'users/edit/$1';
