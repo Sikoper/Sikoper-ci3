@@ -50,7 +50,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |		my-controller/my-method	-> my_controller/my_method
 */
 $route['default_controller'] = 'dashboard';
-$route['404_override'] = '';
+$route['404_override'] = 'errors/error_404';
 $route['translate_uri_dashes'] = FALSE;
 
 $route['pegawai'] = 'pegawai';
@@ -60,6 +60,10 @@ $route['pegawai/getKab'] = 'pegawai/getKab';
 $route['pagawai/getKec'] = 'pagawai/getKec';
 $route['pagawai/getKel'] = 'pagawai/getKel';
 $route['pagawai/simpanData'] = 'pagawai/simpanData';
+$route['pagawai/delete'] = 'pagawai/delete';
+$route['pagawai/edit/(:any)'] = 'pagawai/edit/$1';
+$route['pagawai/updateData'] = 'pagawai/updateData';
+$route['pagawai/detail'] = 'pagawai/detail';
 
 $route['users'] = 'users';
 $route['users/add'] = 'users/add';
