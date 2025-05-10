@@ -18,10 +18,15 @@
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
-    <script src="<?= base_url('assets') ?>/vendors/jquery/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="<?= base_url('assets') ?>/vendors/datatables/datatables.min.js"></script>
-    <script src="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.all.min.js"></script>
+<script src="<?= base_url('assets') ?>/vendors/jquery/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="<?= base_url('assets') ?>/vendors/datatables/datatables.min.js"></script>
+<script src="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.all.min.js"></script>
+
 <body>
+    <?php
+    $level = $this->session->userdata('level');
+    $nama = $this->session->userdata('nama');
+    ?>
     <div id="app">
         <div id="sidebar" class="active">
             <div class="sidebar-wrapper active">
@@ -39,26 +44,32 @@
                     <ul class="menu">
                         <li class="sidebar-title">Menu</li>
 
-                        <li class="sidebar-item <?= $this->uri->segment(1) == '' ? 'active' : '' ?>">
-                            <a href="<?= base_url('/') ?>" class='sidebar-link'>
-                                <i class="bi bi-grid-fill"></i>
-                                <span>Dashboard</span>
-                            </a>
-                        </li>
+                        <?php if ($level == 'Admin' || $level == 'Pegawai'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == '' ? 'active' : '' ?>">
+                                <a href="<?= base_url('/') ?>" class='sidebar-link'>
+                                    <i class="bi bi-grid-fill"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
 
-                        <li class="sidebar-item <?= $this->uri->segment(1) == 'pegawai' ? 'active' : '' ?>">
-                            <a href="<?= base_url('pegawai') ?>" class='sidebar-link'>
-                                <i class="fa fa-users"></i>
-                                <span>Pegawai</span>
-                            </a>
-                        </li>
+                        <?php if ($level == 'Admin'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == 'pegawai' ? 'active' : '' ?>">
+                                <a href="<?= base_url('pegawai') ?>" class='sidebar-link'>
+                                    <i class="fa fa-users"></i>
+                                    <span>Pegawai</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
 
-                        <li class="sidebar-item <?= $this->uri->segment(1) == 'users' ? 'active' : '' ?>">
-                            <a href="<?= base_url('users') ?>" class='sidebar-link'>
-                                <i class="fa fa-user-lock"></i>
-                                <span>User</span>
-                            </a>
-                        </li>
+                        <?php if ($level == 'Admin'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == 'users' ? 'active' : '' ?>">
+                                <a href="<?= base_url('users') ?>" class='sidebar-link'>
+                                    <i class="fa fa-user-lock"></i>
+                                    <span>User</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
 
                     </ul>
                 </div>
@@ -101,8 +112,8 @@
                                 <a href="#" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="user-menu d-flex">
                                         <div class="user-name text-end me-3">
-                                            <h6 class="mb-0 text-gray-600">John Ducky</h6>
-                                            <p class="mb-0 text-sm text-gray-600">Administrator</p>
+                                            <h6 class="mb-0 text-gray-600"><?= $nama ?></h6>
+                                            <p class="mb-0 text-sm text-gray-600"><?= $level ?></p>
                                         </div>
                                         <div class="user-img d-flex align-items-center">
                                             <div class="avatar avatar-md">
@@ -118,8 +129,10 @@
                                         </a>
                                     </li>
 
-                                    <li><a class="dropdown-item" href="#">
-                                            <i class="icon-mid bi bi-box-arrow-left me-2"></i> Logout</a>
+                                    <li>
+                                        <a class="dropdown-item" href="#" id="logout">
+                                            <i class="icon-mid bi bi-box-arrow-left me-2"></i> Log out
+                                        </a>
                                     </li>
                                 </ul>
                             </div>
@@ -155,6 +168,28 @@
             </div>
         </div>
     </div>
+    <script>
+        $('#logout').click(function(e) {
+            e.preventDefault();
+
+            Swal.fire({
+                icon: "warning",
+                title: "Apakah anda yakin ingin logout?",
+                showCancelButton: true,
+                confirmButtonText: "Ya, logout",
+                cancelButtonText: "Batal",
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'btn btn-danger m-2',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "<?= site_url('auth/logout') ?>";
+                }
+            });
+        });
+    </script>
     <script src="<?= base_url('assets') ?>/js/main.js"></script>
     <script src="<?= base_url('assets') ?>/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="<?= base_url('assets') ?>/js/bootstrap.bundle.min.js"></script>

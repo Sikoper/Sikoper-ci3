@@ -6,7 +6,7 @@ class Users_model extends CI_Model
     var $table = 'tbuser';
     var $column_order = array(null, 'nama', 'username', 'level', null);
     var $column_search = array('nama', 'username', 'level');
-    var $order = array('created_at' => 'ASC');
+    var $order = array('created_at' => 'DESC');
 
     public function __construct()
     {
