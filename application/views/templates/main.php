@@ -53,9 +53,9 @@
                             </a>
                         </li>
 
-                        <li class="sidebar-item <?= $this->uri->segment(1) == 'user' ? 'active' : '' ?>">
+                        <li class="sidebar-item <?= $this->uri->segment(1) == 'users' ? 'active' : '' ?>">
                             <a href="<?= base_url('users') ?>" class='sidebar-link'>
-                                <i class="fa fa-users"></i>
+                                <i class="fa fa-user-lock"></i>
                                 <span>User</span>
                             </a>
                         </li>
