@@ -7,12 +7,12 @@ class Pegawai extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Pegawai_model');
-        // $this->load->model('Users_model');
-        // $allowed_roles = ['Admin'];
-        // $level = $this->session->userdata('level');
-        // if (!in_array($level, $allowed_roles)) {
-        //     show_404();
-        // }
+        $this->load->model('Users_model');
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
     }
     public function index()
     {

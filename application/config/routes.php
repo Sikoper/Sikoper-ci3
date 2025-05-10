@@ -52,6 +52,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $route['default_controller'] = 'dashboard';
 $route['404_override'] = 'errors/error_404';
 $route['translate_uri_dashes'] = FALSE;
+$route['unauthorized_403'] = 'errors/error_403';
+
+$route['login'] = 'auth';
+$route['auth/login'] = 'auth/login';
+$route['auth/logout'] = 'auth/logout';
 
 $route['pegawai'] = 'pegawai';
 $route['pegawai/fetchData'] = 'pegawai/fetchData';
