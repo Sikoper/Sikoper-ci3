@@ -11,11 +11,6 @@ class Auth extends CI_Controller
     }
     public function index()
     {
-        if ($this->session->userdata('isLoggedIn')) {
-            redirect('/');
-            exit;
-        }
-
         $rememberToken = get_cookie('remember_token');
         if ($rememberToken) {
             $user = $this->db->get_where('tbuser', ['remember_token' => $rememberToken])->row();
@@ -27,6 +22,10 @@ class Auth extends CI_Controller
                     'level'      => $user->level,
                 ]);
             }
+        }
+        if ($this->session->userdata('isLoggedIn')) {
+            redirect('/');
+            exit;
         }
         $this->load->view('auth/login');
     }
@@ -88,6 +87,7 @@ class Auth extends CI_Controller
         if ($uuid) {
             $this->db->where('uuid', $uuid);
             $this->db->update('tbuser', ['remember_token' => NULL]);
+            $this->session->set_userdata('isLoggedIn' == false);
         }
 
         $this->session->sess_destroy();

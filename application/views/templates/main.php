@@ -71,6 +71,15 @@
                             </li>
                         <?php endif; ?>
 
+                        <?php if ($level == 'Admin'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == 'jenis_tabungan' ? 'active' : '' ?>">
+                                <a href="<?= base_url('jenis_tabungan') ?>" class='sidebar-link'>
+                                    <i class="fa fa-list"></i>
+                                    <span>Jenis Tabungan</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
                     </ul>
                 </div>
                 <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
