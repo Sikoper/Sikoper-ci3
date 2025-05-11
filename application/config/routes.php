@@ -76,3 +76,6 @@ $route['users/add'] = 'users/add';
 $route['users/simpanData'] = 'users/simpanData';
 $route['users/delete'] = 'users/delete';
 $route['users/edit/(:any)'] = 'users/edit/$1';
+
+$route['jenis_tabungan'] = 'kategori';
+$route['jenis_tabungan/add'] = 'kategori/add';
