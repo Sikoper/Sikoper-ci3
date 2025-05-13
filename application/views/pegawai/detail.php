@@ -6,7 +6,6 @@
     </div>
 
     <div class="card-body">
-        <h4 class="mb-4"><i class="fa fa-id-card"></i> Detail Pegawai</h4>
         <div class="row mb-3">
             <div class="col-md-6">
                 <label><strong>NIK:</strong></label>
