@@ -9,13 +9,14 @@
     <div class="card-body">
         <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
             <div class="dataTable-container">
-                <table class="table table-striped dataTable-table" id="tabel_users">
+                <table class="table table-striped dataTable-table" id="tabel_kategori">
                     <thead>
                         <tr>
-                            <th>Nomor</a></th>
-                            <th>Nama</a></th>
-                            <th>Username</a></th>
-                            <th>Level</a></th>
+                            <th>No</a></th>
+                            <th>Jenis</a></th>
+                            <th>Bunga</a></th>
+                            <th>Biaya Registrasi</a></th>
+                            <th>Simpanan Awal</a></th>
                             <th>#</a></th>
                         </tr>
                     </thead>
@@ -33,6 +34,51 @@
     </div>
 </div>
 <script>
+    table = $('#tabel_kategori').DataTable({
+        responsive: true,
+        "destroy": true,
+        "processing": true,
+        "serverSide": true,
+        "order": [],
+        autoWidth: false,
+
+        "ajax": {
+            "url": "<?= site_url('jenis_tabungan/fetchData') ?>",
+            "type": "POST"
+        },
+
+        "columns": [{
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "orderable": false
+            }
+        ],
+
+        "columnDefs": [{
+                "targets": 0,
+                "orderable": false,
+                "width": "5%"
+            },
+            {
+                "targets": 5,
+                "orderable": false,
+                "width": "15%"
+            }
+        ],
+    });
 
     function deleteItem(id, nama) {
         Swal.fire({
@@ -47,7 +93,7 @@
             if (result.isConfirmed) {
                 $.ajax({
                     type: "POST",
-                    url: "<?= base_url('users/delete') ?>",
+                    url: "<?= base_url('jenis_tabungan/delete') ?>",
                     data: {
                         id: id
                     },

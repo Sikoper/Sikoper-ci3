@@ -13,11 +13,11 @@
                 </div>
                 <div class="col-md-6">
                     <?= form_open('', ['id' => 'form_simpan']) ?>
-
+                    <input type="hidden" name="id" id="id" value="<?= $kategori->id ?>">
                     <div class="form-group" style="height: 80px;">
                         <label for="nama">Nama</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="nama" name="nama" placeholder="Nama jenis tabungan">
+                            <input type="text" class="form-control" id="nama" name="nama" placeholder="Nama jenis tabungan" value="<?= $kategori->nama ?>">
                             <span class="input-group-text"><i class="fa-regular fa-credit-card fa-fw"></i></span>
                         </div>
                         <div id="errorNama" class="invalid-feedback" style="display: none;"></div>
@@ -27,7 +27,7 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="bunga">Bunga</label>
                         <div class="input-group">
-                            <input type="text" id="bunga" name="bunga" class="form-control" placeholder="Bunga untuk jenis tabungan">
+                            <input type="text" id="bunga" name="bunga" class="form-control" placeholder="Bunga untuk jenis tabungan" value="<?= $kategori->bunga ?>">
                             <span class="input-group-text"><i class="fa fa-percent fa-fw"></i></span>
                         </div>
                         <div id="errorBunga" class="invalid-feedback" style="display: none;"></div>
@@ -38,7 +38,7 @@
                         <label for="biaya_registrasi">Biaya Registrasi</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="biaya_registrasi" name="biaya_registrasi" class="form-control text-end">
+                            <input type="text" id="biaya_registrasi" name="biaya_registrasi" class="form-control text-end" value="<?= $kategori->biaya_registrasi ?>">
                         </div>
                         <div id="errorBiayaRegistrasi" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -48,7 +48,7 @@
                         <label for="simpanan_awal">Simpanan Awal</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="simpanan_awal" name="simpanan_awal" class="form-control text-end">
+                            <input type="text" id="simpanan_awal" name="simpanan_awal" class="form-control text-end" value="<?= $kategori->simpanan_awal ?>">
                         </div>
                         <div id="errorSimpananAwal" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -58,7 +58,7 @@
                         <label for="pengendapan">Pengendapan</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="pengendapan" name="pengendapan" class="form-control text-end">
+                            <input type="text" id="pengendapan" name="pengendapan" class="form-control text-end" value="<?= $kategori->pengendapan ?>">
                         </div>
                         <div id="errorPengendapan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -67,7 +67,7 @@
                     <div class="form-group" style="height: 180px;">
                         <label for="keterangan">Keterangan</label>
                         <div class="input-group">
-                            <textarea class="form-control" id="keterangan" name="keterangan" rows="5"></textarea>
+                            <textarea class="form-control" id="keterangan" name="keterangan" rows="5"><?= $kategori->keterangan ?></textarea>
                         </div>
                         <div id="errorKeterangan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -118,7 +118,7 @@
 
             $.ajax({
                 type: "POST",
-                url: "<?= base_url('kategori/simpanData') ?>",
+                url: "<?= base_url('kategori/updateData') ?>",
                 data: data,
                 dataType: "json",
                 processData: false,

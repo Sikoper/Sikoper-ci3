@@ -78,4 +78,10 @@ $route['users/delete'] = 'users/delete';
 $route['users/edit/(:any)'] = 'users/edit/$1';
 
 $route['jenis_tabungan'] = 'kategori';
+$route['jenis_tabungan/fetchData'] = 'kategori/fetchData';
 $route['jenis_tabungan/add'] = 'kategori/add';
+$route['jenis_tabungan/simpanData'] = 'kategori/simpanData';
+$route['jenis_tabungan/delete'] = 'kategori/delete';
+$route['jenis_tabungan/edit/(:any)'] = 'kategori/edit/$1';
+$route['jenis_tabungan/updateData'] = 'kategori/updateData';
+$route['jenis_tabungan/detail/(:any)'] = 'kategori/detail/$1';

@@ -21,7 +21,7 @@
 <script src="<?= base_url('assets') ?>/vendors/jquery/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="<?= base_url('assets') ?>/vendors/datatables/datatables.min.js"></script>
 <script src="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.all.min.js"></script>
-
+<script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js"></script>
 <body>
     <?php
     $level = $this->session->userdata('level');

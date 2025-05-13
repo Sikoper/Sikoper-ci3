@@ -4,9 +4,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Kategori_model extends CI_Model
 {
     var $table = 'tbjenistabungan';
-    var $column_order = array(null, 'nik', 'nama_lengkap', 'telp', 'jabatan', null);
-    var $column_search = array('nik', 'nama_lengkap', 'jabatan');
-    var $order = array('created_at' => 'DESC');
+    var $column_order = array(null, 'nama', 'bunga', 'biaya_registrasi', 'simpanan_awal', null);
+    var $column_search = array('nama');
+    var $order = array('id' => 'DESC');
 
     private function _get_datatables_query()
     {
@@ -59,5 +59,22 @@ class Kategori_model extends CI_Model
     {
         $this->db->from($this->table);
         return $this->db->count_all_results();
+    }
+    public function insert_data($data)
+    {
+        return $this->db->insert('tbjenistabungan', $data);
+    }
+
+    public function get_data_by_id($id)
+    {
+        return $this->db->get_where('tbjenistabungan', ['id' => $id])->row();
+    }
+    public function delete_data($id)
+    {
+        return $this->db->delete('tbjenistabungan', ['id' => $id]);
+    }
+    public function edit_data($id, $data)
+    {
+        return $this->db->where('id', $id)->update('tbjenistabungan', $data);
     }
 }
