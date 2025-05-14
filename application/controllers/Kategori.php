@@ -85,13 +85,18 @@ class Kategori extends CI_Controller
 
     public function simpanData()
     {
-        $allowed_roles = ['Admin', 'Direktur'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
-
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+            
             $nama = $this->input->post('nama');
             $bunga = str_replace(',', '.', $this->input->post('bunga'));
             $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
@@ -211,13 +216,18 @@ class Kategori extends CI_Controller
 
     public function updateData()
     {
-        $allowed_roles = ['Admin'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
-
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+
             $id = $this->input->post('id');
             $nama = $this->input->post('nama');
             $bunga = str_replace(',', '.', $this->input->post('bunga'));
