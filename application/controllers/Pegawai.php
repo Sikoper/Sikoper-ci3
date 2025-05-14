@@ -8,7 +8,7 @@ class Pegawai extends CI_Controller
         parent::__construct();
         $this->load->model('Pegawai_model');
         $this->load->model('Users_model');
-        $allowed_roles = ['Admin'];
+        $allowed_roles = ['Admin', 'Direktur'];
         $level = $this->session->userdata('level');
         if (!in_array($level, $allowed_roles)) {
             redirect('unauthorized_403');
@@ -34,6 +34,7 @@ class Pegawai extends CI_Controller
             $list = $this->Pegawai_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
+            $level = $this->session->userdata('level');
 
             foreach ($list as $field) {
                 $no++;
@@ -44,9 +45,15 @@ class Pegawai extends CI_Controller
                 $row[] = $field->nama_lengkap;
                 $row[] = $field->telp;
                 $row[] = $field->jabatan;
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='pegawai/edit/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_lengkap . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
-                            <button class=\"btn btn-secondary\"onclick=\"window.location='pegawai/detail/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-info fa-fw'></i></button>";;
+                $encodedNik = safe_base64_encode($field->nik);
+                $buttons = "<button class=\"btn btn-secondary\" onclick=\"window.location='pegawai/detail/$encodedNik'\"><i class='fa fa-info fa-fw'></i></button>";
+
+                if ($level !== 'Direktur') {
+                    $buttons = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='pegawai/edit/$encodedNik'\"><i class='fa fa-edit fa-fw'></i></button>
+                            <button class=\"btn btn-danger\" onclick=\"deleteItem('{$field->id}', '{$field->nama_lengkap}')\"><i class=\"fa fa-trash fa-fw\"></i></button> " . $buttons;
+                }
+
+                $row[] = $buttons;
                 $data[] = $row;
             }
 
