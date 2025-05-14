@@ -16,12 +16,14 @@
     <link rel="shortcut icon" href="<?= base_url('assets') ?>/images/favicon.svg" type="image/x-icon">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/datatables/datatables.min.css">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.min.css">
+    <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/select2/css/select2.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <script src="<?= base_url('assets') ?>/vendors/jquery/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="<?= base_url('assets') ?>/vendors/datatables/datatables.min.js"></script>
 <script src="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.all.min.js"></script>
 <script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js"></script>
+<script src="<?= base_url('assets') ?>/vendors/select2/js/select2.min.js"></script>
 <body>
     <?php
     $level = $this->session->userdata('level');
