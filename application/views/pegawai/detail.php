@@ -49,4 +49,71 @@
         <div class="text-muted">
             <small>Terdaftar sejak: <?= date('d M Y, H:i', strtotime($pegawai->created_at)) ?></small>
         </div>
+        <?php
+        function safe_base64_encode($string)
+        {
+            return strtr(base64_encode($string), '+/=', '-_.');
+        }
+        ?>
+        <?php if ($this->session->userdata('level') != 'Direktur') : ?>
+            <div class="d-flex justify-content-end mt-4">
+                <button type="button" onclick="window.location='<?= base_url('pegawai/edit/' . safe_base64_encode($pegawai->nik)) . '?code=1' ?>'" class="btn btn-success me-2">
+                    <i class="fa fa-edit fa-fw"></i> Edit
+                </button>
+                <button class="btn btn-danger" onclick="deleteItem('<?= $pegawai->nik ?>', '<?= addslashes($pegawai->nama_lengkap) ?>')">
+                    <i class="fa fa-trash fa-fw"></i> Hapus
+                </button>
+            </div>
+        <?php endif; ?>
     </div>
+</div>
+<script>
+    function deleteItem(id, nama) {
+        Swal.fire({
+            title: "Hapus data ini?",
+            html: `Yakin ingin menghapus data dari <strong>${nama}</strong>?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('pegawai/delete') ?>",
+                    data: {
+                        id: id
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: "Success!",
+                                text: response.success,
+                                icon: "success"
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.reload();
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: "Error!",
+                                text: response.error,
+                                icon: "error"
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location = '<?= base_url('pegawai') ?>';
+                                }
+                            });
+                        }
+                    },
+                    error: function(xhr, thrownError) {
+                        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                    }
+                });
+            }
+        });
+    }
+</script>

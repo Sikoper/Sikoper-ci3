@@ -160,13 +160,18 @@ class Pegawai extends CI_Controller
 
     public function simpanData()
     {
-        $allowed_roles = ['Admin'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
-
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+            
             $nik = $this->input->post('nik');
             $nama_lengkap = $this->input->post('nama_lengkap');
             $tempat_lahir = $this->input->post('tempat_lahir');
@@ -302,13 +307,18 @@ class Pegawai extends CI_Controller
 
     public function delete()
     {
-        $allowed_roles = ['Admin'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
-
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+
             $id = $this->input->post('id');
 
             $this->Pegawai_model->delete_data($id);
@@ -316,8 +326,9 @@ class Pegawai extends CI_Controller
             $msg = [
                 'success' => 'Data berhasil dihapus'
             ];
-
             echo json_encode($msg);
+        } else {
+            redirect('unauthorized_403');
         }
     }
 
@@ -376,13 +387,18 @@ class Pegawai extends CI_Controller
 
     public function updateData()
     {
-        $allowed_roles = ['Admin'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
-
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+
             $id = $this->input->post('id');
             $nik = $this->input->post('nik');
             $nama_lengkap = $this->input->post('nama_lengkap');
