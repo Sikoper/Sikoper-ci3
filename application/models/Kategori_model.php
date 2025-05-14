@@ -6,7 +6,7 @@ class Kategori_model extends CI_Model
     var $table = 'tbjenistabungan';
     var $column_order = array(null, 'nama', 'bunga', 'biaya_registrasi', 'simpanan_awal', null);
     var $column_search = array('nama');
-    var $order = array('id' => 'DESC');
+    var $order = array('created_at' => 'DESC');
 
     private function _get_datatables_query()
     {
