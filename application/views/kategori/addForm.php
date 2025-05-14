@@ -75,7 +75,7 @@
 
                     <div class="text-center mt-3">
                         <button type="submit" id="tombol_simpan" class="btn btn-success">Simpan</button>
-                        <button type="button" onclick="window.location='<?= base_url('users') ?>'" class="btn btn-danger">Batal</button>
+                        <button type="button" onclick="window.location='<?= base_url('jenis_tabungan') ?>'" class="btn btn-danger">Batal</button>
                     </div>
 
                     <?= form_close() ?>
@@ -177,11 +177,21 @@
                             $('#errorKeterangan').fadeOut();
                             $('#keterangan').removeClass('is-invalid').addClass('is-valid');
                         }
-                    } else {
+                    } else if (response.success){
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
                             html: response.success
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location = '<?= base_url('jenis_tabungan') ?>';
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "Error!",
+                            text: response.error,
+                            icon: "error"
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 window.location = '<?= base_url('jenis_tabungan') ?>';

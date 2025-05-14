@@ -46,7 +46,7 @@
                     <ul class="menu">
                         <li class="sidebar-title">Menu</li>
 
-                        <?php if ($level == 'Admin' || $level == 'Pegawai'): ?>
+                        <?php if ($level == 'Admin' || $level == 'Pegawai'|| $level == 'Direktur'): ?>
                             <li class="sidebar-item <?= $this->uri->segment(1) == '' ? 'active' : '' ?>">
                                 <a href="<?= base_url('/') ?>" class='sidebar-link'>
                                     <i class="bi bi-grid-fill"></i>
@@ -55,7 +55,7 @@
                             </li>
                         <?php endif; ?>
 
-                        <?php if ($level == 'Admin'): ?>
+                        <?php if ($level == 'Admin'|| $level == 'Direktur'): ?>
                             <li class="sidebar-item <?= $this->uri->segment(1) == 'pegawai' ? 'active' : '' ?>">
                                 <a href="<?= base_url('pegawai') ?>" class='sidebar-link'>
                                     <i class="fa fa-users"></i>
@@ -82,7 +82,7 @@
                             </li>
                         <?php endif; ?>
 
-                        <?php if ($level == 'Admin'): ?>
+                        <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
                             <li class="sidebar-item <?= $this->uri->segment(1) == 'jenis_tabungan' ? 'active' : '' ?>">
                                 <a href="<?= base_url('jenis_tabungan') ?>" class='sidebar-link'>
                                     <i class="fa fa-list"></i>

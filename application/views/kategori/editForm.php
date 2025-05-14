@@ -1,7 +1,16 @@
 <section class="section">
     <div class="card">
+        <?php
+        function safe_base64_encode($string)
+        {
+            return strtr(base64_encode($string), '+/=', '-_.');
+        }
+        $backUrl = $this->input->get('code') == 1
+            ? site_url('jenis_tabungan/detail/' . safe_base64_encode($kategori->id))
+            : site_url('jenis_tabungan');
+        ?>
         <div class="card-header">
-            <a href="<?= site_url('jenis_tabungan') ?>" class="btn btn-warning">
+            <a href="<?= $backUrl ?>" class="btn btn-warning">
                 <i class="fa fa-backward"></i> Kembali
             </a>
         </div>
@@ -75,7 +84,7 @@
 
                     <div class="text-center mt-3">
                         <button type="submit" id="tombol_simpan" class="btn btn-success">Simpan</button>
-                        <button type="button" onclick="window.location='<?= base_url('users') ?>'" class="btn btn-danger">Batal</button>
+                        <button type="button" onclick="window.location='<?= base_url('jenis_tabungan') ?>'" class="btn btn-danger">Batal</button>
                     </div>
 
                     <?= form_close() ?>
@@ -177,14 +186,24 @@
                             $('#errorKeterangan').fadeOut();
                             $('#keterangan').removeClass('is-invalid').addClass('is-valid');
                         }
-                    } else {
+                    } else if (response.success) {
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('jenis_tabungan') ?>';
+                                window.location = '<?= $backUrl ?>';
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "Error!",
+                            text: response.error,
+                            icon: "error"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location = '<?= $backUrl ?>';
                             }
                         });
                     }

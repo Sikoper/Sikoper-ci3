@@ -225,6 +225,11 @@
 </script>
 <script>
     $(document).ready(function() {
+        $('#provinsi').select2();
+        $('#kabupaten').select2();
+        $('#kecamatan').select2();
+        $('#desa').select2();
+
         $('#provinsi').on('change', function() {
             let provinsi = $('#provinsi').val()
             $.ajax({
@@ -418,11 +423,21 @@
                             $('#errorAgama').fadeOut();
                             $('#agama').removeClass('is-invalid').addClass('is-valid');
                         }
-                    } else {
+                    } else if (response.success) {
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
                             html: response.success
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location = '<?= base_url('pegawai') ?>';
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "Error!",
+                            text: response.error,
+                            icon: "error"
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 window.location = '<?= base_url('pegawai') ?>';

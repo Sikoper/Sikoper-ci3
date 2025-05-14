@@ -8,6 +8,11 @@ class Kategori extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Kategori_model');
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
     }
     public function index()
     {
@@ -24,10 +29,10 @@ class Kategori extends CI_Controller
             $list = $this->Kategori_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
-
+            $level = $this->session->userdata('level');
             function safe_base64_encode($string)
             {
-                return strtr(base64_encode($string), '+/=', '-_?');
+                return strtr(base64_encode($string), '+/=', '-_.');
             }
 
             foreach ($list as $field) {
@@ -39,9 +44,15 @@ class Kategori extends CI_Controller
                 $row[] = number_format($field->bunga, 2, '.', '') . ' %';
                 $row[] = 'Rp ' . number_format($field->biaya_registrasi, 0, ',', '.');
                 $row[] = 'Rp ' . number_format($field->simpanan_awal, 0, ',', '.');
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='jenis_tabungan/edit/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
-                            <button class=\"btn btn-secondary\"onclick=\"window.location='jenis_tabungan/detail/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-info fa-fw'></i></button>";
+                $encodedId = safe_base64_encode($field->id);
+                $buttons = "<button class=\"btn btn-secondary\" onclick=\"window.location='jenis_tabungan/detail/$encodedId'\"><i class='fa fa-info fa-fw'></i></button>";
+
+                if ($level !== 'Direktur') {
+                    $buttons = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='jenis_tabungan/edit/$encodedId'\"><i class='fa fa-edit fa-fw'></i></button>
+                            <button class=\"btn btn-danger\" onclick=\"deleteItem('{$field->id}', '{$field->nama}')\"><i class=\"fa fa-trash fa-fw\"></i></button> " . $buttons;
+                }
+
+                $row[] = $buttons;
                 $data[] = $row;
             }
 
@@ -60,6 +71,11 @@ class Kategori extends CI_Controller
 
     public function add()
     {
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
         $parser = [
             'judul' => "<i class='fa fa-list'></i> Jenis Tabungan",
             'isi'   => $this->load->view('kategori/addForm', '', TRUE)
@@ -70,6 +86,17 @@ class Kategori extends CI_Controller
     public function simpanData()
     {
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+
             $nama = $this->input->post('nama');
             $bunga = str_replace(',', '.', $this->input->post('bunga'));
             $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
@@ -121,12 +148,26 @@ class Kategori extends CI_Controller
             }
 
             echo json_encode($msg);
+        } else {
+            show_custom_404();
+            return;
         }
     }
 
     public function delete()
     {
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+
             $id = $this->input->post('id');
 
             $this->Kategori_model->delete_data($id);
@@ -134,16 +175,24 @@ class Kategori extends CI_Controller
             $msg = [
                 'success' => 'Data berhasil dihapus'
             ];
-
             echo json_encode($msg);
+        } else {
+            show_custom_404();
+            return;
         }
     }
 
     public function edit($encoded_id = null)
     {
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
         function safe_base64_decode($string)
         {
-            return base64_decode(strtr($string, '-_?', '+/='));
+            return base64_decode(strtr($string, '-_.', '+/='));
         }
 
         if ($encoded_id === null) {
@@ -151,7 +200,7 @@ class Kategori extends CI_Controller
             return;
         }
 
-        $id = safe_base64_decode($encoded_id);;
+        $id = safe_base64_decode($encoded_id);
         $kategori = $this->Kategori_model->get_data_by_id($id);
 
         if (!$kategori) {
@@ -172,6 +221,17 @@ class Kategori extends CI_Controller
     public function updateData()
     {
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+
             $id = $this->input->post('id');
             $nama = $this->input->post('nama');
             $bunga = str_replace(',', '.', $this->input->post('bunga'));
@@ -228,6 +288,9 @@ class Kategori extends CI_Controller
             }
 
             echo json_encode($msg);
+        } else {
+            show_custom_404();
+            return;
         }
     }
 
@@ -235,7 +298,7 @@ class Kategori extends CI_Controller
     {
         function safe_base64_decode($string)
         {
-            return base64_decode(strtr($string, '-_?', '+/='));
+            return base64_decode(strtr($string, '-_.', '+/='));
         }
 
         if ($encoded_id === null) {
