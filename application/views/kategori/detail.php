@@ -56,15 +56,18 @@
         }
         ?>
         <?php if ($this->session->userdata('level') != 'Direktur') : ?>
-        <div class="d-flex justify-content-end mt-4">
-            <button type="button" onclick="window.location='<?= base_url('jenis_tabungan/edit/' . safe_base64_encode($kategori->id)) . '?code=1' ?>'" class="btn btn-success me-2">
-                <i class="fa fa-edit fa-fw"></i> Edit
-            </button>
-            <button class="btn btn-danger" onclick="deleteItem('<?= $kategori->id ?>', '<?= addslashes($kategori->nama) ?>')">
-                <i class="fa fa-trash fa-fw"></i> Hapus
-            </button>
-        </div>
+            <div class="d-flex justify-content-end mt-4">
+                <button type="button" onclick="window.location='<?= base_url('jenis_tabungan/edit/' . safe_base64_encode($kategori->id)) . '?code=1' ?>'" class="btn btn-success me-2">
+                    <i class="fa fa-edit fa-fw"></i> Edit
+                </button>
+                <button class="btn btn-danger" onclick="deleteItem('<?= $kategori->id ?>', '<?= addslashes($kategori->nama) ?>')">
+                    <i class="fa fa-trash fa-fw"></i> Hapus
+                </button>
+            </div>
         <?php endif; ?>
+        <div class="text-muted">
+            <small>Terdaftar sejak: <?= date('d M Y, H:i', strtotime($kategori->created_at)) ?></small>
+        </div>
     </div>
 </div>
 <script>
@@ -104,7 +107,7 @@
                                 icon: "error"
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    window.location='<?= base_url('jenis_tabungan') ?>';
+                                    window.location = '<?= base_url('jenis_tabungan') ?>';
                                 }
                             });
                         }
