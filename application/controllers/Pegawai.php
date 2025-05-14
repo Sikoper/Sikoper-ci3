@@ -307,8 +307,7 @@ class Pegawai extends CI_Controller
             return;
         }
 
-        $nik = safe_base64_decode($encoded_nik);
-;
+        $nik = safe_base64_decode($encoded_nik);;
         $pegawai = $this->Pegawai_model->get_data_by_nik($nik);
 
         if (!$pegawai) {
@@ -532,5 +531,29 @@ class Pegawai extends CI_Controller
             'isi'   => $this->load->view('pegawai/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
+    }
+
+    public function cari_pegawai()
+    {
+        $keyword = $this->input->get('q');
+
+        if (!empty($keyword)) {
+            $pegawai = $this->Pegawai_model->search_pegawai($keyword);
+        } else {
+            $this->db->select('id, nama_lengkap');
+            $this->db->from('tbpegawai');
+            $this->db->limit(100);
+            $pegawai = $this->db->get()->result();
+        }
+
+        $data = [];
+        foreach ($pegawai as $row) {
+            $data[] = [
+                'id' => $row->id,
+                'text' => $row->nama_lengkap
+            ];
+        }
+
+        echo json_encode($data);
     }
 }

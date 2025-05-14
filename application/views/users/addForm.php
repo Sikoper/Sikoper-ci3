@@ -13,18 +13,24 @@
                     <?= form_open('', ['id' => 'form_simpan']) ?>
 
                     <div class="form-group" style="height: 80px;">
+                        <label for="pegawai">Pilih Pegawai</label>
+                        <select id="pegawai" class="form-control" name="pegawai"></select>
+                    </div>
+
+                    <div class="form-group" style="height: 80px;">
                         <label for="nama">Nama</label>
-                        <input type="text" class="form-control" id="nama" name="nama" placeholder="Gunakan nama panggilan">
+                        <input type="text" class="form-control" id="nama" name="nama" placeholder="Gunakan nama panggilan" readonly>
                         <div id="errorNama" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="username">Username</label>
-                        <input type="text" id="username" name="username" class="form-control" placeholder="Gunakan kombinasi huruf dan angka">
+                        <input type="text" id="username" name="username" class="form-control" placeholder="Gunakan kombinasi huruf dan angka" readonly>
                         <div id="errorUserName" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
+
 
                     <div class="form-group" style="height: 80px;">
                         <label for="password">Password</label>
@@ -130,5 +136,33 @@
                 }
             });
         });
+    });
+
+
+    $('#pegawai').select2({
+        placeholder: 'Cari nama pegawai...',
+        ajax: {
+            url: '<?= base_url("pegawai/cari_pegawai") ?>', 
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: data
+                };
+            },
+            cache: true
+        }
+    });
+
+    $('#pegawai').on('select2:select', function(e) {
+        let nama = e.params.data.text;
+        let angka = Math.floor(Math.random() * 100);
+        $('#nama').val(nama);
+        $('#username').val(nama.toLowerCase().replace(/\s/g, '') + angka);
     });
 </script>
