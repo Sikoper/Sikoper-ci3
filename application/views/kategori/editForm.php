@@ -1,7 +1,16 @@
 <section class="section">
     <div class="card">
+        <?php
+        function safe_base64_encode($string)
+        {
+            return strtr(base64_encode($string), '+/=', '-_.');
+        }
+        $backUrl = $this->input->get('code') == 1
+            ? site_url('jenis_tabungan/detail/' . safe_base64_encode($kategori->id))
+            : site_url('jenis_tabungan');
+        ?>
         <div class="card-header">
-            <a href="<?= site_url('jenis_tabungan') ?>" class="btn btn-warning">
+            <a href="<?= $backUrl ?>" class="btn btn-warning">
                 <i class="fa fa-backward"></i> Kembali
             </a>
         </div>
