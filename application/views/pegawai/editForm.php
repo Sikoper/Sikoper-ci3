@@ -235,6 +235,11 @@
 </script>
 <script>
     $(document).ready(function() {
+        $('#provinsi').select2();
+        $('#kabupaten').select2();
+        $('#kecamatan').select2();
+        $('#desa').select2();
+        
         $('#provinsi').on('change', function() {
             let provinsi = $('#provinsi').val()
             $.ajax({
