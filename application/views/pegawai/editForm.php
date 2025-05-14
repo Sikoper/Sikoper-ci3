@@ -1,9 +1,18 @@
 <section class="section">
     <div class="card">
+        <?php
+        function safe_base64_encode($string)
+        {
+            return strtr(base64_encode($string), '+/=', '-_.');
+        }
+        $backUrl = $this->input->get('code') == 1
+            ? site_url('pegawai/detail/' . safe_base64_encode($pegawai->nik))
+            : site_url('pegawai');
+        ?>
         <div class="card-header">
-            <button class="btn btn-warning" onclick="window.location='<?= base_url('pegawai') ?>'">
+            <a href="<?= $backUrl ?>" class="btn btn-warning">
                 <i class="fa fa-backward"></i> Kembali
-            </button>
+            </a>
         </div>
 
         <div class="card-body">
