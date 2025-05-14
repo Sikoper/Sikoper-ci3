@@ -84,4 +84,13 @@ class Pegawai_model extends CI_Model
     {
         return $this->db->where('id', $id)->update('tbpegawai', $data);
     }
+
+    public function search_pegawai($keyword)
+    {
+        $this->db->like('nama_lengkap', $keyword);
+        $this->db->select('id, nama_lengkap');
+        $this->db->from('tbpegawai');
+        $query = $this->db->get();
+        return $query->result();
+    }
 }
