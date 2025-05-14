@@ -8,7 +8,7 @@ class Pegawai extends CI_Controller
         parent::__construct();
         $this->load->model('Pegawai_model');
         $this->load->model('Users_model');
-        $allowed_roles = ['Admin', 'Direktur'];
+        $allowed_roles = ['Admin'];
         $level = $this->session->userdata('level');
         if (!in_array($level, $allowed_roles)) {
             redirect('unauthorized_403');
@@ -34,7 +34,6 @@ class Pegawai extends CI_Controller
             $list = $this->Pegawai_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
-            $level = $this->session->userdata('level');
 
             foreach ($list as $field) {
                 $no++;
@@ -45,15 +44,9 @@ class Pegawai extends CI_Controller
                 $row[] = $field->nama_lengkap;
                 $row[] = $field->telp;
                 $row[] = $field->jabatan;
-                $encodedNik = safe_base64_encode($field->nik);
-                $buttons = "<button class=\"btn btn-secondary\" onclick=\"window.location='pegawai/detail/$encodedNik'\"><i class='fa fa-info fa-fw'></i></button>";
-
-                if ($level !== 'Direktur') {
-                    $buttons = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='pegawai/edit/$encodedNik'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('{$field->id}', '{$field->nama_lengkap}')\"><i class=\"fa fa-trash fa-fw\"></i></button> " . $buttons;
-                }
-
-                $row[] = $buttons;
+                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='pegawai/edit/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-edit fa-fw'></i></button>
+                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_lengkap . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
+                            <button class=\"btn btn-secondary\"onclick=\"window.location='pegawai/detail/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-info fa-fw'></i></button>";;
                 $data[] = $row;
             }
 
@@ -141,12 +134,6 @@ class Pegawai extends CI_Controller
 
     public function add()
     {
-        $allowed_roles = ['Admin'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
-
         $getProv = file_get_contents("https://wilayah.id/api/provinces.json");
         $response = json_decode($getProv, true);
         $data['provinces'] = $response['data'];
@@ -161,17 +148,6 @@ class Pegawai extends CI_Controller
     public function simpanData()
     {
         if ($this->input->is_ajax_request()) {
-            $allowed_roles = ['Admin'];
-            $level = $this->session->userdata('level');
-
-            if (!in_array($level, $allowed_roles)) {
-                $msg = [
-                    'error' => 'Unauthorized 403'
-                ];
-                echo json_encode($msg);
-                return;
-            }
-            
             $nik = $this->input->post('nik');
             $nama_lengkap = $this->input->post('nama_lengkap');
             $tempat_lahir = $this->input->post('tempat_lahir');
@@ -289,8 +265,7 @@ class Pegawai extends CI_Controller
                     'jenis_kelamin'     => $kelamin,
                     'agama'             => $agama,
                     'telp'              => $telp,
-                    'jabatan'           => $jabatan,
-                    'user_token'        => '1'
+                    'jabatan'           => $jabatan
                 ];
 
                 $inserted = $this->Pegawai_model->insert_data($data);
@@ -308,17 +283,6 @@ class Pegawai extends CI_Controller
     public function delete()
     {
         if ($this->input->is_ajax_request()) {
-            $allowed_roles = ['Admin'];
-            $level = $this->session->userdata('level');
-
-            if (!in_array($level, $allowed_roles)) {
-                $msg = [
-                    'error' => 'Unauthorized 403'
-                ];
-                echo json_encode($msg);
-                return;
-            }
-
             $id = $this->input->post('id');
 
             $this->Pegawai_model->delete_data($id);
@@ -326,20 +290,13 @@ class Pegawai extends CI_Controller
             $msg = [
                 'success' => 'Data berhasil dihapus'
             ];
+
             echo json_encode($msg);
-        } else {
-            redirect('unauthorized_403');
         }
     }
 
     public function edit($encoded_nik = null)
     {
-        $allowed_roles = ['Admin'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
-
         function safe_base64_decode($string)
         {
             return base64_decode(strtr($string, '-_?', '+/='));
@@ -388,17 +345,6 @@ class Pegawai extends CI_Controller
     public function updateData()
     {
         if ($this->input->is_ajax_request()) {
-            $allowed_roles = ['Admin'];
-            $level = $this->session->userdata('level');
-
-            if (!in_array($level, $allowed_roles)) {
-                $msg = [
-                    'error' => 'Unauthorized 403'
-                ];
-                echo json_encode($msg);
-                return;
-            }
-
             $id = $this->input->post('id');
             $nik = $this->input->post('nik');
             $nama_lengkap = $this->input->post('nama_lengkap');
@@ -595,6 +541,7 @@ class Pegawai extends CI_Controller
             $pegawai = $this->Pegawai_model->search_pegawai($keyword);
         } else {
             $this->db->select('id, nama_lengkap');
+            $this->db->where('user_token','1');
             $this->db->from('tbpegawai');
             $this->db->limit(100);
             $pegawai = $this->db->get()->result();
