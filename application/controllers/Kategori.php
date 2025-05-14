@@ -71,11 +71,11 @@ class Kategori extends CI_Controller
 
     public function add()
     {
-        $allowed_roles = ['Admin'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
+        // $allowed_roles = ['Admin'];
+        // $level = $this->session->userdata('level');
+        // if (!in_array($level, $allowed_roles)) {
+        //     redirect('unauthorized_403');
+        // }
         $parser = [
             'judul' => "<i class='fa fa-list'></i> Jenis Tabungan",
             'isi'   => $this->load->view('kategori/addForm', '', TRUE)
@@ -96,7 +96,7 @@ class Kategori extends CI_Controller
                 echo json_encode($msg);
                 return;
             }
-            
+
             $nama = $this->input->post('nama');
             $bunga = str_replace(',', '.', $this->input->post('bunga'));
             $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
@@ -148,6 +148,9 @@ class Kategori extends CI_Controller
             }
 
             echo json_encode($msg);
+        } else {
+            show_custom_404();
+            return;
         }
     }
 
@@ -174,7 +177,8 @@ class Kategori extends CI_Controller
             ];
             echo json_encode($msg);
         } else {
-            redirect('unauthorized_403');
+            show_custom_404();
+            return;
         }
     }
 
@@ -284,6 +288,9 @@ class Kategori extends CI_Controller
             }
 
             echo json_encode($msg);
+        } else {
+            show_custom_404();
+            return;
         }
     }
 
