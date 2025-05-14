@@ -64,7 +64,7 @@
                             </li>
                         <?php endif; ?>
 
-                        <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
+                        <?php if ($level == 'Admin'): ?>
                             <li class="sidebar-item <?= $this->uri->segment(1) == 'users' ? 'active' : '' ?>">
                                 <a href="<?= base_url('users') ?>" class='sidebar-link'>
                                     <i class="fa fa-user-lock"></i>
