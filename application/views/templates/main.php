@@ -73,6 +73,15 @@
                             </li>
                         <?php endif; ?>
 
+                        <?php if ($level == 'Admin' || $level == 'Pegawai'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == 'nasabah' ? 'active' : '' ?>">
+                                <a href="<?= base_url('nasabah') ?>" class='sidebar-link'>
+                                    <i class="fa fa-user"></i>
+                                    <span>Nasabah</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
                         <?php if ($level == 'Admin'): ?>
                             <li class="sidebar-item <?= $this->uri->segment(1) == 'jenis_tabungan' ? 'active' : '' ?>">
                                 <a href="<?= base_url('jenis_tabungan') ?>" class='sidebar-link'>

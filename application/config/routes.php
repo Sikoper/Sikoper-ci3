@@ -71,6 +71,12 @@ $route['pagawai/updateData'] = 'pagawai/updateData';
 $route['pagawai/detail'] = 'pagawai/detail';
 $route['pegawai/cari_pegawai'] = 'Pegawai/cari_pegawai';
 
+$route['nasabah'] = 'nasabah';
+$route['nasabah/fetchData'] = 'nasabah/fetchData';
+$route['nasabah/add'] = 'nasabah/add';
+$route['nasabah/detail'] = 'nasabah/detail';
+$route['nasabah/delete'] = 'nasabah/delete';
+
 
 $route['users'] = 'users';
 $route['users/fetchData'] = 'users/fetchData';

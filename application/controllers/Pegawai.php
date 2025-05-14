@@ -541,6 +541,7 @@ class Pegawai extends CI_Controller
             $pegawai = $this->Pegawai_model->search_pegawai($keyword);
         } else {
             $this->db->select('id, nama_lengkap');
+            $this->db->where('user_token','1');
             $this->db->from('tbpegawai');
             $this->db->limit(100);
             $pegawai = $this->db->get()->result();
