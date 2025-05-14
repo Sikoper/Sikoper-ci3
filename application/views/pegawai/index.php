@@ -1,9 +1,11 @@
 <div class="card">
     <div class="card-header">
         <h4 class="card-title">
+            <?php if ($this->session->userdata('level') != 'Direktur') : ?>
             <button class="btn btn-primary" onclick="window.location='<?= base_url('pegawai/add') ?>'">
                 <i class="fa fa-plus-circle"></i> Tambah Data
             </button>
+            <?php endif; ?>
         </h4>
     </div>
     <div class="card-body">
