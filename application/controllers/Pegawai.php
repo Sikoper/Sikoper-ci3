@@ -141,6 +141,12 @@ class Pegawai extends CI_Controller
 
     public function add()
     {
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
         $getProv = file_get_contents("https://wilayah.id/api/provinces.json");
         $response = json_decode($getProv, true);
         $data['provinces'] = $response['data'];
@@ -154,6 +160,12 @@ class Pegawai extends CI_Controller
 
     public function simpanData()
     {
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
         if ($this->input->is_ajax_request()) {
             $nik = $this->input->post('nik');
             $nama_lengkap = $this->input->post('nama_lengkap');
@@ -290,6 +302,12 @@ class Pegawai extends CI_Controller
 
     public function delete()
     {
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
 
@@ -305,6 +323,12 @@ class Pegawai extends CI_Controller
 
     public function edit($encoded_nik = null)
     {
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
         function safe_base64_decode($string)
         {
             return base64_decode(strtr($string, '-_?', '+/='));
@@ -352,6 +376,12 @@ class Pegawai extends CI_Controller
 
     public function updateData()
     {
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
             $nik = $this->input->post('nik');
