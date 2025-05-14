@@ -32,7 +32,7 @@ class Kategori extends CI_Controller
             $level = $this->session->userdata('level');
             function safe_base64_encode($string)
             {
-                return strtr(base64_encode($string), '+/=', '-_?');
+                return strtr(base64_encode($string), '+/=', '-_.');
             }
 
             foreach ($list as $field) {
@@ -148,13 +148,18 @@ class Kategori extends CI_Controller
 
     public function delete()
     {
-        $allowed_roles = ['Admin', 'Direktur'];
-        $level = $this->session->userdata('level');
-        if (!in_array($level, $allowed_roles)) {
-            redirect('unauthorized_403');
-        }
-
         if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+
             $id = $this->input->post('id');
 
             $this->Kategori_model->delete_data($id);
@@ -162,8 +167,9 @@ class Kategori extends CI_Controller
             $msg = [
                 'success' => 'Data berhasil dihapus'
             ];
-
             echo json_encode($msg);
+        } else {
+            redirect('unauthorized_403');
         }
     }
 
@@ -177,7 +183,7 @@ class Kategori extends CI_Controller
 
         function safe_base64_decode($string)
         {
-            return base64_decode(strtr($string, '-_?', '+/='));
+            return base64_decode(strtr($string, '-_.', '+/='));
         }
 
         if ($encoded_id === null) {
@@ -185,7 +191,7 @@ class Kategori extends CI_Controller
             return;
         }
 
-        $id = safe_base64_decode($encoded_id);;
+        $id = safe_base64_decode($encoded_id);
         $kategori = $this->Kategori_model->get_data_by_id($id);
 
         if (!$kategori) {
@@ -210,7 +216,7 @@ class Kategori extends CI_Controller
         if (!in_array($level, $allowed_roles)) {
             redirect('unauthorized_403');
         }
-        
+
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
             $nama = $this->input->post('nama');
@@ -275,7 +281,7 @@ class Kategori extends CI_Controller
     {
         function safe_base64_decode($string)
         {
-            return base64_decode(strtr($string, '-_?', '+/='));
+            return base64_decode(strtr($string, '-_.', '+/='));
         }
 
         if ($encoded_id === null) {

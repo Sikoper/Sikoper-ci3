@@ -52,9 +52,10 @@
         <?php
         function safe_base64_encode($string)
         {
-            return strtr(base64_encode($string), '+/=', '-_?');
+            return strtr(base64_encode($string), '+/=', '-_.');
         }
         ?>
+        <?php if ($this->session->userdata('level') != 'Direktur') : ?>
         <div class="d-flex justify-content-end mt-4">
             <button type="button" onclick="window.location='<?= base_url('jenis_tabungan/edit/' . safe_base64_encode($kategori->id)) . '?code=1' ?>'" class="btn btn-success me-2">
                 <i class="fa fa-edit fa-fw"></i> Edit
@@ -63,6 +64,7 @@
                 <i class="fa fa-trash fa-fw"></i> Hapus
             </button>
         </div>
+        <?php endif; ?>
     </div>
 </div>
 <script>
@@ -93,6 +95,16 @@
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     window.location.reload();
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: "Error!",
+                                text: response.error,
+                                icon: "error"
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location='<?= base_url('jenis_tabungan') ?>';
                                 }
                             });
                         }
