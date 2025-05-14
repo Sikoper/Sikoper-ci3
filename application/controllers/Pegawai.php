@@ -265,7 +265,8 @@ class Pegawai extends CI_Controller
                     'jenis_kelamin'     => $kelamin,
                     'agama'             => $agama,
                     'telp'              => $telp,
-                    'jabatan'           => $jabatan
+                    'jabatan'           => $jabatan,
+                    'user_token'        => '1'
                 ];
 
                 $inserted = $this->Pegawai_model->insert_data($data);
