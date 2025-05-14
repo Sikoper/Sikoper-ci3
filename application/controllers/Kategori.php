@@ -71,11 +71,11 @@ class Kategori extends CI_Controller
 
     public function add()
     {
-        // $allowed_roles = ['Admin'];
-        // $level = $this->session->userdata('level');
-        // if (!in_array($level, $allowed_roles)) {
-        //     redirect('unauthorized_403');
-        // }
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
         $parser = [
             'judul' => "<i class='fa fa-list'></i> Jenis Tabungan",
             'isi'   => $this->load->view('kategori/addForm', '', TRUE)
