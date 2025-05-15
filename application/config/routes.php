@@ -76,6 +76,8 @@ $route['nasabah/fetchData'] = 'nasabah/fetchData';
 $route['nasabah/add'] = 'nasabah/add';
 $route['nasabah/detail'] = 'nasabah/detail';
 $route['nasabah/delete'] = 'nasabah/delete';
+$route['nasabah/generate_norek'] = 'nasabah/generate_norek';
+
 
 
 $route['users'] = 'users';

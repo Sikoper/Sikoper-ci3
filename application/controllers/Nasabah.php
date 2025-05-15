@@ -40,13 +40,13 @@ class Nasabah extends CI_Controller
                 $row = array();
 
                 $row[] = "<div class=\"text-center\">$no</div>";
-                $row[] = $field->nomor_rekening;
+                $row[] = $field->no_rekening;
                 $row[] = $field->nama_lengkap;
                 $row[] = $field->telp;
                 $row[] = $field->jenistabungan_id;
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->nomor_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
+                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
                             <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_lengkap . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
-                            <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->nomor_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>";;
+                            <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>";;
                 $data[] = $row;
             }
 
@@ -63,4 +63,226 @@ class Nasabah extends CI_Controller
         }
     }
 
+    public function getKab()
+    {
+        if ($this->input->is_ajax_request()) {
+            $provinsi = $this->input->post('provinsi');
+            $getKab = file_get_contents('https://wilayah.id/api/regencies/' . $provinsi . '.json');
+            $response = json_decode($getKab, true);
+            $Kab = $response['data'];
+            $Value = "<option value='' selected> -- Pilih Kabupaten Asal -- </option>";
+
+            foreach ($Kab as $row) :
+                $Value .= '<option value="' . $row['code'] . '">' . $row['name'] . '</option>';
+            endforeach;
+
+            $msg = [
+                'data' => $Value
+            ];
+
+            echo json_encode($msg);
+        } else {
+            show_404();
+        }
+    }
+
+    public function getKec()
+    {
+        if ($this->input->is_ajax_request()) {
+            $kabupaten = $this->input->post('kabupaten');
+            $getKab = file_get_contents('https://wilayah.id/api/districts/' . $kabupaten . '.json');
+            $response = json_decode($getKab, true);
+            $Kab = $response['data'];
+            $Value = "<option value='' selected> -- Pilih Kecamatan Asal -- </option>";
+
+            foreach ($Kab as $row) :
+                $Value .= '<option value="' . $row['code'] . '">' . $row['name'] . '</option>';
+            endforeach;
+
+            $msg = [
+                'data' => $Value
+            ];
+
+            echo json_encode($msg);
+        } else {
+            show_404();
+        }
+    }
+
+    public function getKel()
+    {
+        if ($this->input->is_ajax_request()) {
+            $kecamatan = $this->input->post('kecamatan');
+            $getKab = file_get_contents('https://wilayah.id/api/villages/' . $kecamatan . '.json');
+            $response = json_decode($getKab, true);
+            $Kab = $response['data'];
+            $Value = "<option value='' selected> -- Pilih Desa Asal -- </option>";
+
+            foreach ($Kab as $row) :
+                $Value .= '<option value="' . $row['code'] . '">' . $row['name'] . '</option>';
+            endforeach;
+
+            $msg = [
+                'data' => $Value
+            ];
+
+            echo json_encode($msg);
+        } else {
+            show_404();
+        }
+    }
+
+    public function add()
+    {
+        $allowed_roles = ['Admin'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
+        $getProv = file_get_contents("https://wilayah.id/api/provinces.json");
+        $response = json_decode($getProv, true);
+        $data['provinces'] = $response['data'];
+
+        $parser = [
+            'judul' => "<i class='fa fa-user-plus'></i> Nasabah",
+            'isi'   => $this->load->view('nasabah/addForm', $data, TRUE)
+        ];
+        $this->parser->parse('templates/main', $parser);
+    }
+
+    public function simpanData()
+    {
+        if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                echo json_encode(['error' => 'Unauthorized 403']);
+                return;
+            }
+
+            $input = $this->input;
+
+            // Ambil input dari form
+            $nik                = $input->post('nik');
+            $nama_lengkap       = $input->post('nama_lengkap');
+            $kelamin            = $input->post('jenis_kelamin');
+            $tempat_lahir       = $input->post('tempat_lahir');
+            $tanggal_lahir      = $input->post('tgl_lahir');
+            $agama              = $input->post('agama');
+            $pekerjaan          = $input->post('pekerjaan');
+            $nama_ibu_kandung   = $input->post('nama_ibu_kandung');
+            $email              = $input->post('email');
+            $provinsi           = $input->post('provinsi');
+            $kabupaten          = $input->post('kabupaten');
+            $kecamatan          = $input->post('kecamatan');
+            $desa               = $input->post('desa');
+            $rt                 = $input->post('rt');
+            $rw                 = $input->post('rw');
+            $alamat             = $input->post('alamat');
+            $telp               = $input->post('telp');
+            $jenis_tabungan     = $input->post('jenistabungan_id');
+            $nomor_rekening     = $input->post('nomor_rekening');
+
+            // Validasi
+            $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbpegawai.nik]');
+            $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]');
+            $this->form_validation->set_rules('jenis_kelamin', 'Jenis Kelamin', 'required');
+            $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'required|max_length[30]');
+            $this->form_validation->set_rules('tgl_lahir', 'Tanggal Lahir', 'required');
+            $this->form_validation->set_rules('agama', 'Agama', 'required');
+            $this->form_validation->set_rules('pekerjaan', 'Pekerjaan', 'required');
+            $this->form_validation->set_rules('nama_ibu_kandung', 'Nama Ibu Kandung', 'required');
+            $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+            $this->form_validation->set_rules('provinsi', 'Provinsi', 'required');
+            $this->form_validation->set_rules('kabupaten', 'Kabupaten', 'required');
+            $this->form_validation->set_rules('kecamatan', 'Kecamatan', 'required');
+            $this->form_validation->set_rules('desa', 'Desa', 'required');
+            $this->form_validation->set_rules('alamat', 'Alamat', 'required');
+            $this->form_validation->set_rules('telp', 'No Telepon', 'required|numeric|min_length[10]');
+            $this->form_validation->set_rules('jenistabungan_id', 'Jenis Tabungan', 'required');
+            $this->form_validation->set_rules('nomor_rekening', 'Nomor Rekening', 'required|numeric|min_length[5]');
+
+            if ($this->form_validation->run() == FALSE) {
+                echo json_encode([
+                    'error' => [
+                        'errorNik'              => form_error('nik'),
+                        'errorNamaLengkap'      => form_error('nama_lengkap'),
+                        'errorJenisKelamin'     => form_error('jenis_kelamin'),
+                        'errorTempatLahir'      => form_error('tempat_lahir'),
+                        'errorTanggalLahir'     => form_error('tgl_lahir'),
+                        'errorAgama'            => form_error('agama'),
+                        'errorPekerjaan'        => form_error('pekerjaan'),
+                        'errorNama_ibu_kandung' => form_error('nama_ibu_kandung'),
+                        'errorEmail'            => form_error('email'),
+                        'errorProvinsi'         => form_error('provinsi'),
+                        'errorKabupaten'        => form_error('kabupaten'),
+                        'errorKecamatan'        => form_error('kecamatan'),
+                        'errorDesa'             => form_error('desa'),
+                        'errorAlamat'           => form_error('alamat'),
+                        'errorRt'               => form_error('rt'),
+                        'errorRw'               => form_error('rw'),
+                        'errorTelp'             => form_error('telp'),
+                        'errorJabatan'          => form_error('jenistabungan_id'),
+                        'errornomor_rekening'   => form_error('nomor_rekening'),
+                    ]
+                ]);
+            } else {
+                $data = [
+                    'nik'               => $nik,
+                    'nama_lengkap'      => $nama_lengkap,
+                    'jenis_kelamin'     => $kelamin,
+                    'tempat_lahir'      => $tempat_lahir,
+                    'tanggal_lahir'     => $tanggal_lahir,
+                    'agama'             => $agama,
+                    'pekerjaan'         => $pekerjaan,
+                    'nama_ibu_kandung'  => $nama_ibu_kandung,
+                    'email'             => $email,
+                    'provinsi'          => $provinsi,
+                    'kabupaten'         => $kabupaten,
+                    'kecamatan'         => $kecamatan,
+                    'desa'              => $desa,
+                    'rt'                => $rt ?: '000',
+                    'rw'                => $rw ?: '000',
+                    'alamat'            => $alamat,
+                    'telp'              => $telp,
+                    'jenistabungan_id'  => $jenis_tabungan,
+                    'nomor_rekening'    => $nomor_rekening,
+                    'user_token'        => '1'
+                ];
+
+                $inserted = $this->Nasabah_model->insert_data($data);
+
+                if ($inserted) {
+                    echo json_encode(['success' => 'Data berhasil disimpan.']);
+                } else {
+                    echo json_encode(['error' => 'Gagal menyimpan data ke database.']);
+                }
+            }
+        }
+    }
+
+    public function generate_norek()
+    {
+        $this->load->model('Nasabah_model');
+
+        // 1. Kode kantor - bisa juga ambil dari session user jika login per kantor
+        $kode_kantor = '01'; // misalnya Kantor Pusat
+
+        // 2. Tanggal dibuat dalam format: ddmmyy (misal: 140525 untuk 14 Mei 2025)
+        $tanggal = date('dm');   // 2 digit hari + 2 digit bulan (14 + 05)
+        $tahun   = date('y');    // 2 digit tahun (25)
+        $tanggal_lengkap = $tanggal . $tahun; // Jadi: 140525
+
+        // 3. Urutan nasabah saat ini (ditambah 1)
+        $jumlah_nasabah = $this->Nasabah_model->count_all_nasabah();
+        $urutan = str_pad($jumlah_nasabah + 1, 6, '0', STR_PAD_LEFT); // ex: 000001
+
+        // 4. Gabungkan semua jadi nomor rekening
+        $norek = $kode_kantor . $tanggal_lengkap . $urutan; // contoh: 01140525000001
+
+        // 5. Return sebagai JSON
+        echo json_encode(['norek' => $norek]);
+    }
 }

@@ -4,9 +4,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Nasabah_model extends CI_Model
 {
     var $table = 'tbnasabah';
-    var $column_order = array(null, 'nomor_rekening', 'nama_lengkap', 'telp', 'jenistabungan_id', null);
-    var $column_search = array('nomor_rekening', 'nama_lengkap', 'jenistabungan_id');
-    var $order = array('created_at' => 'DESC');
+    var $column_order = array(null, 'no_rekening', 'nama_lengkap', 'telp', 'jenistabungan_id', null);
+    var $column_search = array('no_rekening', 'nama_lengkap', 'jenistabungan_id');
+    var $order = array('id' => 'DESC');
 
     private function _get_datatables_query()
     {
@@ -59,5 +59,10 @@ class Nasabah_model extends CI_Model
     {
         $this->db->from($this->table);
         return $this->db->count_all_results();
+    }
+
+    public function count_all_nasabah()
+    {
+        return $this->db->count_all('tbnasabah');
     }
 }
