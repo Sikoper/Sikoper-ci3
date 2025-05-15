@@ -19,6 +19,7 @@ class Auth extends CI_Controller
                     'isLoggedIn' => true,
                     'nama'       => $user->nama,
                     'uuid'       => $user->uuid,
+                    'id'         => $user->id,
                     'level'      => $user->level,
                 ]);
             }
