@@ -80,6 +80,6 @@ class Kategori_model extends CI_Model
 
     public function get_data()
     {
-        return $this->db->get('tbjenistabungan');
+        return $this->db->get('tbjenistabungan')->result();
     }
 }
