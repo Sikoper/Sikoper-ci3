@@ -157,9 +157,9 @@
                         <label for="jenis_tabungan">Jenis Tabungan</label>
                         <select id="jenis_tabungan" name="jenistabungan_id" class="form-select">
                             <option value=""> -- Pilih Jenis Tabungan -- </option>
-                            <option value="--">--</option>
-                            <option value="--">--</option>
-                            <option value="--">--</option>
+                            <?php foreach ($jenistabungan as $item): ?>
+                                <option value="<?= $item->id ?>"><?= $item->nama ?></option>
+                            <?php endforeach; ?>
                         </select>
                         <div id="errorJabatan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>

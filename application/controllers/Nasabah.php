@@ -142,7 +142,13 @@ class Nasabah extends CI_Controller
 
         $getProv = file_get_contents("https://wilayah.id/api/provinces.json");
         $response = json_decode($getProv, true);
-        $data['provinces'] = $response['data'];
+
+        $datajenis = $this->Kategori_model->get_data();
+
+        $data = [
+            'provinces' => $response['data'],
+            'jenistabungan' => $datajenis
+        ];
 
         $parser = [
             'judul' => "<i class='fa fa-user-plus'></i> Nasabah",
@@ -184,6 +190,7 @@ class Nasabah extends CI_Controller
             $telp               = $input->post('telp');
             $jenis_tabungan     = $input->post('jenistabungan_id');
             $nomor_rekening     = $input->post('nomor_rekening');
+            $pegawai_id         = $this->session->userdata('id');
 
             // Validasi
             $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbpegawai.nik]');
@@ -249,7 +256,7 @@ class Nasabah extends CI_Controller
                     'telp'              => $telp,
                     'jenistabungan_id'  => $jenis_tabungan,
                     'nomor_rekening'    => $nomor_rekening,
-                    'user_token'        => '1'
+                    'pegawai_id'        => $pegawai_id
                 ];
 
                 $inserted = $this->Nasabah_model->insert_data($data);
