@@ -77,4 +77,9 @@ class Kategori_model extends CI_Model
     {
         return $this->db->where('id', $id)->update('tbjenistabungan', $data);
     }
+
+    public function get_data()
+    {
+        return $this->db->get('tbjenistabungan');
+    }
 }
