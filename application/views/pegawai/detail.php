@@ -46,9 +46,6 @@
                 <div><?= $pegawai->jabatan ?></div>
             </div>
         </div>
-        <div class="text-muted">
-            <small>Terdaftar sejak: <?= date('d M Y, H:i', strtotime($pegawai->created_at)) ?></small>
-        </div>
         <?php
         function safe_base64_encode($string)
         {
@@ -65,6 +62,9 @@
                 </button>
             </div>
         <?php endif; ?>
+        <div class="text-muted">
+            <small>Terdaftar sejak: <?= date('d M Y, H:i', strtotime($pegawai->created_at)) ?></small>
+        </div>
     </div>
 </div>
 <script>
