@@ -81,7 +81,7 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="provinsi">Provinsi Asal</label>
-                        <select class="form-select" id="provinsi" name="provinsi">
+                        <select class="form-control" id="provinsi" name="provinsi">
                             <option value=""> -- Pilih Provinsi Asal -- </option>
                             <?php foreach ($provinces as $prov): ?>
                                 <option value="<?= $prov['code'] ?>"><?= $prov['name'] ?></option>
@@ -93,7 +93,7 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="kabupaten">Kabupaten Asal</label>
-                        <select class="form-select" id="kabupaten" name="kabupaten">
+                        <select class="form-control" id="kabupaten" name="kabupaten">
                             <option value=""> -- Pilih Kabupaten Asal -- </option>
                         </select>
                         <div id="errorKabupaten" class="invalid-feedback" style="display: none;"></div>
@@ -102,7 +102,7 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="kecamatan">Kecamatan Asal</label>
-                        <select class="form-select" id="kecamatan" name="kecamatan">
+                        <select class="form-control" id="kecamatan" name="kecamatan">
                             <option value=""> -- Pilih Kecamatan Asal -- </option>
                         </select>
                         <div id="errorKecamatan" class="invalid-feedback" style="display: none;"></div>
@@ -111,7 +111,7 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="desa">Desa Asal</label>
-                        <select class="form-select" id="desa" name="desa">
+                        <select class="form-control" id="desa" name="desa">
                             <option value=""> -- Pilih Desa Asal -- </option>
                         </select>
                         <div id="errorDesa" class="invalid-feedback" style="display: none;"></div>
@@ -165,7 +165,7 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-5" style="height: 80px;">
+                    <div class="form-group mb-3" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
                             <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control" readonly>
@@ -174,6 +174,22 @@
                             </span>
                         </div>
                     </div>
+
+                    <?php if ($level == 'Admin'): ?>
+                        <div class="form-group mb-5" style="height: 80px;">
+                            <label for="pegawai_id">Jabatan</label>
+                            <select id="pegawai_id" name="pegawai_id" class="form-control" autocomplete="off">
+                                <option value=""> -- Pilih Pegawai -- </option>
+                                <?php foreach ($pegawai as $item): ?>
+                                    <option value="<?= $item->id ?>"><?= $item->nama_lengkap ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div id="errorJabatan" class="invalid-feedback" style="display: none;"></div>
+                            <div class="valid-feedback" style="display: none;"></div>
+                        </div>
+                    <?php else: ?>
+                        <input type="hidden" name="pegawai_id" id="pegawai_id" value="<?= $this->session->userdata('pegawai_id') ?>">
+                    <?php endif; ?>
 
                     <div class="text-center mb-3">
                         <button type="button" id="tombol_simpan" class="btn btn-success">Simpan</button>
@@ -464,7 +480,7 @@
                         }
                         if (dataError.errorJabatan) {
                             $('#errorJabatan').html(dataError.errorJabatan).show();
-                            $('#jabatan').addClass('is-invalid');
+                            $('#pegawai_id').addClass('is-invalid');
                         } else {
                             $('#errorJabatan').fadeOut();
                             $('#jabatan').removeClass('is-invalid').addClass('is-valid');

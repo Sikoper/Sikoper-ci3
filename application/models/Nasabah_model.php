@@ -86,4 +86,8 @@ class Nasabah_model extends CI_Model
         return $this->db->where('id', $id)->update('tbnasabah', $data);
     }
 
+    public function get_data_by_id($id)
+    {
+        return $this->db->get_where('tbnasabah', ['id' => $id])->row();
+    }
 }
