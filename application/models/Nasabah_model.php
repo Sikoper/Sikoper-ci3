@@ -65,4 +65,25 @@ class Nasabah_model extends CI_Model
     {
         return $this->db->count_all('tbnasabah');
     }
+
+        public function insert_data($data)
+    {
+        return $this->db->insert('tbnasabah', $data);
+    }
+
+        public function delete_data($id)
+    {
+        return $this->db->delete('tbnasabah', ['id' => $id]);
+    }
+
+    public function get_data_by_nik($nik)
+    {
+        return $this->db->get_where('tbnasabah', ['nik' => $nik])->row();
+    }
+
+    public function edit_data($id, $data)
+    {
+        return $this->db->where('id', $id)->update('tbnasabah', $data);
+    }
+
 }

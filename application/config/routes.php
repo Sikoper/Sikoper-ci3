@@ -77,6 +77,10 @@ $route['nasabah/add'] = 'nasabah/add';
 $route['nasabah/detail'] = 'nasabah/detail';
 $route['nasabah/delete'] = 'nasabah/delete';
 $route['nasabah/generate_norek'] = 'nasabah/generate_norek';
+$route['nasabah/getKab'] = 'nasabah/getKab';
+$route['nasabah/getKec'] = 'nasabah/getKec';
+$route['nasabah/getKel'] = 'nasabah/getKel';
+$route['nasabah/simpanData'] = 'nasabah/simpanData';
 
 
 
