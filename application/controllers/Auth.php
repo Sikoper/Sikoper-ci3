@@ -21,6 +21,7 @@ class Auth extends CI_Controller
                     'uuid'       => $user->uuid,
                     'id'         => $user->id,
                     'level'      => $user->level,
+                    'pegawai_id' => $user->pegawai_id,
                 ]);
             }
         }
@@ -54,10 +55,11 @@ class Auth extends CI_Controller
                 if ($auth) {
                     $this->session->set_userdata([
                         'isLoggedIn' => true,
-                        'id'       => $auth->id,
+                        'id'         => $auth->id,
                         'nama'       => $auth->nama,
                         'uuid'       => $auth->uuid,
-                        'level'       => $auth->level,
+                        'level'      => $auth->level,
+                        'pegawai_id' => $auth->pegawai_id,
                     ]);
 
                     if ($remember_me == 1) {
