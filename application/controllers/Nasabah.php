@@ -9,13 +9,9 @@ class Nasabah extends CI_Controller
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
 
-
-//         echo '<pre>';
-// print_r($this->session->userdata());
-// exit; 
-        if (!$this->session->userdata('isLoggedIn')) {
-            redirect('login');
-        }
+        // echo '<pre>';
+        // print_r($this->session->userdata());
+        // exit;
 
         $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
         $level = $this->session->userdata('level');
@@ -200,7 +196,7 @@ class Nasabah extends CI_Controller
             $telp               = $input->post('telp');
             $jenis_tabungan     = $input->post('jenistabungan_id');
             $no_rekening        = $input->post('nomor_rekening');
-            $pegawai_id         = $this->session->userdata('id');
+            $pegawai_id         = $this->session->userdata('pegawai_id');
 
             // Validasi
             $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbnasabah.nik]|numeric', [
