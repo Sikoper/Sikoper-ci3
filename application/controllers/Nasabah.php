@@ -8,12 +8,22 @@ class Nasabah extends CI_Controller
         parent::__construct();
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
+
+
+//         echo '<pre>';
+// print_r($this->session->userdata());
+// exit; 
+        if (!$this->session->userdata('isLoggedIn')) {
+            redirect('login');
+        }
+
         $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
         $level = $this->session->userdata('level');
         if (!in_array($level, $allowed_roles)) {
             redirect('unauthorized_403');
         }
     }
+
     public function index()
     {
         $parser = [
@@ -134,7 +144,7 @@ class Nasabah extends CI_Controller
 
     public function add()
     {
-        $allowed_roles = ['Admin'];
+        $allowed_roles = ['Admin', 'Pegawai',];
         $level = $this->session->userdata('level');
         if (!in_array($level, $allowed_roles)) {
             redirect('unauthorized_403');
@@ -189,27 +199,70 @@ class Nasabah extends CI_Controller
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
             $jenis_tabungan     = $input->post('jenistabungan_id');
-            $nomor_rekening     = $input->post('nomor_rekening');
+            $no_rekening        = $input->post('nomor_rekening');
             $pegawai_id         = $this->session->userdata('id');
 
             // Validasi
-            $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbpegawai.nik]');
-            $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]');
-            $this->form_validation->set_rules('jenis_kelamin', 'Jenis Kelamin', 'required');
-            $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'required|max_length[30]');
-            $this->form_validation->set_rules('tgl_lahir', 'Tanggal Lahir', 'required');
-            $this->form_validation->set_rules('agama', 'Agama', 'required');
-            $this->form_validation->set_rules('pekerjaan', 'Pekerjaan', 'required');
-            $this->form_validation->set_rules('nama_ibu_kandung', 'Nama Ibu Kandung', 'required');
-            $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
-            $this->form_validation->set_rules('provinsi', 'Provinsi', 'required');
-            $this->form_validation->set_rules('kabupaten', 'Kabupaten', 'required');
-            $this->form_validation->set_rules('kecamatan', 'Kecamatan', 'required');
-            $this->form_validation->set_rules('desa', 'Desa', 'required');
-            $this->form_validation->set_rules('alamat', 'Alamat', 'required');
-            $this->form_validation->set_rules('telp', 'No Telepon', 'required|numeric|min_length[10]');
-            $this->form_validation->set_rules('jenistabungan_id', 'Jenis Tabungan', 'required');
-            $this->form_validation->set_rules('nomor_rekening', 'Nomor Rekening', 'required|numeric|min_length[5]');
+            $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbnasabah.nik]|numeric', [
+                'required'   => 'NIK wajib diisi.',
+                'is_unique'  => 'NIK sudah terdaftar.',
+                'numeric'    => 'NIK harus berupa angka.'
+            ]);
+
+            $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]', [
+                'required'   => 'Nama tidak boleh kosong.',
+                'min_length' => 'Nama Lengkap minimal 4 karakter.',
+                'max_length' => 'Nama Lengkap maksimal 100 karakter.'
+            ]);
+            $this->form_validation->set_rules('jenis_kelamin', 'Jenis Kelamin', 'required', [
+                'required'   => 'Jenis Kelamin tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'required|max_length[30]', [
+                'required'   => 'Tempat Lahir tidak boleh kosong.',
+                'max_length' => 'Tempat Lahir maksimal 30 karakter.'
+            ]);
+            $this->form_validation->set_rules('tgl_lahir', 'Tanggal Lahir', 'required', [
+                'required'   => 'Tanggal Lahir tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('agama', 'Agama', 'required', [
+                'required'   => 'Agama tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('pekerjaan', 'Pekerjaan', 'required', [
+                'required'   => 'Pekerjaan tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('nama_ibu_kandung', 'Nama Ibu Kandung', 'required', [
+                'required'   => 'Nama Ibu Kandung tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('email', 'Email', 'required|valid_email', [
+                'required'   => 'Email tidak boleh kosong.',
+                'valid_email' => 'Format email tidak valid.'
+            ]);
+            $this->form_validation->set_rules('provinsi', 'Provinsi', 'required', [
+                'required'   => 'Provinsi tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('kabupaten', 'Kabupaten', 'required', [
+                'required'   => 'Kabupaten tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('kecamatan', 'Kecamatan', 'required', [
+                'required'   => 'Kecamatan tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('desa', 'Desa', 'required', [
+                'required'   => 'Desa tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('alamat', 'Alamat', 'required', [
+                'required'   => 'Alamat tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('telp', 'No Telepon', 'required|numeric|min_length[10]', [
+                'required'   => 'No Telepon tidak boleh kosong.',
+                'numeric'    => 'No Telepon harus berupa angka.',
+                'min_length' => 'No Telepon minimal 10 karakter.'
+            ]);
+            $this->form_validation->set_rules('jenistabungan_id', 'Jenis Tabungan', 'required', [
+                'required'   => 'Jenis Tabungan tidak boleh kosong.'
+            ]);
+            $this->form_validation->set_rules('nomor_rekening', 'Nomor Rekening', 'required', [
+                'required'   => 'Nomor Rekening tidak boleh kosong.'
+            ]);
 
             if ($this->form_validation->run() == FALSE) {
                 echo json_encode([
@@ -255,10 +308,13 @@ class Nasabah extends CI_Controller
                     'alamat'            => $alamat,
                     'telp'              => $telp,
                     'jenistabungan_id'  => $jenis_tabungan,
-                    'nomor_rekening'    => $nomor_rekening,
+                    'no_rekening'       => $no_rekening,
                     'pegawai_id'        => $pegawai_id
                 ];
 
+                // echo '<pre>';
+                // print_r($data);
+                // exit;
                 $inserted = $this->Nasabah_model->insert_data($data);
 
                 if ($inserted) {
@@ -291,5 +347,20 @@ class Nasabah extends CI_Controller
 
         // 5. Return sebagai JSON
         echo json_encode(['norek' => $norek]);
+    }
+
+    public function delete()
+    {
+        if ($this->input->is_ajax_request()) {
+            $id = $this->input->post('id');
+
+            $this->Nasabah_model->delete_data($id);
+
+            $msg = [
+                'success' => 'Data berhasil dihapus'
+            ];
+
+            echo json_encode($msg);
+        }
     }
 }

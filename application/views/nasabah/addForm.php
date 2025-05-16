@@ -153,7 +153,7 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-5" style="height: 80px;">
+                    <div class="form-group mb-2" style="height: 80px;">
                         <label for="jenis_tabungan">Jenis Tabungan</label>
                         <select id="jenis_tabungan" name="jenistabungan_id" class="form-select">
                             <option value=""> -- Pilih Jenis Tabungan -- </option>
@@ -165,7 +165,7 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-5" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
                             <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control" readonly>

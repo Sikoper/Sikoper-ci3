@@ -90,7 +90,14 @@ class Pegawai_model extends CI_Model
         $this->db->like('nama_lengkap', $keyword);
         $this->db->select('id, nama_lengkap');
         $this->db->from('tbpegawai');
+        $this->db->where('user_token', '1');
         $query = $this->db->get();
         return $query->result();
+    }
+
+    public function update_user_token($pegawai_id, $token_value)
+    {
+        $this->db->where('id', $pegawai_id);
+        return $this->db->update('tbpegawai', ['user_token' => $token_value]);
     }
 }

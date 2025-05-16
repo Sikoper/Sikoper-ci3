@@ -81,6 +81,7 @@ class Users extends CI_Controller
             $nama = $this->input->post('nama');
             $username = $this->input->post('username');
             $password = $this->input->post('password');
+            $pegawai_id = $this->input->post('pegawai_id');
 
             $this->form_validation->set_rules('nama', 'Nama', 'required', [
                 'required'     => 'Nama wajib diisi.'
@@ -105,12 +106,24 @@ class Users extends CI_Controller
                     ]
                 ];
             } else {
+                $this->load->model('Pegawai_model');
+                $pegawai = $this->Pegawai_model->update_user_token($pegawai_id, '0');
+                if (!$pegawai) {
+                    $msg = [
+                        'error' => [
+                            'errorPegawai' => 'Pegawai tidak ditemukan.'
+                        ]
+                    ];
+                    echo json_encode($msg);
+                    return;
+                }
                 $data = [
                     'uuid' => uniqid(),
                     'nama' => $nama,
                     'username' => $username,
                     'password' => password_hash($password, PASSWORD_DEFAULT),
                     'level' => 'Pegawai',
+                    'pegawai_id' => $pegawai_id,
                 ];
                 $this->Users_model->register($data);
                 $msg = ['success' => 'Data berhasil ditambahkan.'];
@@ -124,7 +137,19 @@ class Users extends CI_Controller
     {
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
+            $user = $this->Users_model->get_data_by_id($id);
+            $this->load->model('Pegawai_model');
 
+            $pegawai = $this->Pegawai_model->update_user_token($user->pegawai_id, '1');
+            if (!$pegawai) {
+                $msg = [
+                    'error' => [
+                        'errorPegawai' => '-.'
+                    ]
+                ];
+                echo json_encode($msg);
+                return;
+            }
             $this->Users_model->delete_data($id);
 
             $msg = [

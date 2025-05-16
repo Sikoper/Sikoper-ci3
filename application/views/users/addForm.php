@@ -42,6 +42,9 @@
                                 </button>
                             </div>
                         </div>
+
+                        <input type="hidden" id="pegawai_id" name="pegawai_id">
+
                         <div id="errorPassword" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -160,8 +163,10 @@
     });
 
     $('#pegawai').on('select2:select', function(e) {
+        let id = e.params.data.id;
         let nama = e.params.data.text;
         let angka = Math.floor(Math.random() * 100);
+        $('#pegawai_id').val(id);
         $('#nama').val(nama);
         $('#username').val(nama.toLowerCase().replace(/\s/g, '') + angka);
     });
