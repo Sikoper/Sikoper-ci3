@@ -56,6 +56,15 @@
                             </li>
                         <?php endif; ?>
 
+                        <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == 'penarikan' ? 'active' : '' ?>">
+                                <a href="<?= base_url('penarikan') ?>" class='sidebar-link'>
+                                    <i class="fa fa-receipt"></i>
+                                    <span>Penarikan</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
                         <?php if ($level == 'Admin' || $level == 'Pegawai'): ?>
                             <li class="sidebar-item <?= $this->uri->segment(1) == 'nasabah' ? 'active' : '' ?>">
                                 <a href="<?= base_url('nasabah') ?>" class='sidebar-link'>
@@ -70,6 +79,24 @@
                                 <a href="<?= base_url('jenis_tabungan') ?>" class='sidebar-link'>
                                     <i class="fa fa-list"></i>
                                     <span>Jenis Tabungan</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
+                        <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == 'pegawai' ? 'active' : '' ?>">
+                                <a href="<?= base_url('pegawai') ?>" class='sidebar-link'>
+                                    <i class="fa fa-users"></i>
+                                    <span>Pegawai</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
+                        <?php if ($level == 'Admin'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == 'users' ? 'active' : '' ?>">
+                                <a href="<?= base_url('users') ?>" class='sidebar-link'>
+                                    <i class="fa fa-user-lock"></i>
+                                    <span>User</span>
                                 </a>
                             </li>
                         <?php endif; ?>
