@@ -59,7 +59,7 @@
                     </div>
 
                     <div class="form-group" style="height: 80px;">
-                        <label for="pekerjaan">pekerjaan</label>
+                        <label for="pekerjaan">Pekerjaan</label>
                         <input type="text" id="pekerjaan" name="pekerjaan" class="form-control" placeholder="Pekerjaan sekarang" autocomplete="off">
                         <div id="errorPekerjaan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -177,7 +177,7 @@
 
                     <?php if ($level == 'Admin'): ?>
                         <div class="form-group mb-5" style="height: 80px;">
-                            <label for="pegawai_id">Jabatan</label>
+                            <label for="pegawai_id">Pegawai</label>
                             <select id="pegawai_id" name="pegawai_id" class="form-control" autocomplete="off">
                                 <option value=""> -- Pilih Pegawai -- </option>
                                 <?php foreach ($pegawai as $item): ?>

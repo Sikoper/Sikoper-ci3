@@ -84,7 +84,7 @@
 
                     <div class="text-center mt-3">
                         <button type="submit" id="tombol_simpan" class="btn btn-success">Simpan</button>
-                        <button type="button" onclick="window.location='<?= base_url('jenis_tabungan') ?>'" class="btn btn-danger">Batal</button>
+                        <button type="button" onclick="window.location='<?= $backUrl ?>'" class="btn btn-danger">Batal</button>
                     </div>
 
                     <?= form_close() ?>

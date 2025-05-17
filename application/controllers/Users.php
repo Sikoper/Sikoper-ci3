@@ -29,11 +29,10 @@ class Users extends CI_Controller
             $data = array();
             $no = $_POST['start'];
             $user_id = $this->session->userdata('id');
-            $user_level = $this->session->userdata('level');
 
             foreach ($list as $field) {
 
-                if ($user_level == 'Kaling' && $field->level == 'Admin') {
+                if ($field->level == 'Admin') {
                     continue;
                 }
 
