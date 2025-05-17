@@ -80,6 +80,11 @@ class Pegawai_model extends CI_Model
         return $this->db->get_where('tbpegawai', ['nik' => $nik])->row();
     }
 
+    public function get_data()
+    {
+        return $this->db->get('tbpegawai')->result();
+    }
+
     public function edit_data($id, $data)
     {
         return $this->db->where('id', $id)->update('tbpegawai', $data);
