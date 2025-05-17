@@ -56,6 +56,15 @@
                             </li>
                         <?php endif; ?>
 
+                        <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
+                            <li class="sidebar-item <?= $this->uri->segment(1) == 'penarikan' ? 'active' : '' ?>">
+                                <a href="<?= base_url('penarikan') ?>" class='sidebar-link'>
+                                    <i class="fa fa-receipt"></i>
+                                    <span>Penarikan</span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
                         <?php if ($level == 'Admin' || $level == 'Pegawai'): ?>
                             <li class="sidebar-item <?= $this->uri->segment(1) == 'nasabah' ? 'active' : '' ?>">
                                 <a href="<?= base_url('nasabah') ?>" class='sidebar-link'>
