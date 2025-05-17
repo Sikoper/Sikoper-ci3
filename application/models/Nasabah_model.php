@@ -4,8 +4,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Nasabah_model extends CI_Model
 {
     var $table = 'tbnasabah';
-    var $column_order = array(null, 'no_rekening', 'nama_lengkap', 'telp', 'email',  null);
-    var $column_search = array('no_rekening', 'nama_lengkap', 'email');
+    var $column_order = array(null, 'nik', 'nama_lengkap', 'telp', 'email',  null);
+    var $column_search = array('nik', 'nama_lengkap', 'email');
     var $order = array('created_at' => 'DESC');
 
     private function _get_datatables_query()

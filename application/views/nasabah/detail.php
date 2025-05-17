@@ -7,10 +7,6 @@
     <div class="card-body">
         <table class="table table-bordered table-striped">
             <tr>
-                <th>No Rekening</th>
-                <td><?= $nasabah->no_rekening ?></td>
-            </tr>
-            <tr>
                 <th>NIK</th>
                 <td><?= $nasabah->nik ?></td>
             </tr>
