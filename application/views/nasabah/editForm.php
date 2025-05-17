@@ -177,19 +177,6 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-2" style="height: 80px;">
-                        <label for="jenis_tabungan">Jenis Tabungan</label>
-                        <select id="jenis_tabungan" name="jenistabungan_id" class="form-select">
-                            <?php foreach ($jenistabungan as $tab): ?>
-                                <option value="<?= $tab->id ?>" <?= ($nasabah->jenistabungan_id == $tab->id) ? 'selected' : ''; ?>>
-                                    <?= $tab->nama ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div id="errorJabatan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">

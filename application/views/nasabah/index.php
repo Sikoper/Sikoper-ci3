@@ -16,7 +16,7 @@
                             <th>Nomor Rekening</th>
                             <th>Nama Nasabah</th>
                             <th>Nomer Telepon</th>
-                            <th>Jenis Tabungan</th>
+                            <th>Email</th>
                             <th>#</th>
                         </tr>
                     </thead>
