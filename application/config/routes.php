@@ -85,8 +85,6 @@ $route['nasabah/edit/(:any)'] = 'nasabah/edit/$1';
 $route['nasabah/updateData'] = 'nasabah/updateData';
 $route['nasabah/detail'] = 'nasabah/detail';
 
-
-
 $route['users'] = 'users';
 $route['users/fetchData'] = 'users/fetchData';
 $route['users/add'] = 'users/add';
@@ -102,3 +100,5 @@ $route['jenis_tabungan/delete'] = 'kategori/delete';
 $route['jenis_tabungan/edit/(:any)'] = 'kategori/edit/$1';
 $route['jenis_tabungan/updateData'] = 'kategori/updateData';
 $route['jenis_tabungan/detail/(:any)'] = 'kategori/detail/$1';
+
+$route['penarikan'] = 'penarikan';
