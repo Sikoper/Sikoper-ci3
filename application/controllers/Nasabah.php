@@ -48,14 +48,12 @@ class Nasabah extends CI_Controller
             foreach ($list as $field) {
                 $no++;
                 $row = array();
-                $jenistabungan = $this->Kategori_model->get_data_by_id($field->jenistabungan_id);
-                $jenis_tabungan = $jenistabungan ? $jenistabungan->nama : 'Tidak Diketahui';
 
                 $row[] = "<div class=\"text-center\">$no</div>";
                 $row[] = $field->no_rekening;
                 $row[] = $field->nama_lengkap;
                 $row[] = $field->telp;
-                $row[] = $jenis_tabungan;
+                $row[] = $field->email;
                 $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-edit fa-fw'></i></button>
                             <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_lengkap . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
                             <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-info fa-fw'></i></button>";;
@@ -155,12 +153,10 @@ class Nasabah extends CI_Controller
         $getProv = file_get_contents("https://wilayah.id/api/provinces.json");
         $response = json_decode($getProv, true);
 
-        $datajenis = $this->Kategori_model->get_data();
         $pegawai = $this->Pegawai_model->get_data();
 
         $data = [
             'provinces' => $response['data'],
-            'jenistabungan' => $datajenis,
             'pegawai' => $pegawai,
             'level' => $this->session->userdata('level'),
         ];
@@ -203,7 +199,6 @@ class Nasabah extends CI_Controller
             $rw                 = $input->post('rw');
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
-            $jenis_tabungan     = $input->post('jenistabungan_id');
             $no_rekening        = $input->post('nomor_rekening');
             $pegawai_id         = $input->post('pegawai_id');
 
@@ -262,9 +257,6 @@ class Nasabah extends CI_Controller
                 'numeric'    => 'No Telepon harus berupa angka.',
                 'min_length' => 'No Telepon minimal 10 karakter.'
             ]);
-            $this->form_validation->set_rules('jenistabungan_id', 'Jenis Tabungan', 'required', [
-                'required'   => 'Jenis Tabungan tidak boleh kosong.'
-            ]);
             $this->form_validation->set_rules('nomor_rekening', 'Nomor Rekening', 'required', [
                 'required'   => 'Nomor Rekening tidak boleh kosong.'
             ]);
@@ -312,7 +304,6 @@ class Nasabah extends CI_Controller
                     'rw'                => $rw ?: '000',
                     'alamat'            => $alamat,
                     'telp'              => $telp,
-                    'jenistabungan_id'  => $jenis_tabungan,
                     'no_rekening'       => $no_rekening,
                     'pegawai_id'        => $pegawai_id
                 ];
@@ -417,7 +408,6 @@ class Nasabah extends CI_Controller
             'kabList' => $responseKab['data'],
             'kecList' => $responseKec['data'],
             'kelList' => $responseKel['data'],
-            'jenistabungan' => $kategori,
             'level' => $this->session->userdata('level'),
             'pegawai' => $pegawai,
         ];
@@ -460,7 +450,6 @@ class Nasabah extends CI_Controller
             $rw                 = $input->post('rw');
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
-            $jenis_tabungan     = $input->post('jenistabungan_id');
             $no_rekening        = $input->post('nomor_rekening');
             $pegawai_id         = $input->post('pegawai_id');
 
@@ -525,9 +514,6 @@ class Nasabah extends CI_Controller
                 'numeric'    => 'No Telepon harus berupa angka.',
                 'min_length' => 'No Telepon minimal 10 karakter.'
             ]);
-            $this->form_validation->set_rules('jenistabungan_id', 'Jenis Tabungan', 'required', [
-                'required'   => 'Jenis Tabungan tidak boleh kosong.'
-            ]);
             $this->form_validation->set_rules('nomor_rekening', 'Nomor Rekening', 'required', [
                 'required'   => 'Nomor Rekening tidak boleh kosong.'
             ]);
@@ -575,7 +561,6 @@ class Nasabah extends CI_Controller
                     'rw'                => $rw ?: '000',
                     'alamat'            => $alamat,
                     'telp'              => $telp,
-                    'jenistabungan_id'  => $jenis_tabungan,
                     'no_rekening'       => $no_rekening,
                     'pegawai_id'        => $pegawai_id
                 ];
@@ -646,7 +631,6 @@ class Nasabah extends CI_Controller
             'nama_kabupaten' => $nama_kabupaten,
             'nama_kecamatan' => $nama_kecamatan,
             'nama_desa' => $nama_desa,
-            'jenis_tabungan' => $kategori,
             'level' => $this->session->userdata('level'),
         ];
         $parser = [

@@ -153,18 +153,6 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-2" style="height: 80px;">
-                        <label for="jenis_tabungan">Jenis Tabungan</label>
-                        <select id="jenis_tabungan" name="jenistabungan_id" class="form-select">
-                            <option value=""> -- Pilih Jenis Tabungan -- </option>
-                            <?php foreach ($jenistabungan as $item): ?>
-                                <option value="<?= $item->id ?>"><?= $item->nama ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div id="errorJabatan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
