@@ -618,9 +618,6 @@ class Nasabah extends CI_Controller
         $nama_desa = array_column($getKel['data'], 'name', 'code')[$nasabah->desa] ?? '-';
 
 
-        $kategori = $this->Kategori_model->get_data_by_id($nasabah->jenistabungan_id);
-
-
         $data = [
             'nasabah'   => $nasabah,
             'desa'      => $nasabah->desa,
