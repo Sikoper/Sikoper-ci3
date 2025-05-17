@@ -12,9 +12,14 @@
                 <div class="col-md-6">
                     <?= form_open('', ['id' => 'form_simpan']) ?>
 
-                    <div class="form-group" style="height: 80px;">
+                    <div class="form-group">
                         <label for="pegawai">Pilih Pegawai</label>
-                        <select id="pegawai" class="form-control" name="pegawai"></select>
+                        <div class="d-flex align-items-center">
+                            <select id="pegawai" class="form-control select2" name="pegawai" style="width: auto; flex: 1;"></select>
+                            <button type="button" onclick="window.location='<?= base_url('pegawai/add' ) . '?code=1' ?>'" class="btn btn-primary ml-2">
+                                <i class="fa fa-circle-plus"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
@@ -145,7 +150,7 @@
     $('#pegawai').select2({
         placeholder: 'Cari nama pegawai...',
         ajax: {
-            url: '<?= base_url("pegawai/cari_pegawai") ?>', 
+            url: '<?= base_url("pegawai/cari_pegawai") ?>',
             dataType: 'json',
             delay: 250,
             data: function(params) {
@@ -165,7 +170,7 @@
     $('#pegawai').on('select2:select', function(e) {
         let id = e.params.data.id;
         let nama = e.params.data.text;
-        let angka = Math.floor(Math.random() * 100);
+        let angka = Math.floor(Math.random() * 90) + 10;
         $('#pegawai_id').val(id);
         $('#nama').val(nama);
         $('#username').val(nama.toLowerCase().replace(/\s/g, '') + angka);

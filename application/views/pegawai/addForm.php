@@ -1,7 +1,16 @@
 <section class="section">
     <div class="card">
+        <?php
+        function safe_base64_encode($string)
+        {
+            return strtr(base64_encode($string), '+/=', '-_.');
+        }
+        $backUrl = $this->input->get('code') == 1
+            ? site_url('users/add')
+            : site_url('pegawai');
+        ?>
         <div class="card-header">
-            <button class="btn btn-warning" onclick="window.location='<?= base_url('pegawai') ?>'">
+            <button class="btn btn-warning" onclick="window.location='<?= $backUrl ?>'">
                 <i class="fa fa-backward"></i> Kembali
             </button>
         </div>
@@ -145,7 +154,7 @@
                     </div>
                     <div class="text-center mb-3">
                         <button type="button" id="tombol_simpan" class="btn btn-success">Simpan</button>
-                        <button type="button" onclick="window.location='<?= base_url('pegawai') ?>'" class="btn btn-danger">Batal</button>
+                        <button type="button" onclick="window.location='<?= $backUrl ?>'" class="btn btn-danger">Batal</button>
                     </div>
                     <?= form_close() ?>
                 </div>
@@ -430,7 +439,7 @@
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('pegawai') ?>';
+                                window.location = '<?= $backUrl ?>';
                             }
                         });
                     } else {
@@ -440,7 +449,7 @@
                             icon: "error"
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('pegawai') ?>';
+                                window.location = '<?= $backUrl ?>';
                             }
                         });
                     }
