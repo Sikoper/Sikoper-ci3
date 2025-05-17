@@ -50,7 +50,7 @@ class Nasabah extends CI_Controller
                 $row = array();
 
                 $row[] = "<div class=\"text-center\">$no</div>";
-                $row[] = $field->no_rekening;
+                $row[] = $field->nik;
                 $row[] = $field->nama_lengkap;
                 $row[] = $field->telp;
                 $row[] = $field->email;
@@ -199,7 +199,6 @@ class Nasabah extends CI_Controller
             $rw                 = $input->post('rw');
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
-            $no_rekening        = $input->post('nomor_rekening');
             $pegawai_id         = $input->post('pegawai_id');
 
             // Validasi
@@ -257,9 +256,6 @@ class Nasabah extends CI_Controller
                 'numeric'    => 'No Telepon harus berupa angka.',
                 'min_length' => 'No Telepon minimal 10 karakter.'
             ]);
-            $this->form_validation->set_rules('nomor_rekening', 'Nomor Rekening', 'required', [
-                'required'   => 'Nomor Rekening tidak boleh kosong.'
-            ]);
 
             if ($this->form_validation->run() == FALSE) {
                 echo json_encode([
@@ -282,7 +278,6 @@ class Nasabah extends CI_Controller
                         'errorRw'               => form_error('rw'),
                         'errorTelp'             => form_error('telp'),
                         'errorJabatan'          => form_error('jenistabungan_id'),
-                        'errornomor_rekening'   => form_error('nomor_rekening'),
                     ]
                 ]);
             } else {
@@ -304,7 +299,6 @@ class Nasabah extends CI_Controller
                     'rw'                => $rw ?: '000',
                     'alamat'            => $alamat,
                     'telp'              => $telp,
-                    'no_rekening'       => $no_rekening,
                     'pegawai_id'        => $pegawai_id
                 ];
 
@@ -320,29 +314,6 @@ class Nasabah extends CI_Controller
                 }
             }
         }
-    }
-
-    public function generate_norek()
-    {
-        $this->load->model('Nasabah_model');
-
-        // 1. Kode kantor - bisa juga ambil dari session user jika login per kantor
-        $kode_kantor = '01'; // misalnya Kantor Pusat
-
-        // 2. Tanggal dibuat dalam format: ddmmyy (misal: 140525 untuk 14 Mei 2025)
-        $tanggal = date('dm');   // 2 digit hari + 2 digit bulan (14 + 05)
-        $tahun   = date('y');    // 2 digit tahun (25)
-        $tanggal_lengkap = $tanggal . $tahun; // Jadi: 140525
-
-        // 3. Urutan nasabah saat ini (ditambah 1)
-        $jumlah_nasabah = $this->Nasabah_model->count_all_nasabah();
-        $urutan = str_pad($jumlah_nasabah + 1, 6, '0', STR_PAD_LEFT); // ex: 000001
-
-        // 4. Gabungkan semua jadi nomor rekening
-        $norek = $kode_kantor . $tanggal_lengkap . $urutan; // contoh: 01140525000001
-
-        // 5. Return sebagai JSON
-        echo json_encode(['norek' => $norek]);
     }
 
     public function delete()
@@ -450,7 +421,6 @@ class Nasabah extends CI_Controller
             $rw                 = $input->post('rw');
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
-            $no_rekening        = $input->post('nomor_rekening');
             $pegawai_id         = $input->post('pegawai_id');
 
             // Validasi
@@ -514,9 +484,6 @@ class Nasabah extends CI_Controller
                 'numeric'    => 'No Telepon harus berupa angka.',
                 'min_length' => 'No Telepon minimal 10 karakter.'
             ]);
-            $this->form_validation->set_rules('nomor_rekening', 'Nomor Rekening', 'required', [
-                'required'   => 'Nomor Rekening tidak boleh kosong.'
-            ]);
 
             if ($this->form_validation->run() == FALSE) {
                 echo json_encode([
@@ -539,7 +506,6 @@ class Nasabah extends CI_Controller
                         'errorRw'               => form_error('rw'),
                         'errorTelp'             => form_error('telp'),
                         'errorJabatan'          => form_error('jenistabungan_id'),
-                        'errornomor_rekening'   => form_error('nomor_rekening'),
                     ]
                 ]);
             } else {
@@ -561,7 +527,6 @@ class Nasabah extends CI_Controller
                     'rw'                => $rw ?: '000',
                     'alamat'            => $alamat,
                     'telp'              => $telp,
-                    'no_rekening'       => $no_rekening,
                     'pegawai_id'        => $pegawai_id
                 ];
 

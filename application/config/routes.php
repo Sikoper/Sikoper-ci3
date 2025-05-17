@@ -102,3 +102,4 @@ $route['jenis_tabungan/updateData'] = 'kategori/updateData';
 $route['jenis_tabungan/detail/(:any)'] = 'kategori/detail/$1';
 
 $route['penarikan'] = 'penarikan';
+$route['penarikan/add'] = 'penarikan/add';

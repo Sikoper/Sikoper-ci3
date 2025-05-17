@@ -13,7 +13,7 @@
                     <thead>
                         <tr>
                             <th class="text-center" width="40px">No</th>
-                            <th>Nomor Rekening</th>
+                            <th>Nik</th>
                             <th>Nama Nasabah</th>
                             <th>Nomer Telepon</th>
                             <th>Email</th>

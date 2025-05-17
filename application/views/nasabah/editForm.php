@@ -177,13 +177,6 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-3" style="height: 80px;">
-                        <label for="nomor_rekening">Nomor Rekening</label>
-                        <div class="input-group">
-                            <input type="text" name="nomor_rekening" id="nomor_rekening" value="<?= $nasabah->no_rekening ?>" class="form-control" readonly>
-                        </div>
-                    </div>
-
                     <?php if ($level == 'Admin'): ?>
                         <div class="form-group mb-3" style="height: 80px;">
                             <label for="pegawai_id">Pegawai</label>
