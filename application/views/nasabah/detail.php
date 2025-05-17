@@ -67,10 +67,6 @@
                 <td><?= $nasabah->nama_ibu_kandung ?></td>
             </tr>
             <tr>
-                <th>Jenis Tabungan</th>
-                <td><?= $jenis_tabungan->nama ?></td>
-            </tr>
-            <tr>
                 <th>Tanggal dan Jam Dibuat</th>
                 <td><?= date('d-m-Y H:i', strtotime($nasabah->created_at)) ?></td>
             </tr>
