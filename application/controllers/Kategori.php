@@ -102,7 +102,13 @@ class Kategori extends CI_Controller
             $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
             $simpanan_awal    = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
             $pengendapan      = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
-            $keterangan = $this->input->post('keterangan');
+            $jenis_denda      = $this->input->post('jenis_denda');
+            $jumlah_denda = str_replace(
+                ['.', ','],
+                ['', '.'],
+                $this->input->post('denda_idr') ?: $this->input->post('denda_persen') ?? ''
+            );
+            $keterangan       = $this->input->post('keterangan');
 
             $this->form_validation->set_rules('nama', 'Nama', 'required', [
                 'required'     => 'Nama wajib diisi.'
@@ -141,6 +147,8 @@ class Kategori extends CI_Controller
                     'biaya_registrasi' => $biaya_registrasi,
                     'simpanan_awal' => $simpanan_awal,
                     'pengendapan' => $pengendapan,
+                    'jenis_denda' => $jenis_denda,
+                    'jumlah_denda' => $jumlah_denda,
                     'keterangan' => $keterangan,
                 ];
                 $this->Kategori_model->insert_data($data);
@@ -238,6 +246,12 @@ class Kategori extends CI_Controller
             $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
             $simpanan_awal    = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
             $pengendapan      = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
+            $jenis_denda      = $this->input->post('jenis_denda');
+            $jumlah_denda = $this->input->post('denda_idr')
+                ? str_replace(['.', ','], ['', '.'], $this->input->post('denda_idr'))
+                : ($this->input->post('denda_persen')
+                    ? str_replace(',', '.', $this->input->post('denda_persen'))
+                    : '');
             $keterangan = $this->input->post('keterangan');
 
             $this->form_validation->set_rules('nama', 'Nama', 'required', [
@@ -277,6 +291,8 @@ class Kategori extends CI_Controller
                     'biaya_registrasi' => $biaya_registrasi,
                     'simpanan_awal' => $simpanan_awal,
                     'pengendapan' => $pengendapan,
+                    'jenis_denda' => $jenis_denda,
+                    'jumlah_denda' => $jumlah_denda,
                     'keterangan' => $keterangan,
                 ];
                 $inserted = $this->Kategori_model->edit_data($id, $data);

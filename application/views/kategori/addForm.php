@@ -64,6 +64,40 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
+                    <div class="form-group" style="height: 80px;">
+                        <label for="jenis_denda">Jenis Denda</label>
+                        <div class="input-group">
+                            <select id="jenis_denda" name="jenis_denda" class="form-control">
+                                <option value=""> -- Pilih jenis denda -- </option>
+                                <option value="Rp">Denda dalam bentuk Rp</option>
+                                <option value="%">Denda dalam bentuk %</option>
+                            </select>
+                        </div>
+                        <div id="errorJenisDenda" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+
+                    <div class="form-group mb-3" style="height: 80px;">
+                        <label for="denda_idr">Pinalti/Denda Penarikan (Rp)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="text" id="denda_idr" name="denda_idr" class="form-control text-end" disabled>
+                        </div>
+                        <div id="errorDendaIdr" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group mb-3" style="height: 80px;">
+                        <label for="denda_persen">Pinalti/Denda Penarikan (%)</label>
+                        <div class="input-group">
+                            <input type="text" id="denda_persen" name="denda_persen" class="form-control text-end" disabled>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div id="errorDendaPersen" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
                     <div class="form-group" style="height: 180px;">
                         <label for="keterangan">Keterangan</label>
                         <div class="input-group">
@@ -109,6 +143,34 @@
             aDec: ',',
             mDec: '0',
         });
+        $('#denda_idr').autoNumeric('init', {
+            aSep: '.',
+            aDec: ',',
+            mDec: '0',
+        });
+        $('#denda_persen').autoNumeric('init', {
+            aSep: ',',
+            aDec: '.',
+            mDec: '2',
+            vMin: '0',
+            vMax: '100',
+        });
+
+        $('#jenis_denda').on('change', function() {
+            let value = $(this).val();
+            if (value == 'Rp') {
+                $('#denda_idr').attr('disabled', false);
+                $('#denda_persen').attr('disabled', true);
+                $('#denda_persen').val('');
+            } else if (value == '%') {
+                $('#denda_idr').attr('disabled', true);
+                $('#denda_idr').val('');
+                $('#denda_persen').attr('disabled', false);
+            } else {
+                $('#denda_idr').attr('disabled', true);
+                $('#denda_persen').attr('disabled', true);
+            }
+        })
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
@@ -177,7 +239,7 @@
                             $('#errorKeterangan').fadeOut();
                             $('#keterangan').removeClass('is-invalid').addClass('is-valid');
                         }
-                    } else if (response.success){
+                    } else if (response.success) {
                         Swal.fire({
                             icon: "success",
                             title: "Success!",

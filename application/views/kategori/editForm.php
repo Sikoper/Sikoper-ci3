@@ -73,6 +73,40 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
+                    <div class="form-group" style="height: 80px;">
+                        <label for="jenis_denda">Jenis Denda</label>
+                        <div class="input-group">
+                            <select id="jenis_denda" name="jenis_denda" class="form-control">
+                                <option value=""> -- Pilih jenis denda -- </option>
+                                <option value="Rp" <?= ($kategori->jenis_denda == 'Rp') ? 'selected' : ''; ?>>Rp</option>
+                                <option value="%" <?= ($kategori->jenis_denda == '%') ? 'selected' : ''; ?>>%</option>
+                            </select>
+                        </div>
+                        <div id="errorJenisDenda" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+
+                    <div class="form-group mb-3" style="height: 80px;">
+                        <label for="denda_idr">Pinalti/Denda Penarikan (Rp)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="text" id="denda_idr" name="denda_idr" class="form-control text-end" disabled>
+                        </div>
+                        <div id="errorDendaIdr" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group mb-3" style="height: 80px;">
+                        <label for="denda_persen">Pinalti/Denda Penarikan (%)</label>
+                        <div class="input-group">
+                            <input type="text" id="denda_persen" name="denda_persen" class="form-control text-end" disabled>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div id="errorDendaPersen" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
                     <div class="form-group" style="height: 180px;">
                         <label for="keterangan">Keterangan</label>
                         <div class="input-group">
@@ -94,6 +128,7 @@
         </div>
     </div>
 </section>
+<script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
         $('#bunga').autoNumeric('init', {
@@ -118,6 +153,46 @@
             aDec: ',',
             mDec: '0',
         });
+        const dendaIdrAN = new AutoNumeric('#denda_idr', {
+            digitGroupSeparator: '.',
+            decimalCharacter: ',',
+            decimalPlaces: 0
+        });
+
+        const dendaPersenAN = new AutoNumeric('#denda_persen', {
+            digitGroupSeparator: ',',
+            decimalCharacter: '.',
+            decimalPlaces: 2,
+            minimumValue: '0',
+            maximumValue: '100'
+        });
+
+        $('#jenis_denda').on('change', function() {
+            const value = $(this).val() || '<?= $kategori->jenis_denda ?? '' ?>';
+            const dendaValue = '<?= $kategori->jumlah_denda ?? '' ?>';
+            const numericValue = parseFloat(dendaValue || 0);
+
+            if (value === 'Rp') {
+                dendaPersenAN.clear();
+                dendaPersenAN.node().disabled = true;
+
+                dendaIdrAN.node().disabled = false;
+                dendaIdrAN.set(numericValue);
+            } else if (value === '%') {
+                dendaIdrAN.clear();
+                dendaIdrAN.node().disabled = true;
+
+                dendaPersenAN.node().disabled = false;
+                dendaPersenAN.set(numericValue);
+            } else {
+                dendaIdrAN.clear();
+                dendaPersenAN.clear();
+                dendaIdrAN.node().disabled = true;
+                dendaPersenAN.node().disabled = true;
+            }
+        });
+
+        $('#jenis_denda').trigger('change');
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
