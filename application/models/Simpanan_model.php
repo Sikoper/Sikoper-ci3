@@ -1,9 +1,9 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Nasabah_model extends CI_Model
+class Simpanan_model extends CI_Model
 {
-    var $table = 'tbnasabah';
+    var $table = 'tbsimpanan';
     var $column_order = array(null, 'nik', 'nama_lengkap', 'telp', 'email',  null);
     var $column_search = array('nik', 'nama_lengkap', 'email');
     var $order = array('created_at' => 'DESC');
@@ -61,34 +61,29 @@ class Nasabah_model extends CI_Model
         return $this->db->count_all_results();
     }
 
-    public function count_all_nasabah()
+    public function count_all_data()
     {
-        return $this->db->count_all('tbnasabah');
+        return $this->db->count_all('tbsimpanan');
     }
 
         public function insert_data($data)
     {
-        return $this->db->insert('tbnasabah', $data);
+        return $this->db->insert('tbsimpanan', $data);
     }
 
         public function delete_data($id)
     {
-        return $this->db->delete('tbnasabah', ['id' => $id]);
-    }
-
-    public function get_data_by_nik($nik)
-    {
-        return $this->db->get_where('tbnasabah', ['nik' => $nik])->row();
+        return $this->db->delete('tbsimpanan', ['id' => $id]);
     }
 
     public function edit_data($id, $data)
     {
-        return $this->db->where('id', $id)->update('tbnasabah', $data);
+        return $this->db->where('id', $id)->update('tbsimpanan', $data);
     }
 
     public function get_data_by_id($id)
     {
-        return $this->db->get_where('tbnasabah', ['id' => $id])->row();
+        return $this->db->get_where('tbsimpanan', ['id' => $id])->row();
     }
 
     public function search_nasabah($keyword)

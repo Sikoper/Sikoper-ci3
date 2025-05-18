@@ -601,4 +601,28 @@ class Nasabah extends CI_Controller
         ];
         $this->parser->parse('templates/main', $parser);
     }
+
+    public function cari_nasabah()
+    {
+        $keyword = $this->input->get('q');
+
+        if (!empty($keyword)) {
+            $nasabah = $this->Nasabah_model->search_nasabah($keyword);
+        } else {
+            $this->db->select('id, nama_lengkap');
+            $this->db->from('tbnasabah');
+            $this->db->limit(100);
+            $nasabah = $this->db->get()->result();
+        }
+
+        $data = [];
+        foreach ($nasabah as $row) {
+            $data[] = [
+                'id' => $row->id,
+                'text' => $row->nama_lengkap
+            ];
+        }
+
+        echo json_encode($data);
+    }
 }
