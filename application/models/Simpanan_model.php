@@ -4,14 +4,16 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Simpanan_model extends CI_Model
 {
     var $table = 'tbsimpanan';
-    var $column_order = array(null, 'nik', 'nama_lengkap', 'telp', 'email',  null);
-    var $column_search = array('nik', 'nama_lengkap', 'email');
+    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jenis_tabungan',  null);
+    var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
     var $order = array('created_at' => 'DESC');
 
     private function _get_datatables_query()
     {
-
+        $this->db->select('tbsimpanan.*, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah, tbjenistabungan.nama as jenis_tabungan');
         $this->db->from($this->table);
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
+        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');
 
         $i = 0;
 
@@ -84,6 +86,11 @@ class Simpanan_model extends CI_Model
     public function get_data_by_id($id)
     {
         return $this->db->get_where('tbsimpanan', ['id' => $id])->row();
+    }
+
+    public function get_data_by_norek($no_rekening)
+    {
+        return $this->db->get_where('tbsimpanan', ['no_rekening' => $no_rekening])->row();
     }
 
     public function search_nasabah($keyword)
