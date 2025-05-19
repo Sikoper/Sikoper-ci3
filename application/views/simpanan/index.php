@@ -13,10 +13,10 @@
                     <thead>
                         <tr>
                             <th class="text-center" width="40px">No</th>
-                            <th>NIK</th>
-                            <th>Nama Pegawai</th>
+                            <th>Nama Nasabah</th>
+                            <th>Nomer Rekening</th>
                             <th>Nomer Telepon</th>
-                            <th>Jabatan</th>
+                            <th>Jenis Tabungan</th>
                             <th>#</th>
                         </tr>
                     </thead>

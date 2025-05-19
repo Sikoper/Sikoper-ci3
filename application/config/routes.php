@@ -106,4 +106,7 @@ $route['penarikan/add'] = 'penarikan/add';
 
 $route['simpanan'] = 'simpanan';
 $route['simpanan/add'] = 'simpanan/add';
+$route['simpanan/simpanData'] = 'simpanan/simpanData';
 $route['simpanan/getJenisData'] = 'simpanan/getJenisData';
+$route['simpanan/delete'] = 'simpanan/delete';
+$route['simpanan/edit/(:any)'] = 'simpanan/edit/$1';

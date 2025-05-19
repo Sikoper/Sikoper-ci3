@@ -91,6 +91,11 @@ class Nasabah_model extends CI_Model
         return $this->db->get_where('tbnasabah', ['id' => $id])->row();
     }
 
+    public function get_data()
+    {
+        return $this->db->get('tbnasabah')->result();
+    }
+
     public function search_nasabah($keyword)
     {
         $this->db->like('nama_lengkap', $keyword);
