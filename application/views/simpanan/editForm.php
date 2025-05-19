@@ -15,19 +15,20 @@
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_simpanan">Tanggal</label>
                         <div class="input-group">
-                            <input type="date" name="tanggal_simpanan" id="tanggal_simpanan" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
+                            <input type="date" name="tanggal_simpanan" id="tanggal_simpanan" class="form-control" value="<?= $simpanan->tanggal_simpanan ?>" readonly>
                         </div>
                         <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
-                        <label for="nasabah">Pilih Nasabah</label>
+                        <label for="nasabah">Nasabah</label>
                         <div class="d-flex align-items-center">
-                            <select id="nasabah" class="form-control select2" name="nasabah" style="width: auto; flex: 1;"></select>
-                            <button type="button" onclick="window.location='<?= base_url('nasabah/add') . '?code=1' ?>'" class="btn btn-primary ml-2">
-                                <i class="fa fa-circle-plus"></i>
-                            </button>
+                            <select id="nasabah" class="form-control select2" name="nasabah" style="width: auto; flex: 1;" disabled>
+                                <option value="<?= $nasabah->id ?>"><?= $nasabah->nama_lengkap ?></option>
+                            </select>
+
+                            <input type="hidden" name="nasabah" id="nasabah" value="<?= $nasabah->id ?>">
                         </div>
                         <div id="errorNasabah" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -35,12 +36,16 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="jenis_tabungan">Jenis Tabungan</label>
-                        <select type="text" class="form-control" id="jenis_tabungan" name="jenis_tabungan">
-                            <option value=""> -- Pilih Jenis Tabungan -- </option>
+                        <select class="form-control" id="jenis_tabungan" disabled>
                             <?php foreach ($jenis as $item): ?>
-                                <option value="<?= $item->id ?>"><?= $item->nama ?></option>
+                                <option value="<?= $item->id ?>" <?= ($item->id == $simpanan->jenistabungan_id) ? 'selected' : '' ?>>
+                                    <?= $item->nama ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
+
+                        <input type="hidden" name="jenis_tabungan" value="<?= $simpanan->jenistabungan_id ?>">
+
                         <div id="errorJenisTabungan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -135,12 +140,12 @@
                             <label for="durasi">Jangka Waktu Deposito</label>
                             <select id="durasi" name="durasi" class="form-control" autocomplete="off">
                                 <option value=""> -- Pilih Jangka Waktu -- </option>
-                                <option value="6">6 Bulan / &frac12; Tahun</option>
-                                <option value="12">12 Bulan / 1 Tahun</option>
-                                <option value="18">18 Bulan / 1.5 Tahun</option>
-                                <option value="24">24 Bulan / 2 Tahun</option>
-                                <option value="30">30 Bulan / 2.5 Tahun</option>
-                                <option value="36">36 Bulan / 3 Tahun</option>
+                                <option value="6" <?= ($simpanan->durasi == 6) ? 'selected' : '' ?>>6 Bulan / &frac12; Tahun</option>
+                                <option value="12" <?= ($simpanan->durasi == 12) ? 'selected' : '' ?>>12 Bulan / 1 Tahun</option>
+                                <option value="18" <?= ($simpanan->durasi == 18) ? 'selected' : '' ?>>18 Bulan / 1.5 Tahun</option>
+                                <option value="24" <?= ($simpanan->durasi == 24) ? 'selected' : '' ?>>24 Bulan / 2 Tahun</option>
+                                <option value="30" <?= ($simpanan->durasi == 30) ? 'selected' : '' ?>>30 Bulan / 2.5 Tahun</option>
+                                <option value="36" <?= ($simpanan->durasi == 36) ? 'selected' : '' ?>>36 Bulan / 3 Tahun</option>
                             </select>
                             <div id="errorDurasi" class="invalid-feedback" style="display: none;"></div>
                             <div class="valid-feedback" style="display: none;"></div>
@@ -149,7 +154,7 @@
                         <div class="form-group" style="height: 80px;">
                             <label for="nama_ahli_waris" class="form-label">Nama Ahli Waris</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" name="nama_ahli_waris" id="nama_ahli_waris">
+                                <input type="text" class="form-control" name="nama_ahli_waris" value="<?= $simpanan->nama_ahli_waris ?>" id="nama_ahli_waris">
                             </div>
                             <div id="errorNamaAhliWaris" class="invalid-feedback" style="display: none;"></div>
                             <div class="valid-feedback" style="display: none;"></div>
@@ -158,7 +163,7 @@
                         <div class="form-group" style="height: 80px;">
                             <label for="kontak_ahli_waris" class="form-label">Kontak Ahli Waris</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" name="kontak_ahli_waris" id="kontak_ahli_waris">
+                                <input type="text" class="form-control" name="kontak_ahli_waris" value="<?= $simpanan->telp_ahli_waris ?>" id="kontak_ahli_waris">
                             </div>
                             <div id="errorKontakAhliWaris" class="invalid-feedback" style="display: none;"></div>
                             <div class="valid-feedback" style="display: none;"></div>
@@ -169,9 +174,9 @@
                             <div class="input-group">
                                 <select class="form-control" name="hubungan_ahli_waris" id="hubungan_ahli_waris">
                                     <option value=""> -- Pilih hubungan -- </option>
-                                    <option value="Anak">Anak dari Deposan</option>
-                                    <option value="Cucu">Cucu dari Deposan</option>
-                                    <option value="Suami/Istri">Suami / Istri dari Deposan</option>
+                                    <option value="Anak" <?= ($simpanan->hubungan_ahli_waris == 'Anak') ? 'selected' : '' ?>>Anak dari Deposan</option>
+                                    <option value="Cucu" <?= ($simpanan->hubungan_ahli_waris == 'Cucu') ? 'selected' : '' ?>>Cucu dari Deposan</option>
+                                    <option value="Suami/Istri" <?= ($simpanan->hubungan_ahli_waris == 'Suami/Istri') ? 'selected' : '' ?>>Suami / Istri dari Deposan</option>
                                 </select>
                             </div>
                             <div id="errorHubunganAhliWaris" class="invalid-feedback" style="display: none;"></div>
@@ -185,7 +190,9 @@
                             <select id="pegawai_id" name="pegawai_id" class="form-control" autocomplete="off">
                                 <option value=""> -- Pilih Pegawai -- </option>
                                 <?php foreach ($pegawai as $item): ?>
-                                    <option value="<?= $item->id ?>"><?= $item->nama_lengkap ?></option>
+                                    <option value="<?= $item->id ?>" <?= ($item->id == $simpanan->pegawai_id) ? 'selected' : '' ?>>
+                                        <?= $item->nama_lengkap ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                             <div id="errorPegawai" class="invalid-feedback" style="display: none;"></div>
@@ -199,7 +206,7 @@
                         <label for="jumlah_simpanan">Jumlah Simpanan</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" name="jumlah_simpanan" id="jumlah_simpanan" class="form-control text-end">
+                            <input type="text" name="jumlah_simpanan" id="jumlah_simpanan" class="form-control text-end" value="<?= $simpanan->jumlah_simpanan ?>">
                         </div>
                         <div id="errorJumlahSimpanan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -207,7 +214,9 @@
 
                     <div class="form-group mb-3" style="height: 300px;">
                         <label for="signature-pad" class="form-label fw-bold">Tanda Tangan</label>
-
+                        <?php if (!empty($simpanan->tanda_tangan)): ?>
+                            <img id="existing-signature" src="<?= base_url($simpanan->tanda_tangan) ?>" style="display: none;">
+                        <?php endif; ?>
                         <div class="border rounded" style="width: 100%; max-width: 400px; height: 200px; position: relative;">
                             <canvas id="signature-pad" width="400" height="200" style="width: 100%; height: 100%;"></canvas>
                         </div>
@@ -224,10 +233,7 @@
                     <div class="form-group mb-5" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
-                            <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control" readonly>
-                            <span class="input-group-btn">
-                                <button type="button" id="btn-generate" class="btn btn-success" disabled>Buat</button>
-                            </span>
+                            <input type="text" name="nomor_rekening" value="<?= $simpanan->no_rekening ?>" id="nomor_rekening" class="form-control" readonly>
                         </div>
                         <div id="errorNoRekening" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -250,8 +256,23 @@
 <script>
     $(document).ready(function() {
 
-        var canvas = document.getElementById('signature-pad');
-        var signaturePad = new SignaturePad(canvas);
+        const canvas = document.getElementById('signature-pad');
+        const signaturePad = new SignaturePad(canvas);
+
+        const $existingImg = $('#existing-signature');
+
+        if ($existingImg.length) {
+            const context = canvas.getContext('2d');
+            const image = new Image();
+
+            image.onload = function() {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                $('#signature_input').val(canvas.toDataURL());
+            };
+
+            image.src = $existingImg.attr('src');
+        }
 
         $('#clear').on('click', function() {
             signaturePad.clear();
@@ -320,6 +341,8 @@
                 });
             }
         });
+
+        $('#jenis_tabungan').trigger('change');
 
         function jenis_tabungan_handler(response) {
             const kategori = response?.kategori;
@@ -533,32 +556,6 @@
                 }
             });
         });
-    });
-
-
-    $('#nasabah').select2({
-        placeholder: 'Cari nama nasabah...',
-        ajax: {
-            url: '<?= base_url("nasabah/cari_nasabah") ?>',
-            dataType: 'json',
-            delay: 250,
-            data: function(params) {
-                return {
-                    q: params.term
-                };
-            },
-            processResults: function(data) {
-                return {
-                    results: data
-                };
-            },
-            cache: true
-        }
-    });
-
-    $('#nasabah').on('select2:select', function(e) {
-        let id = e.params.data.id;
-        $('#nasabah_id').val(id);
     });
 
     $('#btn-generate').click(function() {
