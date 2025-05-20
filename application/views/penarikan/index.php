@@ -15,8 +15,8 @@
                     <thead>
                         <tr>
                             <th class="text-center" width="40px">No</th>
-                            <th>Nama Nasabah</th>
                             <th>Nomor Rekening</th>
+                            <th>Nama Nasabah</th>
                             <th>Jenis Tabungan</th>
                             <th>Total Penarikan</th>
                             <th>Status</th>
