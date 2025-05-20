@@ -285,7 +285,7 @@ class Simpanan extends CI_Controller
 
         $no_rekening = safe_base64_decode($encoded_rek);;
         $simpanan = $this->Simpanan_model->get_data_by_norek($no_rekening);
-        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);   
+        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
 
         if (!$simpanan) {
             show_custom_404();
@@ -303,6 +303,229 @@ class Simpanan extends CI_Controller
         $parser = [
             'judul' => "<i class='fa fa-money-check'></i> Simpanan",
             'isi'   => $this->load->view('simpanan/editForm', $data, TRUE)
+        ];
+        $this->parser->parse('templates/main', $parser);
+    }
+
+    public function updateData()
+    {
+        if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin', 'Direktur', 'Pegawai'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
+
+            $id = $this->input->post('id');
+            $tanggal_simpanan = $this->input->post('tanggal_simpanan');
+            $nasabah = $this->input->post('nasabah');
+            $jenis_tabungan = $this->input->post('jenis_tabungan');
+            $pegawai = $this->input->post('pegawai_id');
+            $jumlah_simpanan = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_simpanan'));
+            $durasi = $this->input->post('durasi');
+            $nama_ahli_waris = $this->input->post('nama_ahli_waris');
+            $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
+            $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
+            $signature_input = $this->input->post('signature_input');
+            $no_rekening = $this->input->post('nomor_rekening');
+
+            $this->form_validation->set_rules('tanggal_simpanan', 'Tanggal Simpanan', 'required', [
+                'required'   => 'Tanggal simpanan wajib diisi.'
+            ]);
+
+            $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
+                'required'     => 'Nasabah tidak boleh kosong.'
+            ]);
+
+            $this->form_validation->set_rules('jenis_tabungan', 'Jenis Tabungan', 'required', [
+                'required'     => 'Jenis tabungan harus diisi.',
+            ]);
+
+            $this->form_validation->set_rules('bunga', 'Bunga', 'required', [
+                'required' => 'Bunga harus diisi.'
+            ]);
+
+            $this->form_validation->set_rules('biaya_registrasi', 'Biaya Registrasi', 'required', [
+                'required' => 'Biaya Registrasi wajib diisi'
+            ]);
+
+            $jenis_data = $this->Kategori_model->get_data_by_id($jenis_tabungan);
+
+            if (!empty($jenis_data)) {
+                $validasi_deposito = $jenis_data->nama;
+
+                if ($validasi_deposito == 'Deposito') {
+                    $this->form_validation->set_rules('durasi', 'Jangka waktu', 'required', [
+                        'required' => 'Jangka waktu deposito wajib diisi'
+                    ]);
+                }
+
+                $minimum_jumlah = $jenis_data->simpanan_awal;
+
+                $this->form_validation->set_rules('jumlah_simpanan', 'Jumlah Simpanan', 'required|callback_check_minimum[' . $minimum_jumlah . ']', [
+                    'required' => 'Jumlah simpanan harus diisi.',
+                ]);
+            }
+
+            $this->form_validation->set_rules('jumlah_simpanan', 'Jumlah Simpanan', 'required', [
+                'required' => 'Jumlah simpanan harus diisi.',
+            ]);
+
+            $this->form_validation->set_rules('simpanan_awal', 'Simpanan awal', 'required', [
+                'required' => 'Simpanan awal harus diisi.'
+            ]);
+
+            $this->form_validation->set_rules('pengendapan', 'Pengendapan', 'required', [
+                'required' => 'Pengendapan harus diisi.'
+            ]);
+
+            $this->form_validation->set_rules('jenis_denda', 'Jenis Denda', 'required', [
+                'required' => 'Jenis denda harus diisi.'
+            ]);
+
+            $this->form_validation->set_rules('jumlah_denda', 'Jumlah Denda', 'required', [
+                'required' => 'Jumlah denda harus diisi.'
+            ]);
+
+            $this->form_validation->set_rules('signature_input', 'Tanda tangan', 'required', [
+                'required' => 'Tanda tangan harus diisi.'
+            ]);
+
+            $Simpanan = $this->Simpanan_model->get_data_by_id($id);
+            if ($Simpanan->no_rekening == $no_rekening) {
+                $this->form_validation->set_rules('nomor_rekening', 'Nomer Rekening', 'required', [
+                    'required' => 'Nomer rekening harus diisi.',
+                ]);
+            } else {
+                $this->form_validation->set_rules('nomor_rekening', 'Nomer Rekening', 'required|is_unique[tbsimpanan.no_rekening]', [
+                    'required' => 'Nomer rekening harus diisi.',
+                    'is_unique' => 'Nomer rekening sudah terdaftar.'
+                ]);
+            }
+
+            if ($this->form_validation->run() == FALSE) {
+                $msg = [
+                    'error' => [
+                        'errorTanggalSimpanan'  => form_error('tanggal_simpanan'),
+                        'errorNasabah'          => form_error('nasabah'),
+                        'errorJenisTabungan'    => form_error('jenis_tabungan'),
+                        'errorBunga'            => form_error('bunga'),
+                        'errorBiayaRegistrasi'  => form_error('biaya_registrasi'),
+                        'errorSimpananAwal'     => form_error('simpanan_awal'),
+                        'errorPengendapan'      => form_error('pengendapan'),
+                        'errorJenisDenda'       => form_error('jenis_denda'),
+                        'errorJumlahDenda'      => form_error('jumlah_denda'),
+                        'errorJumlahSimpanan'   => form_error('jumlah_simpanan'),
+                        'errorTandaTangan'      => form_error('signature_input'),
+                        'errorNoRekening'       => form_error('nomor_rekening'),
+                        'errorDurasi'           => form_error('durasi'),
+                    ]
+                ];
+            } else {
+                $upload_path = FCPATH . 'assets/uploads/nasabah/tanda-tangan/';
+                $data_nasabah = $this->Nasabah_model->get_data_by_id($nasabah);
+                $file_name = $no_rekening . '-' . $data_nasabah->nik . '-ttd.png';
+
+                if ($signature_input) {
+                    $imgData = explode(',', $signature_input);
+                    $imageDecoded = base64_decode($imgData[1]);
+                    file_put_contents($upload_path . $file_name, $imageDecoded);
+                    $path_ttd = 'assets/uploads/nasabah/tanda-tangan/' . $file_name;
+                }
+
+                $data = [
+                    'tanggal_simpanan' => $tanggal_simpanan,
+                    'no_rekening' => $no_rekening,
+                    'nasabah_id' => $nasabah,
+                    'pegawai_id' => $pegawai,
+                    'jenistabungan_id' => $jenis_tabungan,
+                    'jumlah_simpanan' => $jumlah_simpanan,
+                    'durasi' => $durasi,
+                    'nama_ahli_waris' => $nama_ahli_waris,
+                    'telp_ahli_waris' => $kontak_ahli_waris,
+                    'hubungan_ahli_waris' => $hubungan_ahli_waris,
+                    'tanda_tangan' => $path_ttd,
+                ];
+
+                // echo '<pre>';
+                // print_r($data);
+                // exit;
+
+                $updated = $this->Simpanan_model->edit_data($id, $data);
+                if ($updated) {
+                    $msg = ['success' => 'Data berhasil dirubah.'];
+                } else {
+                    $msg = ['error' => 'Gagal menyimpan perubahan.'];
+                }
+            }
+
+            echo json_encode($msg);
+        }
+    }
+
+    public function detail($encoded_rek = null)
+    {
+        $allowed_roles = ['Admin', 'Direktur', 'Pegawai'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
+        function safe_base64_decode($string)
+        {
+            return base64_decode(strtr($string, '-_?', '+/='));
+        }
+
+        if ($encoded_rek === null) {
+            show_custom_404();
+            return;
+        }
+
+        $no_rekening = safe_base64_decode($encoded_rek);;
+        $simpanan = $this->Simpanan_model->get_data_by_norek($no_rekening);
+        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
+        $jenis_tabungan = $this->Kategori_model->get_data_by_id($simpanan->jenistabungan_id);
+        $pegawai = $this->Pegawai_model->get_data_by_id($simpanan->pegawai_id);
+
+        if (!$simpanan) {
+            show_custom_404();
+            return;
+        }
+
+        function format_durasi($bulan)
+        {
+            if (!$bulan || $bulan <= 0) return '-';
+            $tahun = floor($bulan / 12);
+            $sisa_bulan = $bulan % 12;
+
+            $output = "$bulan bulan";
+            if ($tahun > 0) {
+                $output .= " / {$tahun} tahun";
+                if ($sisa_bulan > 0) {
+                    $output .= " {$sisa_bulan} bulan";
+                }
+            }
+            return $output;
+        }
+
+        $data = [
+            'simpanan' => $simpanan,
+            'nasabah' => $nasabah,
+            'jenis' => $jenis_tabungan,
+            'pegawai' => $pegawai,
+            'level' => $this->session->userData('level'),
+        ];
+
+        $parser = [
+            'judul' => "<a href=". base_url('simpanan') . " class=\"btn btn-warning\">
+                            <i class=\"fa fa-backward\"></i> Kembali
+                        </a>",
+            'isi'   => $this->load->view('simpanan/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
