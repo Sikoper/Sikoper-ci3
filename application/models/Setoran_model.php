@@ -1,9 +1,9 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Simpanan_model extends CI_Model
+class Setoran_model extends CI_Model
 {
-    var $table = 'tbsimpanan';
+    var $table = 'tbdetail_simpanan';
     var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jenis_tabungan',  null);
     var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
     var $order = array('created_at' => 'DESC');
@@ -65,45 +65,21 @@ class Simpanan_model extends CI_Model
 
     public function count_all_data()
     {
-        return $this->db->count_all('tbsimpanan');
+        return $this->db->count_all('tbdetail_simpanan');
     }
 
     public function insert_data($data)
     {
-        return $this->db->insert('tbsimpanan', $data);
+        return $this->db->insert('tbdetail_simpanan', $data);
     }
 
     public function delete_data($id)
     {
-        return $this->db->delete('tbsimpanan', ['id' => $id]);
+        return $this->db->delete('tbdetail_simpanan', ['id' => $id]);
     }
 
     public function edit_data($id, $data)
     {
-        return $this->db->where('id', $id)->update('tbsimpanan', $data);
-    }
-
-    public function get_data_by_id($id)
-    {
-        return $this->db->get_where('tbsimpanan', ['id' => $id])->row();
-    }
-
-    public function get_data_by_norek($no_rekening)
-    {
-        return $this->db->get_where('tbsimpanan', ['no_rekening' => $no_rekening])->row();
-    }
-
-    public function get_data_by_nasabah($id)
-    {
-        return $this->db->get_where('tbsimpanan', ['nasabah_id' => $id])->result();
-    }
-
-    public function search_nasabah($keyword)
-    {
-        $this->db->like('nama_lengkap', $keyword);
-        $this->db->select('id, nama_lengkap');
-        $this->db->from('tbnasabah');
-        $query = $this->db->get();
-        return $query->result();
+        return $this->db->where('id', $id)->update('tbdetail_simpanan', $data);
     }
 }
