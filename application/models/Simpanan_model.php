@@ -68,12 +68,12 @@ class Simpanan_model extends CI_Model
         return $this->db->count_all('tbsimpanan');
     }
 
-        public function insert_data($data)
+    public function insert_data($data)
     {
         return $this->db->insert('tbsimpanan', $data);
     }
 
-        public function delete_data($id)
+    public function delete_data($id)
     {
         return $this->db->delete('tbsimpanan', ['id' => $id]);
     }

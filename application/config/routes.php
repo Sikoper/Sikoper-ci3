@@ -110,3 +110,7 @@ $route['simpanan/simpanData'] = 'simpanan/simpanData';
 $route['simpanan/getJenisData'] = 'simpanan/getJenisData';
 $route['simpanan/delete'] = 'simpanan/delete';
 $route['simpanan/edit/(:any)'] = 'simpanan/edit/$1';
+$route['simpanan/simpananData'] = 'simpanan/simpananData';
+$route['simpanan/detail/(:any)'] = 'simpanan/detail/$1';
+
+$route['setoran'] = 'setoran';

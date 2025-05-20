@@ -11,7 +11,7 @@
                 <div class="col-md-3"></div>
                 <div class="col-md-6">
                     <?= form_open('', ['id' => 'form_simpan']) ?>
-
+                    <input type="hidden" name="id" id="id" value="<?= $simpanan->id ?>">
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_simpanan">Tanggal</label>
                         <div class="input-group">
@@ -424,7 +424,7 @@
 
             $.ajax({
                 type: "POST",
-                url: "<?= base_url('simpanan/simpanData') ?>",
+                url: "<?= base_url('simpanan/updateData') ?>",
                 data: data,
                 dataType: "json",
                 processData: false,
