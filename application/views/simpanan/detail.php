@@ -88,6 +88,39 @@
             </div>
         </div>
     </div>
+
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail bunga</h5>
+
+            </div>
+            <div class="card-body">
+                <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
+                    <div class="dataTable-container">
+                        <table class="table table-striped dataTable-table" id="tabel_bunga">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal bunga</th>
+                                    <th>Jumlah bunga</th>
+                                    <th>#</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="dataTable-bottom">
+                        <ul class="pagination pagination-primary float-end dataTable-pagination">
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script>
     table = $('#detail_simpanan').DataTable({
@@ -127,6 +160,48 @@
             },
             {
                 "targets": 4,
+                "orderable": false,
+                "width": "15%"
+            }
+        ],
+    });
+
+    var simpananId = '<?= $simpanan->id ?>';
+
+    table = $('#tabel_bunga').DataTable({
+        responsive: true,
+        "destroy": true,
+        "processing": true,
+        "serverSide": true,
+        "order": [],
+        autoWidth: false,
+
+        "ajax": {
+            "url": "<?= site_url('bunga/fetchNasabahBunga') ?>",
+            "type": "POST",
+            data: function(d) {
+                d.simpanan_id = simpananId;
+            }
+        },
+
+        "columns": [{
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "orderable": false
+            }
+        ],
+
+        "columnDefs": [{
+                "targets": 0,
+                "orderable": false,
+                "width": "5%"
+            },
+            {
+                "targets": 3,
                 "orderable": false,
                 "width": "15%"
             }

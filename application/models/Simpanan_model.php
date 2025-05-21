@@ -106,4 +106,22 @@ class Simpanan_model extends CI_Model
         $query = $this->db->get();
         return $query->result();
     }
+
+    public function checkAndRunBunga()
+    {
+        if (date('d') != '25') {
+            return;
+        }
+
+        $today = date('Y-m-d');
+
+        $exists = $this->db->get_where('system_log', ['tanggal' => $today])->num_rows();
+        if ($exists > 0) {
+            return;
+        }
+
+        $this->add_bunga();
+
+        $this->db->insert('system_log', ['tanggal' => $today]);
+    }
 }
