@@ -80,19 +80,69 @@ class Setoran extends CI_Controller
                     'pegawai_id' => $pegawai_id
                 ];
 
+                $data_simpanan = $this->Simpanan_model->get_data_by_id($tabungan);
+                function safe_base64_encode($string)
+                {
+                    return strtr(base64_encode($string), '+/=', '-_?');
+                }
                 // echo '<pre>';
                 // print_r($data);
                 // exit;
 
                 $inserted = $this->Setoran_model->insert_data($data);
                 if ($inserted) {
-                    $msg = ['success' => 'Data berhasil ditambahkan.'];
+                    $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $this->db->escape($jumlah_setoran), false);
+                    $this->db->where('id', $tabungan);
+                    $this->db->update('tbsimpanan');
+
+                    $msg = [
+                        'success' => 'Data berhasil ditambahkan.',
+                        'redirect' => base_url('simpanan/detail/') . safe_base64_encode($data_simpanan->no_rekening)
+                    ];
                 } else {
                     $msg = ['error' => 'Gagal menyimpan data.'];
                 }
             }
 
             echo json_encode($msg);
+        }
+    }
+
+    public function fetchData()
+    {
+        function safe_base64_encode($string)
+        {
+            return strtr(base64_encode($string), '+/=', '-_?');
+        }
+
+        if ($this->input->is_ajax_request() == true) {
+            $list = $this->Setoran_model->get_datatables();
+            $data = array();
+            $no = $_POST['start'];
+
+            foreach ($list as $field) {
+                $no++;
+                $row = array();
+
+                $row[] = "<div class=\"text-center\">$no</div>";
+                $row[] = $field->tanggal_setoran;
+                $row[] = "Rp " . number_format($field->jumlah_setoran, 2, ',', '.');
+                $row[] = $field->pegawai;
+                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='simpanan/edit/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-edit fa-fw'></i></button>
+                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->jumlah_setoran . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+                $data[] = $row;
+            }
+
+            $output = array(
+                "draw" => $_POST['draw'],
+                "recordsTotal" => $this->Setoran_model->count_all(),
+                "recordsFiltered" => $this->Setoran_model->count_filtered(),
+                "data" => $data,
+            );
+
+            echo json_encode($output);
+        } else {
+            exit('Maaf data tidak bisa ditampilkan');
         }
     }
 

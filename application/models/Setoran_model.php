@@ -4,16 +4,15 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Setoran_model extends CI_Model
 {
     var $table = 'tbdetail_simpanan';
-    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jenis_tabungan',  null);
-    var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
-    var $order = array('created_at' => 'DESC');
+    var $column_order = array(null, 'tanggal_setoran', 'jumlah_setoran', 'pegawai',  null);
+    var $column_search = array('tbdetail_simpanan.tanggal_setoran', 'tbpegawai.nama_lengkap');
+    var $order = array('created_at' => 'ASC');
 
     private function _get_datatables_query()
     {
-        $this->db->select('tbsimpanan.*, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah, tbjenistabungan.nama as jenis_tabungan');
+        $this->db->select('tbdetail_simpanan.*, tbpegawai.nama_lengkap as pegawai');
         $this->db->from($this->table);
-        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
-        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');
+        $this->db->join('tbpegawai', 'tbpegawai.id = tbdetail_simpanan.pegawai_id');
 
         $i = 0;
 

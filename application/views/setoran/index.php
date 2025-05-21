@@ -145,7 +145,7 @@
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('setoran') ?>';
+                                window.location.href = response.redirect;
                             }
                         });
                     }
