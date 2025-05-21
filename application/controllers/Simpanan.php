@@ -56,7 +56,7 @@ class Simpanan extends CI_Controller
                 $row[] = $field->telp_nasabah;
                 $row[] = $field->jenis_tabungan;
                 $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='simpanan/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
+                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
                             <button class=\"btn btn-secondary\"onclick=\"window.location='simpanan/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>";;
                 $data[] = $row;
             }
@@ -232,6 +232,17 @@ class Simpanan extends CI_Controller
 
                 $inserted = $this->Simpanan_model->insert_data($data);
                 if ($inserted) {
+                    $simpanan_id = $this->db->insert_id();
+
+                    $detail_setoran = [
+                        'simpanan_id' => $simpanan_id,
+                        'tanggal_setoran' => $tanggal_simpanan,
+                        'jumlah_setoran' => $jumlah_simpanan,
+                        'pegawai_id' => $pegawai,
+                    ];
+
+                    $this->db->insert('tbdetail_simpanan', $detail_setoran);
+
                     $msg = ['success' => 'Data berhasil ditambahkan.'];
                 } else {
                     $msg = ['error' => 'Gagal menyimpan data.'];
@@ -247,6 +258,16 @@ class Simpanan extends CI_Controller
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
             $data = $this->Simpanan_model->get_data_by_id($id);
+
+            $has_detail = $this->db->get_where('tbdetail_simpanan', ['simpanan_id' => $id])->num_rows();
+
+            if ($has_detail > 0) {
+                $msg = [
+                    'error' => 'Data tidak bisa dihapus karena memiliki riwayat setoran.'
+                ];
+                echo json_encode($msg);
+                return;
+            }
 
             if (!empty($data->tanda_tangan)) {
                 $foto = $data->tanda_tangan;
@@ -522,7 +543,7 @@ class Simpanan extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "<a href=". base_url('simpanan') . " class=\"btn btn-warning\">
+            'judul' => "<a href=" . base_url('simpanan') . " class=\"btn btn-warning\">
                             <i class=\"fa fa-backward\"></i> Kembali
                         </a>",
             'isi'   => $this->load->view('simpanan/detail', $data, TRUE)

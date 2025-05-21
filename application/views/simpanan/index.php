@@ -83,7 +83,7 @@
     function deleteItem(id, nama) {
         Swal.fire({
             title: "Hapus data ini?",
-            html: `Yakin ingin menghapus data dari <strong>${nama}</strong>?`,
+            html: `Yakin ingin menghapus rekening dari <strong>${nama}</strong>?`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
