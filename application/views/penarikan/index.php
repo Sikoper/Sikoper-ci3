@@ -2,87 +2,80 @@
     <div class="card-header">
         <h4 class="card-title">
             <?php if ($this->session->userdata('level') != 'Direktur') : ?>
-            <button class="btn btn-primary" onclick="window.location='<?= base_url('penarikan/add') ?>'">
-                <i class="fa fa-plus-circle"></i> Tambah Data
-            </button>
+                <button class="btn btn-primary" onclick="window.location='<?= base_url('penarikan/add') ?>'">
+                    <i class="fa fa-plus-circle"></i> Tambah Data
+                </button>
             <?php endif; ?>
         </h4>
     </div>
     <div class="card-body">
-        <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
+        <div class="dataTable-wrapper">
             <div class="dataTable-container">
-                <table class="table table-striped dataTable-table" id="tabel_pegawai">
+                <table class="table table-striped" id="tabel_penarikan">
                     <thead>
                         <tr>
-                            <th class="text-center" width="40px">No</th>
+                            <th class="text-center" width="5%">No</th>
                             <th>Nomor Rekening</th>
                             <th>Nama Nasabah</th>
                             <th>Jenis Tabungan</th>
                             <th>Total Penarikan</th>
                             <th>Status</th>
-                            <th>#</th>
+                            <th width="15%">#</th>
                         </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
+                    <tbody></tbody>
                 </table>
-            </div>
-            <div class="dataTable-bottom">
-                <ul class="pagination pagination-primary float-end dataTable-pagination">
-                </ul>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    table = $('#tabel_penarikan').DataTable({
-        responsive: true,
-        "destroy": true,
-        "processing": true,
-        "serverSide": true,
-        "order": [],
-        autoWidth: false,
-
-        "ajax": {
-            "url": "<?= site_url('penarikan/fetchData') ?>",
-            "type": "POST"
-        },
-
-        "columns": [{
-                "type": "string"
+    $(document).ready(function() {
+        $('#tabel_penarikan').DataTable({
+            responsive: true,
+            processing: true,
+            serverSide: true,
+            order: [],
+            ajax: {
+                url: "<?= site_url('penarikan/fetchData') ?>",
+                type: "POST"
             },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "orderable": false
-            }
-        ],
-
-        "columnDefs": [{
-                "targets": 0,
-                "orderable": false,
-                "width": "5%"
-            },
-            {
-                "targets": 5,
-                "orderable": false,
-                "width": "15%"
-            }
-        ],
+            columns: [{
+                    data: 'no',
+                    orderable: false
+                },
+                {
+                    data: 'no_rekening'
+                },
+                {
+                    data: 'nama_nasabah'
+                },
+                {
+                    data: 'jenis_tabungan'
+                },
+                {
+                    data: 'total_penarikan'
+                },
+                {
+                    data: 'status',
+                    orderable: false
+                },
+                {
+                    data: 'aksi',
+                    orderable: false
+                }
+            ],
+            columnDefs: [{
+                    targets: 0,
+                    className: "text-center"
+                },
+                {
+                    targets: 6,
+                    className: "text-center"
+                }
+            ]
+        });
     });
 
     function deleteItem(id, nama) {
@@ -93,7 +86,7 @@
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
-            confirmButtonText: "Yes!",
+            confirmButtonText: "Yes!"
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -109,11 +102,11 @@
                                 title: "Success!",
                                 text: response.success,
                                 icon: "success"
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.reload();
-                                }
+                            }).then(() => {
+                                $('#tabel_penarikan').DataTable().ajax.reload();
                             });
+                        } else {
+                            Swal.fire("Gagal", "Data tidak berhasil dihapus.", "error");
                         }
                     },
                     error: function(xhr, thrownError) {
@@ -122,9 +115,5 @@
                 });
             }
         });
-    }
-
-    function detail(id) {
-
     }
 </script>
