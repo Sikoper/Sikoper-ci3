@@ -35,7 +35,6 @@ class Penarikan extends CI_Controller
                 'nama_nasabah' => $row->nama_nasabah,
                 'jenis_tabungan' => $row->jenis_tabungan,
                 'total_penarikan' => 'Rp ' . number_format($row->total_penarikan, 0, ',', '.'),
-                'status' => $row->status,
                 'aksi' => '
     <a href="' . base_url('penarikan/edit/' . $row->id) . '" class="btn btn-warning btn-sm">
         <i class="fa fa-edit"></i>
@@ -209,22 +208,94 @@ class Penarikan extends CI_Controller
         }
     }
 
-    public function update()
+    // public function updateData()
+    // {
+    //     if ($this->input->is_ajax_request()) {
+    //         $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
+
+    //         $level = $this->session->userdata('level');
+
+    //         if (!in_array($level, $allowed_roles)) {
+    //             echo json_encode(['error' => 'Unauthorized 403']);
+    //             return;
+    //         }
+
+    //         // Ambil data dari input form
+    //         $id = $this->input->post('id');
+    //         $total_penarikan = str_replace(['.', ','], ['', '.'], $this->input->post('totalpenarikan'));
+
+    //         // Validasi sederhana jika perlu (misalnya harus numeric dan tidak kosong)
+    //         $this->form_validation->set_rules('totalpenarikan', 'Total Penarikan', 'required|numeric', [
+    //             'required' => 'Total Penarikan wajib diisi.',
+    //             'numeric'  => 'Total Penarikan harus berupa angka.'
+    //         ]);
+
+    //         if ($this->form_validation->run() == FALSE) {
+    //             echo json_encode([
+    //                 'error' => [
+    //                     'errorTotalPenarikan' => form_error('totalpenarikan'),
+    //                 ]
+    //             ]);
+    //         } else {
+    //             // Siapkan data untuk update
+    //             $updateData = [
+    //                 'totalpenarikan' => $total_penarikan,
+    //             ];
+
+    //             // Proses update via model
+    //             $result = $this->Penarikan_model->update($id, $updateData);
+
+    //             if ($result) {
+    //                 echo json_encode(['success' => 'Data berhasil diupdate']);
+    //             } else {
+    //                 echo json_encode(['error' => 'Gagal mengupdate data']);
+    //             }
+    //         }
+    //     }
+    // }
+
+    public function updateData()
     {
-        $id = $this->input->post('id');
-        $updateData = [
-            'total_penarikan' => $this->input->post('total_penarikan'),
-            'status' => $this->input->post('status'),
-        ];
+        if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
+            $level = $this->session->userdata('level');
 
-        $result = $this->Penarikan_model->update($id, $updateData);
+            if (!in_array($level, $allowed_roles)) {
+                echo json_encode(['error' => 'Unauthorized 403']);
+                return;
+            }
 
-        if ($result) {
-            echo json_encode(['success' => 'Data berhasil diupdate']);
-        } else {
-            echo json_encode(['error' => 'Gagal mengupdate data']);
+            $id = $this->input->post('id');
+            $total_penarikan = str_replace(['.', ','], ['', '.'], $this->input->post('total_penarikan'));
+
+            $this->form_validation->set_rules('total_penarikan', 'Total Penarikan', 'required|numeric', [
+                'required' => 'Total Penarikan wajib diisi.',
+                'numeric'  => 'Total Penarikan harus berupa angka.'
+            ]);
+
+            if ($this->form_validation->run() == FALSE) {
+                echo json_encode([
+                    'error' => [
+                        'total_penarikan' => form_error('total_penarikan'),
+                    ]
+                ]);
+            } else {
+                $updateData = [
+                    'total_penarikan' => $total_penarikan,
+                ];
+
+                $result = $this->Penarikan_model->update($id, $updateData);
+
+                if ($result) {
+                    echo json_encode(['success' => 'Data berhasil diupdate']);
+                } else {
+                    echo json_encode(['error' => 'Gagal mengupdate data']);
+                }
+            }
         }
     }
+
+
 
     public function edit($id = null)
     {
@@ -238,8 +309,10 @@ class Penarikan extends CI_Controller
         if (!$data['penarikan']) {
             show_404();
         }
-
-        // Load view editForm.php dengan data
-        $this->load->view('editForm', $data);
+        $parser = [
+            'judul' => "<i class='fa fa-user-edit'></i> Penarikan",
+            'isi'   => $this->load->view('penarikan/editForm', $data, TRUE)
+        ];
+        $this->parser->parse('templates/main', $parser);
     }
 }

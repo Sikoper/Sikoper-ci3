@@ -76,7 +76,7 @@
                     <?php endif; ?>
 
                     <div class="text-center mb-3">
-                        <button type="submit" id="tombol_simpan" class="btn btn-success">Simpan</button>
+                        <button type="submit" id="tombol_simpan" class="btn btn-success">Tarik Uang</button>
                         <button type="button" onclick="window.location='<?= base_url('penarikan') ?>'" class="btn btn-danger">Batal</button>
                     </div>
 
@@ -149,7 +149,7 @@
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('penarikan') ?>';
+                                window.location = '<?= base_url('simpanan') ?>';
                             }
                         });
                     }

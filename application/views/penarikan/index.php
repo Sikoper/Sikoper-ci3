@@ -19,7 +19,6 @@
                             <th>Nama Nasabah</th>
                             <th>Jenis Tabungan</th>
                             <th>Total Penarikan</th>
-                            <th>Status</th>
                             <th width="15%">#</th>
                         </tr>
                     </thead>
@@ -58,10 +57,6 @@
                     data: 'total_penarikan'
                 },
                 {
-                    data: 'status',
-                    orderable: false
-                },
-                {
                     data: 'aksi',
                     orderable: false
                 }
@@ -71,7 +66,7 @@
                     className: "text-center"
                 },
                 {
-                    targets: 6,
+                    targets: 5,
                     className: "text-center"
                 }
             ]

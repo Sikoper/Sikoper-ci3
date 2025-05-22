@@ -16,7 +16,6 @@ class Penarikan_model extends CI_Model
         $this->db->from('tbsimpanan');
         $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');
         $this->db->where('tbsimpanan.nasabah_id', $nasabah_id);
-        $this->db->where('tbsimpanan.status', 'aktif');
         $query = $this->db->get();
 
         $result = [];
@@ -26,7 +25,6 @@ class Penarikan_model extends CI_Model
                 'text' => $row->no_rekening . ' (' . $row->nama_jenis . ')'
             ];
         }
-
         return $result;
     }
 
@@ -68,7 +66,7 @@ class Penarikan_model extends CI_Model
         if (isset($_POST['order'])) {
             $column_index = $_POST['order'][0]['column'];
             $order_dir = $_POST['order'][0]['dir'];
-            $columns = ['tbpenarikan.id', 'tbsimpanan.no_rekening', 'tbnasabah.nama_lengkap', 'tbjenistabungan.nama', 'tbpenarikan.total_penarikan', 'tbpenarikan.status'];
+            $columns = ['tbpenarikan.id', 'tbsimpanan.no_rekening', 'tbnasabah.nama_lengkap', 'tbjenistabungan.nama', 'tbpenarikan.total_penarikan'];
 
             if (isset($columns[$column_index])) {
                 $this->db->order_by($columns[$column_index], $order_dir);
@@ -106,7 +104,7 @@ class Penarikan_model extends CI_Model
 
     public function getById($id)
     {
-        $this->db->select('tbpenarikan.id, tbsimpanan.no_rekening, tbnasabah.nama_lengkap as nama_nasabah, tbjenistabungan.nama as jenis_tabungan, tbpenarikan.total_penarikan, tbpenarikan.status');
+        $this->db->select('tbpenarikan.id, tbsimpanan.no_rekening, tbnasabah.nama_lengkap as nama_nasabah, tbjenistabungan.nama as jenis_tabungan, tbpenarikan.total_penarikan');
         $this->db->from('tbpenarikan');
         $this->db->join('tbsimpanan', 'tbpenarikan.simpanan_id = tbsimpanan.id');
         $this->db->join('tbnasabah', 'tbsimpanan.nasabah_id = tbnasabah.id');
