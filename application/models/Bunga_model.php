@@ -128,4 +128,13 @@ class Bunga_model extends CI_Model
             $this->db->update('tbsimpanan');
         }
     }
+
+    public function get_data_by_id($id)
+    {
+        return $this->db->get_where('tbtransaksi', ['id' => $id])->row();
+    }
+    public function delete_data($id)
+    {
+        return $this->db->delete('tbtransaksi', ['id' => $id]);
+    }
 }

@@ -81,4 +81,9 @@ class Setoran_model extends CI_Model
     {
         return $this->db->where('id', $id)->update('tbdetail_simpanan', $data);
     }
+
+    public function get_data_by_id($id)
+    {
+        return $this->db->get_where('tbdetail_simpanan', ['id' => $id])->row();
+    }
 }
