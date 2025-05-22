@@ -128,8 +128,7 @@ class Setoran extends CI_Controller
                 $row[] = $field->tanggal_setoran;
                 $row[] = "Rp " . number_format($field->jumlah_setoran, 2, ',', '.');
                 $row[] = $field->pegawai;
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='simpanan/edit/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->jumlah_setoran . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+                $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteSetoran('" . $field->id . "', '" . $field->jumlah_setoran . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
                 $data[] = $row;
             }
 
@@ -160,6 +159,36 @@ class Setoran extends CI_Controller
             }
 
             echo json_encode(['data' => $Value]);
+        }
+    }
+
+    public function delete()
+    {
+        if ($this->input->is_ajax_request()) {
+            $id = $this->input->post('id');
+
+            $simpanan_detail = $this->Setoran_model->get_data_by_id($id);
+            $simpanan = $this->Simpanan_model->get_data_by_id($simpanan_detail->simpanan_id);
+
+            $selisih = $simpanan->jumlah_simpanan - $simpanan_detail->jumlah_setoran;
+
+            $delete = $this->Setoran_model->delete_data($id);
+            if ($delete) {
+                $data = [
+                    'jumlah_simpanan' => $selisih
+                ];
+
+                $this->Simpanan_model->edit_data($simpanan_detail->simpanan_id, $data);
+                $msg = [
+                    'success' => 'Bunga berhasil dihapus.'
+                ];
+            } else {
+                $msg = [
+                    'error' => 'Bunga gagal dihapus.'
+                ];
+            }
+
+            echo json_encode($msg);
         }
     }
 }

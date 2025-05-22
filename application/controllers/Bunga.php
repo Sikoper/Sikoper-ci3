@@ -75,8 +75,7 @@ class Bunga extends CI_Controller
                 $row[] = $field->nasabah;
                 $row[] = $field->tanggal_transaksi;
                 $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+                $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
                 $data[] = $row;
             }
 
@@ -128,6 +127,37 @@ class Bunga extends CI_Controller
             echo json_encode($output);
         } else {
             exit('Maaf data tidak bisa ditampilkan');
+        }
+    }
+
+    public function delete()
+    {
+        if ($this->input->is_ajax_request()) {
+            $id = $this->input->post('id');
+
+            $transaksi = $this->Bunga_model->get_data_by_id($id);
+            $simpanan = $this->Simpanan_model->get_data_by_id($transaksi->simpanan_id);
+
+            $selisih = $simpanan->jumlah_simpanan - $transaksi->jumlah_transaksi;
+
+            $delete = $this->Bunga_model->delete_data($id);
+            if($delete)
+            {
+                $data = [
+                    'jumlah_simpanan' => $selisih
+                ];
+
+                $this->Simpanan_model->edit_data($transaksi->simpanan_id, $data);
+                $msg = [
+                    'success' => 'Bunga berhasil dihapus.'
+                ];
+            } else {
+                $msg = [
+                    'error' => 'Bunga gagal dihapus.'
+                ];
+            }
+
+            echo json_encode($msg);
         }
     }
 }
