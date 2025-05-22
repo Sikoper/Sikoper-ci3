@@ -114,5 +114,10 @@ $route['simpanan/delete'] = 'simpanan/delete';
 $route['simpanan/edit/(:any)'] = 'simpanan/edit/$1';
 $route['simpanan/simpananData'] = 'simpanan/simpananData';
 $route['simpanan/detail/(:any)'] = 'simpanan/detail/$1';
+$route['simpanan/fetchBunga'] = 'simpanan/fetchBunga';
 
 $route['setoran'] = 'setoran';
+$route['setoran/get_no_rekening'] = 'setoran/get_no_rekening';
+$route['setoran/fetchData'] = 'setoran/fetchData';
+
+$route['bunga'] = 'bunga';

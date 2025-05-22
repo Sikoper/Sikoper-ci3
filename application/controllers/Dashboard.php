@@ -1,13 +1,23 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Dashboard extends CI_Controller {
-	public function index()
-	{
+class Dashboard extends CI_Controller
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('Bunga_model');
+
+        if (date('d') == '25') {
+            $this->Bunga_model->checkAndRunBunga();
+        }
+    }
+    public function index()
+    {
         $parser = [
             'judul' => 'Selamat Datang!',
             'isi'   => $this->load->view('home/index', '', TRUE)
         ];
-		$this->parser->parse('templates/main', $parser);
-	}
+        $this->parser->parse('templates/main', $parser);
+    }
 }
