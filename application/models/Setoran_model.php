@@ -86,4 +86,15 @@ class Setoran_model extends CI_Model
     {
         return $this->db->get_where('tbdetail_simpanan', ['id' => $id])->row();
     }
+
+    public function jumlah_setoran()
+    {
+        $this->db->select('MONTH(tanggal_setoran) as bulan, COUNT(id) as total_setoran');
+        $this->db->from('tbdetail_simpanan');
+        $this->db->group_by('MONTH(tanggal_setoran)');
+        $this->db->order_by('MONTH(tanggal_setoran)', 'ASC');
+
+        $query = $this->db->get();
+        return $query->result();
+    }
 }

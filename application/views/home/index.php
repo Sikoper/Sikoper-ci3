@@ -75,7 +75,7 @@
                 <h4>Jumlah Transaksi per Bulan</h4>
             </div>
             <div class="card-body">
-                <div id="chart-profile-visit" style="min-height: 315px;"></div>
+                <div id="transaksi_bulanan" style="min-height: 315px;"></div>
             </div>
         </div>
     </div>
@@ -83,54 +83,63 @@
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
-    const options = {
-        chart: {
-            type: 'bar',
-            height: 300
-        },
-        series: [{
-                name: 'Jumlah Setoran',
-                data: [20, 25, 18, 22, 30, 28, 24, 26, 29, 23, 27, 31],
-                color: '#007bff'
-            },
-            {
-                name: 'Jumlah Penarikan',
-                data: [15, 18, 12, 20, 22, 19, 17, 16, 21, 20, 18, 25],
-                color: '#dc3545'
-            }
-        ],
-        xaxis: {
-            categories: [
-                'Januari', 'Februari', 'Maret', 'April',
-                'Mei', 'Juni', 'Juli', 'Agustus',
-                'September', 'Oktober', 'November', 'Desember'
-            ],
-            title: {
-                text: 'Bulan'
-            }
-        },
-        yaxis: {
-            title: {
-                text: 'Jumlah Transaksi'
-            }
-        },
-        plotOptions: {
-            bar: {
-                horizontal: false,
-                columnWidth: '50%',
-                endingShape: 'rounded'
-            }
-        },
-        tooltip: {
-            y: {
-                formatter: val => `${val} Transaksi`
-            }
-        },
-        dataLabels: {
-            enabled: true
-        }
-    };
+    $(document).ready(function() {
+        $.ajax({
+            type: "POST",
+            "url": "<?= site_url('dashboard/fetchData') ?>",
+            dataType: "json",
+            success: function(response) {
+                const options = {
+                    chart: {
+                        type: 'area',
+                        height: 400
+                    },
+                    series: [{
+                            name: 'Jumlah Setoran',
+                            data: response.setoran,
+                            color: '#007bff'
+                        },
+                        {
+                            name: 'Jumlah Penarikan',
+                            data: [15, 18, 12, 20, 22, 19, 17, 16, 21, 20, 18, 25],
+                            color: '#dc3545'
+                        }
+                    ],
+                    xaxis: {
+                        categories: [
+                            'Januari', 'Februari', 'Maret', 'April',
+                            'Mei', 'Juni', 'Juli', 'Agustus',
+                            'September', 'Oktober', 'November', 'Desember'
+                        ],
+                        title: {
+                            text: 'Bulan'
+                        }
+                    },
+                    yaxis: {
+                        title: {
+                            text: 'Jumlah Transaksi'
+                        }
+                    },
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                            columnWidth: '50%',
+                            endingShape: 'rounded'
+                        }
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: val => `${val} Transaksi`
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true
+                    }
+                };
 
-    const chart = new ApexCharts(document.querySelector("#chart-profile-visit"), options);
-    chart.render();
+                const chart = new ApexCharts($("#transaksi_bulanan")[0], options);
+                chart.render();
+            }
+        });
+    });
 </script>
