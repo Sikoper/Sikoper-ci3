@@ -8,6 +8,7 @@ class Dashboard extends CI_Controller
         parent::__construct();
         $this->load->model('Bunga_model');
         $this->load->model('Setoran_model');
+        $this->load->model('Penarikan_model');
 
         if (date('d') == '25') {
             $this->Bunga_model->checkAndRunBunga();
@@ -27,15 +28,20 @@ class Dashboard extends CI_Controller
         $setoran_raw = $this->Setoran_model->jumlah_setoran();
         $setoran = array_fill(0, 12, 0);
         foreach ($setoran_raw as $item) {
-            $monthIndex = $item->bulan - 1; // bulan = 1..12, index 0..11
+            $monthIndex = $item->bulan - 1;
             $setoran[$monthIndex] = (int) $item->total_setoran;
         }
 
-        // $penarikan = ;
+        $penarikan_raw = $this->Penarikan_model->jumlah_setoran();
+        $penarikan = array_fill(0, 12, 0);
+        foreach ($penarikan_raw as $item) {
+            $monthIndex = $item->bulan - 1;
+            $setoran[$monthIndex] = (int) $item->total_penarikan;
+        }
 
         $data = [
             'setoran' => $setoran,
-            // 'penarikan' => $penarikan
+            'penarikan' => $penarikan
         ];
 
         echo json_encode($data);

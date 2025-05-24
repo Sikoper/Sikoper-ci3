@@ -91,8 +91,8 @@
             success: function(response) {
                 const options = {
                     chart: {
-                        type: 'area',
-                        height: 400
+                        type: 'bar',
+                        height: 300
                     },
                     series: [{
                             name: 'Jumlah Setoran',
@@ -101,7 +101,7 @@
                         },
                         {
                             name: 'Jumlah Penarikan',
-                            data: [15, 18, 12, 20, 22, 19, 17, 16, 21, 20, 18, 25],
+                            data: response.penarikan,
                             color: '#dc3545'
                         }
                     ],
