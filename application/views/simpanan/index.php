@@ -119,7 +119,20 @@
         });
     }
 
-    function detail(id) {
-
+    function print(id, nama) {
+        Swal.fire({
+            title: "Print data ini?",
+            html: `Yakin ingin print data dari <strong>${nama}</strong>?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.open("<?= base_url('simpanan/print_nasabah?id=') ?>" + id, "_blank");
+                window.location.reload();
+            }
+        });
     }
 </script>
