@@ -1,22 +1,20 @@
 <div class="card">
     <div class="card-header">
         <h4 class="card-title">
-            <button class="btn btn-primary" onclick="window.location='<?= base_url('simpanan/add') ?>'">
-                <i class="fa fa-plus-circle"></i> Tambah Data
-            </button>
+
         </h4>
     </div>
     <div class="card-body">
         <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
             <div class="dataTable-container">
-                <table class="table table-striped dataTable-table" id="tabel_simpanan">
+                <table class="table table-striped dataTable-table" id="tabel_bunga">
                     <thead>
                         <tr>
-                            <th class="text-center" width="40px">No</th>
-                            <th>Nama Nasabah</th>
-                            <th>Nomer Rekening</th>
-                            <th>Nomer Telepon</th>
-                            <th>Jenis Tabungan</th>
+                            <th>No</th>
+                            <th>No. Rekening</th>
+                            <th>Nasabah</th>
+                            <th>Tanggal bunga</th>
+                            <th>Jumlah bunga</th>
                             <th>#</th>
                         </tr>
                     </thead>
@@ -34,7 +32,7 @@
     </div>
 </div>
 <script>
-    table = $('#tabel_simpanan').DataTable({
+    table = $('#tabel_bunga').DataTable({
         responsive: true,
         "destroy": true,
         "processing": true,
@@ -43,7 +41,7 @@
         autoWidth: false,
 
         "ajax": {
-            "url": "<?= site_url('simpanan/fetchData') ?>",
+            "url": "<?= site_url('bunga/fetchData') ?>",
             "type": "POST"
         },
 
@@ -83,7 +81,7 @@
     function deleteItem(id, nama) {
         Swal.fire({
             title: "Hapus data ini?",
-            html: `Yakin ingin menghapus rekening dari <strong>${nama}</strong>?`,
+            html: `Yakin ingin menghapus bunga dari no. rekening: <strong>${nama}</strong>?`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
@@ -93,7 +91,7 @@
             if (result.isConfirmed) {
                 $.ajax({
                     type: "POST",
-                    url: "<?= base_url('simpanan/delete') ?>",
+                    url: "<?= base_url('bunga/delete') ?>",
                     data: {
                         id: id
                     },
@@ -115,23 +113,6 @@
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });
-            }
-        });
-    }
-
-    function print(id, nama) {
-        Swal.fire({
-            title: "Print data ini?",
-            html: `Yakin ingin print data dari <strong>${nama}</strong>?`,
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes!",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.open("<?= base_url('simpanan/print_nasabah?id=') ?>" + id, "_blank");
-                window.location.reload();
             }
         });
     }

@@ -103,6 +103,9 @@ $route['jenis_tabungan/detail/(:any)'] = 'kategori/detail/$1';
 
 $route['penarikan'] = 'penarikan';
 $route['penarikan/add'] = 'penarikan/add';
+$route['penarikan/proses'] = 'penarikan/proses';
+$route['penarikan/edit(:any)'] = 'penarikan/edit/$1';
+$route['penarikan/updateData'] = 'penarikan/updateData';
 
 $route['simpanan'] = 'simpanan';
 $route['simpanan/add'] = 'simpanan/add';
@@ -114,5 +117,8 @@ $route['simpanan/simpananData'] = 'simpanan/simpananData';
 $route['simpanan/detail/(:any)'] = 'simpanan/detail/$1';
 $route['simpanan/print_nasabah'] = 'simpanan/print_nasabah';
 
-
 $route['setoran'] = 'setoran';
+$route['setoran/get_no_rekening'] = 'setoran/get_no_rekening';
+$route['setoran/fetchData'] = 'setoran/fetchData';
+
+$route['bunga'] = 'bunga';

@@ -93,6 +93,11 @@ class Simpanan_model extends CI_Model
         return $this->db->get_where('tbsimpanan', ['no_rekening' => $no_rekening])->row();
     }
 
+    public function get_data_by_nasabah($id)
+    {
+        return $this->db->get_where('tbsimpanan', ['nasabah_id' => $id])->result();
+    }
+
     public function search_nasabah($keyword)
     {
         $this->db->like('nama_lengkap', $keyword);
@@ -100,5 +105,23 @@ class Simpanan_model extends CI_Model
         $this->db->from('tbnasabah');
         $query = $this->db->get();
         return $query->result();
+    }
+
+    public function checkAndRunBunga()
+    {
+        if (date('d') != '25') {
+            return;
+        }
+
+        $today = date('Y-m-d');
+
+        $exists = $this->db->get_where('system_log', ['tanggal' => $today])->num_rows();
+        if ($exists > 0) {
+            return;
+        }
+
+        $this->add_bunga();
+
+        $this->db->insert('system_log', ['tanggal' => $today]);
     }
 }
