@@ -103,6 +103,9 @@ $route['jenis_tabungan/detail/(:any)'] = 'kategori/detail/$1';
 
 $route['penarikan'] = 'penarikan';
 $route['penarikan/add'] = 'penarikan/add';
+$route['penarikan/proses'] = 'penarikan/proses';
+$route['penarikan/edit(:any)'] = 'penarikan/edit/$1';
+$route['penarikan/updateData'] = 'penarikan/updateData';
 
 $route['simpanan'] = 'simpanan';
 $route['simpanan/add'] = 'simpanan/add';
