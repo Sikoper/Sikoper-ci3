@@ -10,7 +10,7 @@ class Dashboard extends CI_Controller
         $this->load->model('Setoran_model');
         $this->load->model('Penarikan_model');
 
-        if (date('d') == '25') {
+        if (date('d') == '28') {
             $this->Bunga_model->checkAndRunBunga();
         }
     }
