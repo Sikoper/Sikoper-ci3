@@ -56,8 +56,9 @@ class Simpanan extends CI_Controller
                 $row[] = $field->telp_nasabah;
                 $row[] = $field->jenis_tabungan;
                 $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='simpanan/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
-                            <button class=\"btn btn-secondary\"onclick=\"window.location='simpanan/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>";;
+                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
+                            <button class=\"btn btn-secondary\"onclick=\"window.location='simpanan/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
+                            <button class=\"btn btn-primary\" onclick=\"print('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
                 $data[] = $row;
             }
 
@@ -599,5 +600,30 @@ class Simpanan extends CI_Controller
             return FALSE;
         }
         return TRUE;
+    }
+
+    public function print_nasabah()
+    {
+        $id = $this->input->get('id');
+        $simpanan = $this->Simpanan_model->get_data_by_id($id);
+        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
+        $jenis = $this->Kategori_model->get_data_by_id($simpanan->jenistabungan_id);
+
+        $data = [
+            'nama_nasabah' => $nasabah->nama_lengkap,
+            'no_rekening' => $simpanan->no_rekening,
+            'jenis_tabungan' => $jenis->nama,
+            'tanggal_simpanan' => $simpanan->tanggal_simpanan
+        ];
+
+        $html = $this->load->view('simpanan/cetak_nasabah', $data, true);
+
+        $this->load->library('dompdf_lib');
+        $this->dompdf_lib->loadHtml($html);
+        $this->dompdf_lib->setPaper([0, 0, 396.85, 283.46], 'landscape');
+        $this->dompdf_lib->render();
+
+        $filename = "nasabah_$id.pdf";
+        $this->dompdf_lib->stream($filename, false);
     }
 }
