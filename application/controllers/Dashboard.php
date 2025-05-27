@@ -8,7 +8,7 @@ class Dashboard extends CI_Controller
         parent::__construct();
         $this->load->model('Bunga_model');
 
-        if (date('d') == '25') {
+        if (date('d') == '28') {
             $this->Bunga_model->checkAndRunBunga();
         }
     }
