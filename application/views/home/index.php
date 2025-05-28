@@ -10,7 +10,7 @@
                     </div>
                     <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
                         <h6 class="text-muted font-semibold">Jumlah Pegawai</h6>
-                        <h6 class="font-extrabold mb-0">10</h6>
+                        <h6 class="font-extrabold mb-0" id="jumlah_pegawai"></h6>
                     </div>
                 </div>
             </div>
@@ -27,7 +27,7 @@
                     </div>
                     <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
                         <h6 class="text-muted font-semibold">Jumlah Nasabah</h6>
-                        <h6 class="font-extrabold mb-0">100</h6>
+                        <h6 class="font-extrabold mb-0" id="jumlah_nasabah"></h6>
                     </div>
                 </div>
             </div>
@@ -44,7 +44,7 @@
                     </div>
                     <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
                         <h6 class="text-muted font-semibold">Setoran Baru</h6>
-                        <h6 class="font-extrabold mb-0">5</h6>
+                        <h6 class="font-extrabold mb-0" id="setoran_baru"></h6>
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@
                     </div>
                     <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
                         <h6 class="text-muted font-semibold">Penarikan</h6>
-                        <h6 class="font-extrabold mb-0">11</h6>
+                        <h6 class="font-extrabold mb-0" id="penarikan_baru"></h6>
                     </div>
                 </div>
             </div>
@@ -136,6 +136,11 @@
                         enabled: true
                     }
                 };
+
+                $('#jumlah_pegawai').text(response.jumlah_pegawai);
+                $('#jumlah_nasabah').text(response.jumlah_nasabah);
+                $('#setoran_baru').text(response.setoran_baru);
+                $('#penarikan_baru').text(response.penarikan_baru);
 
                 const chart = new ApexCharts($("#transaksi_bulanan")[0], options);
                 chart.render();
