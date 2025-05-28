@@ -120,4 +120,22 @@ class Penarikan_model extends CI_Model
         $this->db->where('id', $id);
         return $this->db->update('tbpenarikan', $data);
     }
+
+    public function count_new_data($today)
+    {
+        $this->db->from('tbdetail_penarikan');
+        $this->db->where('tanggal_setoran', $today);
+        return $this->db->count_all_results();
+    }
+
+    public function jumlah_setoran()
+    {
+        $this->db->select('MONTH(tanggal_penarikan) as bulan, COUNT(id) as total_penarikan');
+        $this->db->from('tbdetail_penarikan');
+        $this->db->group_by('MONTH(tanggal_penarikan)');
+        $this->db->order_by('MONTH(tanggal_penarikan)', 'ASC');
+
+        $query = $this->db->get();
+        return $query->result();
+    }
 }
