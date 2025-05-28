@@ -175,7 +175,10 @@
 
         "ajax": {
             "url": "<?= site_url('setoran/fetchData') ?>",
-            "type": "POST"
+            "type": "POST",
+            "data": {
+                id: <?= $simpanan->id ?>
+            }
         },
 
         "columns": [{

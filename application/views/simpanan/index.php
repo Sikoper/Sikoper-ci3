@@ -109,6 +109,16 @@
                                     window.location.reload();
                                 }
                             });
+                        } else {
+                            Swal.fire({
+                                title: "Error!",
+                                text: response.error,
+                                icon: "warning"
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.reload();
+                                }
+                            });
                         }
                     },
                     error: function(xhr, thrownError) {

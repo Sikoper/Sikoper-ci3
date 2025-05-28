@@ -114,9 +114,9 @@ class Setoran extends CI_Controller
         {
             return strtr(base64_encode($string), '+/=', '-_?');
         }
-
+        $id = $this->input->post('id');
         if ($this->input->is_ajax_request() == true) {
-            $list = $this->Setoran_model->get_datatables();
+            $list = $this->Setoran_model->get_datatables($id);
             $data = array();
             $no = $_POST['start'];
 
@@ -134,8 +134,8 @@ class Setoran extends CI_Controller
 
             $output = array(
                 "draw" => $_POST['draw'],
-                "recordsTotal" => $this->Setoran_model->count_all(),
-                "recordsFiltered" => $this->Setoran_model->count_filtered(),
+                "recordsTotal" => $this->Setoran_model->count_all($id),
+                "recordsFiltered" => $this->Setoran_model->count_filtered($id),
                 "data" => $data,
             );
 
