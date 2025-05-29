@@ -358,7 +358,7 @@
     function deleteDetailPenarikan(id, jumlah) {
         Swal.fire({
             title: "Hapus data penarikan ini?",
-            html: `Yakin ingin menghapus detail penarikan sejumlah:<br/> <strong>${jumlah}</strong>?`, // Jumlah sudah diformat
+            html: `Yakin ingin menghapus detail penarikan sejumlah:<br/> <strong>${jumlah}</strong>?`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
@@ -372,7 +372,6 @@
                     url: "<?= site_url('penarikan/hapus_detail_penarikan_ajax') ?>",
                     data: {
                         penarikan_id: id
-                        // simpanan_id: simpananId // Opsional, jika dibutuhkan di backend untuk validasi/redirect
                     },
                     dataType: "json",
                     success: function(response) {
@@ -383,7 +382,7 @@
                                 icon: "success"
                             }).then(() => {
                                 tabel_detail_penarikan.ajax.reload(null, false); // Reload tabel penarikan
-                                // Update juga informasi total penarikan keseluruhan
+                                window.location.reload(); 
                                 updateTotalPenarikanInfo();
                             });
                         } else if (response.error) {
