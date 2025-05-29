@@ -10,6 +10,7 @@ class Simpanan extends CI_Controller
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
+        $this->load->model('Penarikan_model');
 
 
         // echo '<pre>';
@@ -498,55 +499,90 @@ class Simpanan extends CI_Controller
             redirect('unauthorized_403');
         }
 
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
+        if (!function_exists('safe_base64_decode_detail_simpanan')) {
+            function safe_base64_decode_detail_simpanan($string)
+            {
+                $data = strtr($string, '-_?', '+/=');
+                $mod4 = strlen($data) % 4;
+                if ($mod4) {
+                    $data .= substr('====', $mod4);
+                }
+                return base64_decode($data);
+            }
         }
 
         if ($encoded_rek === null) {
-            show_custom_404();
+            show_404();
             return;
         }
 
-        $no_rekening = safe_base64_decode($encoded_rek);;
+        $no_rekening = safe_base64_decode_detail_simpanan($encoded_rek);
+
+        if ($no_rekening === false || empty(trim($no_rekening))) {
+            show_404("Nomor rekening tidak valid.");
+            return;
+        }
+
         $simpanan = $this->Simpanan_model->get_data_by_norek($no_rekening);
+
+        if (!$simpanan) {
+            show_404("Data simpanan tidak ditemukan untuk nomor rekening: " . html_escape($no_rekening));
+            return;
+        }
+
         $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
         $jenis_tabungan = $this->Kategori_model->get_data_by_id($simpanan->jenistabungan_id);
         $pegawai = $this->Pegawai_model->get_data_by_id($simpanan->pegawai_id);
 
-        if (!$simpanan) {
-            show_custom_404();
-            return;
-        }
+        $this->load->model('Penarikan_model');
+        $akumulasi_data_penarikan = $this->Penarikan_model->get_akumulasi_penarikan_by_simpanan($simpanan->id);
 
-        function format_durasi($bulan)
-        {
-            if (!$bulan || $bulan <= 0) return '-';
-            $tahun = floor($bulan / 12);
-            $sisa_bulan = $bulan % 12;
-
-            $output = "$bulan bulan";
-            if ($tahun > 0) {
-                $output .= " / {$tahun} tahun";
-                if ($sisa_bulan > 0) {
-                    $output .= " {$sisa_bulan} bulan";
+        if (!function_exists('format_durasi')) { 
+            function format_durasi($bulan)
+            {
+                if ($bulan === null || !is_numeric($bulan) || $bulan <= 0) {
+                    return '-';
                 }
+                $bulan_int = intval($bulan);
+                $tahun = floor($bulan_int / 12);
+                $sisa_bulan = $bulan_int % 12;
+
+                $output_parts = [];
+                if ($tahun > 0) {
+                    $output_parts[] = "{$tahun} tahun";
+                }
+                if ($sisa_bulan > 0) {
+                    $output_parts[] = "{$sisa_bulan} bulan";
+                }
+
+                if (empty($output_parts)) {
+                    return "{$bulan_int} bulan";
+                }
+
+                $output_str = implode(' ', $output_parts);
+                if ($bulan_int >= 12) {
+                    $output_str .= " (Total: {$bulan_int} bulan)";
+                }
+                return $output_str;
             }
-            return $output;
         }
 
         $data = [
-            'simpanan' => $simpanan,
-            'nasabah' => $nasabah,
-            'jenis' => $jenis_tabungan,
-            'pegawai' => $pegawai,
-            'level' => $this->session->userData('level'),
+            'simpanan'        => $simpanan,
+            'nasabah'         => $nasabah,
+            'jenis'           => $jenis_tabungan,
+            'pegawai'         => $pegawai,
+            'level'           => $this->session->userdata('level'),
+            'formatted_durasi' => format_durasi($simpanan->durasi ?? null),
+            'total_akumulasi_penarikan' => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_penarikan ?? 0) : 0,
+            'total_akumulasi_denda'     => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_denda ?? 0) : 0,
         ];
 
         $parser = [
-            'judul' => "<a href=" . base_url('simpanan') . " class=\"btn btn-warning\">
-                            <i class=\"fa fa-backward\"></i> Kembali
-                        </a>",
+            'judul' => "<a href=\"" . base_url('simpanan') . "\" class=\"btn btn-warning\">
+                        <i class=\"fa fa-backward\"></i> Kembali
+                    </a> 
+                    ",
             'isi'   => $this->load->view('simpanan/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);

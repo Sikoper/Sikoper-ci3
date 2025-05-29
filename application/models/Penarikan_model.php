@@ -3,11 +3,141 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Penarikan_model extends CI_Model
 {
+    private $_table_penarikan_header = 'tbpenarikan';
+    private $_table_penarikan_items = 'tbdetail_penarikan';
 
-    // Ambil semua nasabah
-    public function get_all_nasabah()
+    public function get_akumulasi_penarikan_by_simpanan($simpanan_id)
     {
-        return $this->db->get('tbnasabah')->result();
+        $total_penarikan = 0;
+        $total_denda = 0;
+
+        $this->db->select_sum('jumlah_penarikan', 'sum_jumlah_penarikan');
+        $this->db->from($this->_table_penarikan_items);
+        $this->db->where('simpanan_id', $simpanan_id);
+        $this->db->where('status', 'disetujui');
+        $query_penarikan = $this->db->get();
+
+        if ($query_penarikan->num_rows() > 0) {
+            $result_penarikan = $query_penarikan->row();
+            $total_penarikan = $result_penarikan->sum_jumlah_penarikan ?? 0;
+        }
+
+        $this->db->select_sum('jumlah_denda', 'sum_jumlah_denda');
+        $this->db->from($this->_table_penarikan_header);
+        $this->db->where('simpanan_id', $simpanan_id);
+        $query_denda = $this->db->get();
+
+        if ($query_denda->num_rows() > 0) {
+            $result_denda = $query_denda->row();
+            $total_denda = $result_denda->sum_jumlah_denda ?? 0;
+        }
+
+        return (object)[
+            'total_akumulasi_penarikan' => $total_penarikan,
+            'total_akumulasi_denda'     => $total_denda
+        ];
+    }
+
+    private $_column_order_penarikan_detail = [null, 'p.tanggal_penarikan', 'p.total_penarikan', 'p.jumlah_denda', 'pg.nama_lengkap', null];
+    private $_column_search_penarikan_detail = ['p.tanggal_penarikan', 'p.total_penarikan', 'p.jumlah_denda', 'pg.nama_lengkap'];
+    private $_order_penarikan_default = ['p.tanggal_penarikan' => 'desc'];
+
+
+    private function _get_datatables_query_detail_penarikan($simpanan_id)
+    {
+        if (empty($simpanan_id) || !ctype_digit((string)$simpanan_id)) {
+            $this->db->where('1=0', null, false);
+        } else {
+            $this->db->where('p.simpanan_id', $simpanan_id);
+        }
+
+        $this->db->select('p.id, p.simpanan_id, p.tanggal_penarikan, p.total_penarikan, p.jumlah_denda, pg.nama_lengkap as nama_pegawai');
+        $this->db->from($this->_table_penarikan_header . ' p');
+        $this->db->join('tbpegawai pg', 'p.pegawai_id = pg.id', 'left');
+
+        $i = 0;
+        if ($this->input->post('search') && $this->input->post('search')['value'] != '') {
+            foreach ($this->_column_search_penarikan_detail as $item) {
+                if ($i === 0) {
+                    $this->db->group_start();
+                    $this->db->like($item, $this->input->post('search')['value']);
+                } else {
+                    $this->db->or_like($item, $this->input->post('search')['value']);
+                }
+                if (count($this->_column_search_penarikan_detail) - 1 == $i)
+                    $this->db->group_end();
+                $i++;
+            }
+        }
+
+        if ($this->input->post('order')) {
+            $col_index = $this->input->post('order')['0']['column'];
+            $order_dir = $this->input->post('order')['0']['dir'];
+            if (isset($this->_column_order_penarikan_detail[$col_index]) && $this->_column_order_penarikan_detail[$col_index] != null) {
+                $this->db->order_by($this->_column_order_penarikan_detail[$col_index], $order_dir);
+            }
+        } else if (isset($this->_order_penarikan_default)) {
+            $order = $this->_order_penarikan_default;
+            $this->db->order_by(key($order), $order[key($order)]);
+        }
+    }
+
+
+    public function get_datatables_detail_penarikan($simpanan_id)
+    {
+        $this->_get_datatables_query_detail_penarikan($simpanan_id);
+        if ($this->input->post('length') && $this->input->post('length') != -1) {
+            $this->db->limit($this->input->post('length'), ($this->input->post('start') ? $this->input->post('start') : 0));
+        }
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function count_filtered_detail_penarikan($simpanan_id)
+    {
+        $this->_get_datatables_query_detail_penarikan($simpanan_id);
+        $query = $this->db->get();
+        return $query->num_rows();
+    }
+
+    public function count_all_detail_penarikan($simpanan_id)
+    {
+        $this->db->from($this->_table_penarikan_header);
+        if (!empty($simpanan_id) && ctype_digit((string)$simpanan_id)) {
+            $this->db->where('simpanan_id', $simpanan_id);
+        } else {
+            return 0;
+        }
+        return $this->db->count_all_results();
+    }
+
+    public function simpan_penarikan($data)
+    {
+        return $this->db->insert('tbpenarikan', $data);
+    }
+
+    public function kurangi_saldo_simpanan($id, $jumlah)
+    {
+        $this->db->set('jumlah_simpanan', 'jumlah_simpanan - ' . (float)$jumlah, false);
+        $this->db->where('id', $id);
+        $this->db->update('tbsimpanan');
+        return $this->db->affected_rows() > 0;
+    }
+
+    public function get_penarikan_untuk_dihapus($penarikan_id)
+    {
+        $this->db->where('id', $penarikan_id);
+        return $this->db->get($this->_table_penarikan_header)->row();
+    }
+
+    public function get_simpanan_by_id($id)
+    {
+        return $this->db->select('tbsimpanan.*, tbjenistabungan.pengendapan')
+            ->from('tbsimpanan')
+            ->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id')
+            ->where('tbsimpanan.id', $id)
+            ->get()
+            ->row();
     }
 
     public function get_rekening_dengan_jenis($nasabah_id)
@@ -28,96 +158,16 @@ class Penarikan_model extends CI_Model
         return $result;
     }
 
-    public function get_simpanan_by_id($id)
+    public function hapus_data_penarikan_by_id($id_penarikan)
     {
-        return $this->db->select('tbsimpanan.*, tbjenistabungan.pengendapan')
-            ->from('tbsimpanan')
-            ->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id')
-            ->where('tbsimpanan.id', $id)
-            ->get()
-            ->row();
+        $this->db->where('id', $id_penarikan);
+        return $this->db->delete($this->_table_penarikan_header);
     }
 
-
-    public function kurangi_saldo_simpanan($id, $jumlah)
+    public function tambah_saldo_simpanan($simpanan_id, $jumlah)
     {
-        $this->db->set('jumlah_simpanan', 'jumlah_simpanan - ' . (int)$jumlah, false);
-        $this->db->where('id', $id);
-        $this->db->update('tbsimpanan');
-    }
-
-    private function _get_datatables_query()
-    {
-        $this->db->select('tbpenarikan.*, tbsimpanan.no_rekening, tbnasabah.nama_lengkap as nama_nasabah, tbjenistabungan.nama as jenis_tabungan, tbsimpanan.status,');
-        $this->db->from('tbpenarikan');
-        $this->db->join('tbsimpanan', 'tbpenarikan.simpanan_id = tbsimpanan.id');
-        $this->db->join('tbnasabah', 'tbsimpanan.nasabah_id = tbnasabah.id');
-        $this->db->join('tbjenistabungan', 'tbsimpanan.jenistabungan_id = tbjenistabungan.id');
-
-        // Searching
-        if (isset($_POST['search']['value']) && $_POST['search']['value'] !== '') {
-            $this->db->group_start();
-            $this->db->like('tbsimpanan.no_rekening', $_POST['search']['value']);
-            $this->db->or_like('tbnasabah.nama_lengkap', $_POST['search']['value']);
-            $this->db->group_end();
-        }
-
-        // Ordering
-        if (isset($_POST['order'])) {
-            $column_index = $_POST['order'][0]['column'];
-            $order_dir = $_POST['order'][0]['dir'];
-            $columns = ['tbpenarikan.id', 'tbsimpanan.no_rekening', 'tbnasabah.nama_lengkap', 'tbjenistabungan.nama', 'tbpenarikan.total_penarikan'];
-
-            if (isset($columns[$column_index])) {
-                $this->db->order_by($columns[$column_index], $order_dir);
-            }
-        } else {
-            $this->db->order_by('tbpenarikan.id', 'DESC');
-        }
-    }
-
-    public function get_datatables()
-    {
-        $this->_get_datatables_query();
-        if (isset($_POST['length']) && $_POST['length'] != -1) {
-            $this->db->limit($_POST['length'], $_POST['start'] ?? 0);
-        }
-        return $this->db->get()->result();
-    }
-
-    public function count_filtered()
-    {
-        $this->_get_datatables_query();
-        return $this->db->get()->num_rows();
-    }
-
-    public function count_all()
-    {
-        $this->db->from('tbpenarikan');
-        return $this->db->count_all_results();
-    }
-
-    public function simpan_penarikan($data)
-    {
-        return $this->db->insert('tbpenarikan', $data);
-    }
-
-    public function getById($id)
-    {
-        $this->db->select('tbpenarikan.id, tbsimpanan.no_rekening, tbnasabah.nama_lengkap as nama_nasabah, tbjenistabungan.nama as jenis_tabungan, tbpenarikan.total_penarikan');
-        $this->db->from('tbpenarikan');
-        $this->db->join('tbsimpanan', 'tbpenarikan.simpanan_id = tbsimpanan.id');
-        $this->db->join('tbnasabah', 'tbsimpanan.nasabah_id = tbnasabah.id');
-        $this->db->join('tbjenistabungan', 'tbsimpanan.jenistabungan_id = tbjenistabungan.id');
-        $this->db->where('tbpenarikan.id', $id);
-
-        $query = $this->db->get();
-        return $query->row_array();
-    }
-
-    public function update($id, $data)
-    {
-        $this->db->where('id', $id);
-        return $this->db->update('tbpenarikan', $data);
+        $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . (float)$jumlah, false);
+        $this->db->where('id', $simpanan_id);
+        return $this->db->update('tbsimpanan');
     }
 }

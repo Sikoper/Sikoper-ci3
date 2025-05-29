@@ -124,4 +124,33 @@ class Simpanan_model extends CI_Model
 
         $this->db->insert('system_log', ['tanggal' => $today]);
     }
+
+    public function get_akumulasi_penarikan_dan_denda($simpanan_id)
+    {
+        $this->db->select_sum(
+            "CASE WHEN jenis_transaksi = 'PENARIKAN' THEN jumlah ELSE 0 END",
+            'total_penarikan'
+        );
+        $this->db->select_sum(
+            "CASE WHEN jenis_transaksi = 'DENDA' THEN jumlah ELSE 0 END",
+            'total_denda'
+        );
+        $this->db->from('tbdetail_simpanan');
+        $this->db->where('simpanan_id', $simpanan_id);
+
+        $query = $this->db->get();
+
+        if ($query->num_rows() > 0) {
+            $result = $query->row();
+            return (object) [
+                'total_penarikan' => $result->total_penarikan ?? 0,
+                'total_denda'     => $result->total_denda ?? 0,
+            ];
+        }
+
+        return (object) [
+            'total_penarikan' => 0,
+            'total_denda'     => 0,
+        ];
+    }
 }

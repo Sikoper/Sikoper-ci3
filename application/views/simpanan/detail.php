@@ -28,6 +28,12 @@
                         <td>: Rp <?= number_format($simpanan->jumlah_simpanan, 2, ',', '.') ?></td>
                     </tr>
                     <tr>
+                        <th>Total Penarikan Keseluruhan</th>
+                        <td id="totalPenarikanValue">: Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?>
+                            (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
+                        </td>
+                    </tr>
+                    <tr>
                         <th>Tanggal Simpanan</th>
                         <td>: <?= date('d-m-Y', strtotime($simpanan->tanggal_simpanan)) ?></td>
                     </tr>
@@ -96,17 +102,18 @@
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-warning d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                        <button class="btn btn-primary" onclick="window.location='<?= base_url('setoran') ?>'"><i class="fa fa-circle-plus"></i> Tambah Data</button>
+                        <button class="btn btn-primary" onclick="window.location='<?= base_url('penarikan') ?>'"><i class="fa fa-circle-plus"></i> Tambah Data</button>
                     </div>
                     <div class="card-body">
                         <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
                             <div class="dataTable-container">
-                                <table class="table table-bordered table-striped" id="detail_simpanan">
+                                <table class="table table-bordered table-striped" id="tabel_detail_penarikan">
                                     <thead class="table-light">
                                         <tr>
                                             <th>No</th>
                                             <th>Tanggal</th>
-                                            <th>Jumlah Simpanan</th>
+                                            <th>Jumlah Penarikan</th>
+                                            <th>Jumlah Denda</th>
                                             <th>Pegawai</th>
                                             <th>#</th>
                                         </tr>
@@ -292,6 +299,98 @@
                     },
                     error: function(xhr, thrownError) {
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                    }
+                });
+            }
+        });
+    }
+
+    var tabel_detail_penarikan = $('#tabel_detail_penarikan').DataTable({ 
+        "responsive": true,
+        "destroy": true,
+        "processing": true,
+        "serverSide": true,
+        "order": [
+            [1, "desc"]
+        ], 
+        "autoWidth": false,
+        "ajax": {
+            "url": "<?= site_url('penarikan/fetch_detail_penarikan_by_simpanan') ?>",
+            "type": "POST",
+            "data": function(d) {
+                d.simpanan_id = simpananId; 
+            }
+        },
+        "columns": [
+            
+            {
+                "data": 0,
+                "className": "text-center",
+                "width": "5%",
+                "orderable": false
+            },
+            {
+                "data": 1
+            }, 
+            {
+                "data": 2,
+                "className": "text-end"
+            }, 
+            {
+                "data": 3,
+                "className": "text-end"
+            }, 
+            {
+                "data": 4
+            },
+            {
+                "data": 5,
+                "orderable": false,
+                "className": "text-center",
+                "width": "10%"
+            } 
+        ],
+    });
+
+    function deleteDetailPenarikan(id, jumlah) {
+        Swal.fire({
+            title: "Hapus data penarikan ini?",
+            html: `Yakin ingin menghapus detail penarikan sejumlah:<br/> <strong>${jumlah}</strong>?`, // Jumlah sudah diformat
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Ya, hapus!",
+            cancelButtonText: "Batal",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    type: "POST",
+                    url: "<?= site_url('penarikan/hapus_detail_penarikan_ajax') ?>",
+                    data: {
+                        penarikan_id: id
+                        // simpanan_id: simpananId // Opsional, jika dibutuhkan di backend untuk validasi/redirect
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: "Berhasil!",
+                                text: response.success,
+                                icon: "success"
+                            }).then(() => {
+                                tabel_detail_penarikan.ajax.reload(null, false); // Reload tabel penarikan
+                                // Update juga informasi total penarikan keseluruhan
+                                updateTotalPenarikanInfo();
+                            });
+                        } else if (response.error) {
+                            Swal.fire("Gagal!", response.error, "error");
+                        } else {
+                            Swal.fire("Error!", "Terjadi kesalahan yang tidak diketahui.", "error");
+                        }
+                    },
+                    error: function(xhr, thrownError) {
+                        Swal.fire("Error AJAX!", "Terjadi kesalahan: " + xhr.status + " \n" + xhr.responseText + " \n" + thrownError, "error");
                     }
                 });
             }
