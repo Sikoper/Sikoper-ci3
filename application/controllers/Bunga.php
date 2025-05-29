@@ -39,7 +39,7 @@ class Bunga extends CI_Controller
 
     public function add_bunga()
     {
-        if (date('d') != '25') return;
+        if (date('d') != '28') return;
 
         $today = date('Y-m-d');
         $exists = $this->db->get_where('systems_log', ['tanggal' => $today])->num_rows();

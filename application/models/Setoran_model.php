@@ -8,10 +8,11 @@ class Setoran_model extends CI_Model
     var $column_search = array('tbdetail_simpanan.tanggal_setoran', 'tbpegawai.nama_lengkap');
     var $order = array('created_at' => 'ASC');
 
-    private function _get_datatables_query()
+    private function _get_datatables_query($id)
     {
         $this->db->select('tbdetail_simpanan.*, tbpegawai.nama_lengkap as pegawai');
         $this->db->from($this->table);
+        $this->db->where('tbdetail_simpanan.simpanan_id', $id);
         $this->db->join('tbpegawai', 'tbpegawai.id = tbdetail_simpanan.pegawai_id');
 
         $i = 0;
@@ -40,25 +41,26 @@ class Setoran_model extends CI_Model
         }
     }
 
-    function get_datatables()
+    function get_datatables($id)
     {
-        $this->_get_datatables_query();
+        $this->_get_datatables_query($id);
         if ($_POST['length'] != -1)
             $this->db->limit($_POST['length'], $_POST['start']);
         $query = $this->db->get();
         return $query->result();
     }
 
-    function count_filtered()
+    function count_filtered($id)
     {
-        $this->_get_datatables_query();
+        $this->_get_datatables_query($id);
         $query = $this->db->get();
         return $query->num_rows();
     }
 
-    public function count_all()
+    public function count_all($id)
     {
         $this->db->from($this->table);
+        $this->db->where('simpanan_id', $id);
         return $this->db->count_all_results();
     }
 
@@ -85,5 +87,22 @@ class Setoran_model extends CI_Model
     public function get_data_by_id($id)
     {
         return $this->db->get_where('tbdetail_simpanan', ['id' => $id])->row();
+    }
+
+    public function count_new_data($today)
+    {
+        $this->db->from('tbdetail_simpanan');
+        $this->db->where('tanggal_setoran', $today);
+        return $this->db->count_all_results();
+    }
+    public function jumlah_setoran()
+    {
+        $this->db->select('MONTH(tanggal_setoran) as bulan, COUNT(id) as total_setoran');
+        $this->db->from('tbdetail_simpanan');
+        $this->db->group_by('MONTH(tanggal_setoran)');
+        $this->db->order_by('MONTH(tanggal_setoran)', 'ASC');
+
+        $query = $this->db->get();
+        return $query->result();
     }
 }
