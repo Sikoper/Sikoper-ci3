@@ -193,4 +193,19 @@ class Penarikan_model extends CI_Model
         $query = $this->db->get();
         return $query->result();
     }
+
+    public function get_by_date_range($simpanan_id, $start_date, $end_date)
+    {
+        $this->db->where('simpanan_id', $simpanan_id);
+        $this->db->where('tanggal_penarikan >=', $start_date);
+        $this->db->where('tanggal_penarikan <=', $end_date);
+        $query = $this->db->get('tbdetail_penarikan');
+        return $query->result();
+    }
+    public function get_all_by_simpanan($simpanan_id)
+    {
+        $this->db->where('simpanan_id', $simpanan_id);
+        $query = $this->db->get('tbdetail_penarikan');
+        return $query->result();
+    }
 }

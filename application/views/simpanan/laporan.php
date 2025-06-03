@@ -17,7 +17,7 @@
     </div>
     <?= form_open('', ['id' => 'form_laporan']) ?>
     <div class="card-body">
-        <input type="hidden" name="id" id="id" <?= $simpanan->id ?>>
+        <input type="hidden" name="id" id="id" value="<?= $simpanan->id ?>">
         <div class="row mb-3">
             <div class="col-md-4">
                 <div class="form-group mb-3" style="height: 80px;">
@@ -38,7 +38,7 @@
             <div class="col-md-4">
                 <div class="form-group mb-3" style="height: 80px;">
                     <label for="tanggal_akhir">Pilih jenis laporan</label>
-                    <select class="form-select">
+                    <select class="form-select" id="jenis_laporan" name="jenis_laporan">
                         <option value=""> -- Pilih laporan yang ingin di print -- </option>
                         <option value="1"> Setoran </option>
                         <option value="2"> Penarikan </option>
@@ -58,32 +58,29 @@
 </div>
 <script>
     $(document).ready(function() {
-        $('#tombol_cetak').click(function(e) {
+        $('#form_laporan').submit(function(e) {
             e.preventDefault();
-            let form = $('#form_laporan')[0];
-            let data = new FormData(form);
+
+            // Confirm dialog
             Swal.fire({
-                title: "Print data ini?",
-                html: "Yakin ingin print data dari <strong><?= $simpanan->no_rekening ?></strong>?",
+                title: "Cetak data?",
+                text: `Yakin ingin cetak data dari <?= $simpanan->no_rekening ?>`,
                 icon: "question",
                 showCancelButton: true,
                 confirmButtonColor: "#3085d6",
                 cancelButtonColor: "#d33",
-                confirmButtonText: "Yes!",
+                confirmButtonText: "Ya!",
+                cancelButtonText: "Tidak",
             }).then((result) => {
                 if (result.isConfirmed) {
-                    $.ajax({
-                        type: "POST",
-                        url: "<?= base_url('simpanan/print_laporan') ?>",
-                        data: data,
-                        dataType: "json",
-                        success: function(response) {
+                    // Get form data as query params
+                    const formData = $(this).serialize();
 
-                        },
-                        error: function(xhr, thrownError) {
-                            alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                        }
-                    });
+                    // Build the URL to open in a new tab with query params
+                    const url = "<?= base_url('simpanan/print_laporan') ?>" + "?" + formData;
+
+                    // Open in new tab
+                    window.open(url, '_blank');
                 }
             });
         });
