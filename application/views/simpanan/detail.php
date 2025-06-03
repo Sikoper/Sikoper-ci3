@@ -381,7 +381,7 @@
                                 text: response.success,
                                 icon: "success"
                             }).then(() => {
-                                tabel_detail_penarikan.ajax.reload(null, false); // Reload tabel penarikan
+                                tabel_detail_penarikan.ajax.reload(null, false);
                                 window.location.reload(); 
                                 updateTotalPenarikanInfo();
                             });
