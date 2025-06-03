@@ -178,6 +178,11 @@ class Penarikan_model extends CI_Model
         return $this->db->count_all_results();
     }
 
+    public function get_data_by_id($id)
+    {
+        return $this->db->get_where('tbdetail_penarikan', ['id' => $id])->row();
+    }
+
     public function jumlah_setoran()
     {
         $this->db->select('MONTH(tanggal_penarikan) as bulan, COUNT(id) as total_penarikan');
@@ -186,6 +191,21 @@ class Penarikan_model extends CI_Model
         $this->db->order_by('MONTH(tanggal_penarikan)', 'ASC');
 
         $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function get_by_date_range($simpanan_id, $start_date, $end_date)
+    {
+        $this->db->where('simpanan_id', $simpanan_id);
+        $this->db->where('tanggal_penarikan >=', $start_date);
+        $this->db->where('tanggal_penarikan <=', $end_date);
+        $query = $this->db->get('tbdetail_penarikan');
+        return $query->result();
+    }
+    public function get_all_by_simpanan($simpanan_id)
+    {
+        $this->db->where('simpanan_id', $simpanan_id);
+        $query = $this->db->get('tbdetail_penarikan');
         return $query->result();
     }
 }

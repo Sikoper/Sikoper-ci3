@@ -129,7 +129,7 @@
         });
     }
 
-    function print(id, nama) {
+    function printNasabah(id, nama) {
         Swal.fire({
             title: "Print data ini?",
             html: `Yakin ingin print data dari <strong>${nama}</strong>?`,

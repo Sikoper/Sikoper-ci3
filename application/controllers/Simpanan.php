@@ -11,7 +11,7 @@ class Simpanan extends CI_Controller
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
         $this->load->model('Penarikan_model');
-
+        $this->load->model('Setoran_model');
 
         // echo '<pre>';
         // print_r($this->session->userdata());
@@ -59,7 +59,7 @@ class Simpanan extends CI_Controller
                 $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='simpanan/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
                             <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
                             <button class=\"btn btn-secondary\"onclick=\"window.location='simpanan/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
-                            <button class=\"btn btn-primary\" onclick=\"print('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
+                            <button class=\"btn btn-primary\" onclick=\"printNasabah('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
                 $data[] = $row;
             }
 
@@ -546,7 +546,7 @@ class Simpanan extends CI_Controller
         $this->load->model('Penarikan_model');
         $akumulasi_data_penarikan = $this->Penarikan_model->get_akumulasi_penarikan_by_simpanan($simpanan->id);
 
-        if (!function_exists('format_durasi')) { 
+        if (!function_exists('format_durasi')) {
             function format_durasi($bulan)
             {
                 if ($bulan === null || !is_numeric($bulan) || $bulan <= 0) {
@@ -668,7 +668,110 @@ class Simpanan extends CI_Controller
         $this->dompdf_lib->setPaper([0, 0, 396.85, 283.46], 'landscape');
         $this->dompdf_lib->render();
 
-        $filename = "nasabah_$id.pdf";
+        $filename = "nasabah_" . $nasabah->nama_lengkap . "_" . $simpanan->no_rekening . ".pdf";
+        $this->dompdf_lib->stream($filename, false);
+    }
+
+    public function laporan()
+    {
+        function safe_base64_decode($string)
+        {
+            return base64_decode(strtr($string, '-_?', '+/='));
+        }
+
+        $id = $this->input->get('id');
+        $no_rek = safe_base64_decode($id);
+        $simpanan = $this->Simpanan_model->get_data_by_norek($no_rek);
+
+        $data = [
+            'simpanan' => $simpanan
+        ];
+
+        $parser = [
+            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
+            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
+            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
+            'isi'   => $this->load->view('simpanan/laporan', $data, TRUE)
+        ];
+        $this->parser->parse('templates/main', $parser);
+    }
+
+    public function print_laporan()
+    {
+        $id = $this->input->get('id');
+        $tanggal_mulai = $this->input->get('tanggal_mulai');
+        $tanggal_akhir = $this->input->get('tanggal_akhir');
+        $jenis_laporan = $this->input->get('jenis_laporan');
+
+        // If jenis_laporan is empty or not provided, default it to '3' (Setoran dan Penarikan)
+        if (empty($jenis_laporan)) {
+            $jenis_laporan = '3';
+        }
+
+        // Fetch simpanan and nasabah data
+        $simpanan = $this->Simpanan_model->get_data_by_id($id);
+        // Ensure $simpanan is not null before accessing its properties
+        if (!$simpanan) {
+            echo "Error: Simpanan data not found.";
+            return;
+        }
+        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
+        // Ensure $nasabah is not null
+        if (!$nasabah) {
+            echo "Error: Nasabah data not found.";
+            return;
+        }
+
+        $setoran = [];
+        $penarikan = [];
+
+        // Determine which data to fetch based on date range and report type
+        if (!empty($tanggal_mulai) && !empty($tanggal_akhir)) {
+            if ($jenis_laporan == 1) { // Setoran only
+                $setoran = $this->Setoran_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
+            } elseif ($jenis_laporan == 2) { // Penarikan only
+                $penarikan = $this->Penarikan_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
+            } elseif ($jenis_laporan == 3) { // Both
+                $setoran = $this->Setoran_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
+                $penarikan = $this->Penarikan_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
+            }
+        } else {
+            // If no date range, fetch all data for the selected type
+            if ($jenis_laporan == 1) {
+                $setoran = $this->Setoran_model->get_all_by_simpanan($simpanan->id);
+            } elseif ($jenis_laporan == 2) {
+                $penarikan = $this->Penarikan_model->get_all_by_simpanan($simpanan->id);
+            } elseif ($jenis_laporan == 3) { // Default case
+                $setoran = $this->Setoran_model->get_all_by_simpanan($simpanan->id);
+                $penarikan = $this->Penarikan_model->get_all_by_simpanan($simpanan->id);
+            }
+        }
+
+        $data = [
+            'simpanan' => $simpanan,
+            'nasabah' => $nasabah,
+            'setoran' => $setoran,
+            'penarikan' => $penarikan,
+            'tanggal_mulai' => $tanggal_mulai,
+            'tanggal_akhir' => $tanggal_akhir,
+            'jenis_laporan' => $jenis_laporan,
+        ];
+
+        // Load the HTML content from the view
+        $html = $this->load->view('simpanan/cetak_laporan', $data, true);
+
+        // Load the dompdf library
+        $this->load->library('dompdf_lib');
+        $this->dompdf_lib->loadHtml($html);
+
+        // Set paper size to A4 and orientation to portrait
+        $this->dompdf_lib->setPaper('A4', 'portrait'); // Changed from 'landscape' to 'portrait'
+
+        // Render the PDF
+        $this->dompdf_lib->render();
+
+        // Generate filename and stream the PDF
+        $filename = "laporan_" . $nasabah->nama_lengkap . "_" . $simpanan->no_rekening . ".pdf";
         $this->dompdf_lib->stream($filename, false);
     }
 }
