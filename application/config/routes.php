@@ -116,6 +116,8 @@ $route['simpanan/edit/(:any)'] = 'simpanan/edit/$1';
 $route['simpanan/simpananData'] = 'simpanan/simpananData';
 $route['simpanan/detail/(:any)'] = 'simpanan/detail/$1';
 $route['simpanan/print_nasabah'] = 'simpanan/print_nasabah';
+$route['simpanan/laporan'] = 'simpanan/laporan';
+$route['simpanan/print_laporan'] = 'simpanan/print_laporan';
 
 $route['setoran'] = 'setoran';
 $route['setoran/get_no_rekening'] = 'setoran/get_no_rekening';

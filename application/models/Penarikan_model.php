@@ -178,6 +178,11 @@ class Penarikan_model extends CI_Model
         return $this->db->count_all_results();
     }
 
+    public function get_data_by_id($id)
+    {
+        return $this->db->get_where('tbdetail_penarikan', ['id' => $id])->row();
+    }
+
     public function jumlah_setoran()
     {
         $this->db->select('MONTH(tanggal_penarikan) as bulan, COUNT(id) as total_penarikan');

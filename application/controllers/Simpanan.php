@@ -11,7 +11,7 @@ class Simpanan extends CI_Controller
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
         $this->load->model('Penarikan_model');
-
+        $this->load->model('Setoran_model');
 
         // echo '<pre>';
         // print_r($this->session->userdata());
@@ -59,7 +59,7 @@ class Simpanan extends CI_Controller
                 $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='simpanan/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
                             <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
                             <button class=\"btn btn-secondary\"onclick=\"window.location='simpanan/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
-                            <button class=\"btn btn-primary\" onclick=\"print('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
+                            <button class=\"btn btn-primary\" onclick=\"printNasabah('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
                 $data[] = $row;
             }
 
@@ -546,7 +546,7 @@ class Simpanan extends CI_Controller
         $this->load->model('Penarikan_model');
         $akumulasi_data_penarikan = $this->Penarikan_model->get_akumulasi_penarikan_by_simpanan($simpanan->id);
 
-        if (!function_exists('format_durasi')) { 
+        if (!function_exists('format_durasi')) {
             function format_durasi($bulan)
             {
                 if ($bulan === null || !is_numeric($bulan) || $bulan <= 0) {
@@ -668,7 +668,57 @@ class Simpanan extends CI_Controller
         $this->dompdf_lib->setPaper([0, 0, 396.85, 283.46], 'landscape');
         $this->dompdf_lib->render();
 
-        $filename = "nasabah_$id.pdf";
+        $filename = "nasabah_" . $nasabah->nama_lengkap . "_" . $simpanan->no_rekening . ".pdf";
+        $this->dompdf_lib->stream($filename, false);
+    }
+
+    public function laporan()
+    {
+        function safe_base64_decode($string)
+        {
+            return base64_decode(strtr($string, '-_?', '+/='));
+        }
+
+        $id = $this->input->get('id');
+        $no_rek = safe_base64_decode($id);
+        $simpanan = $this->Simpanan_model->get_data_by_norek($no_rek);
+
+        $data = [
+            'simpanan' => $simpanan
+        ];
+
+        $parser = [
+            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
+            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
+            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
+            'isi'   => $this->load->view('simpanan/laporan', $data, TRUE)
+        ];
+        $this->parser->parse('templates/main', $parser);
+    }
+
+    public function print_laporan()
+    {
+        $id = $this->input->get('id');
+        $tanggal_mulai = $this->input->post('tanggal_mulai');
+        $tanggal_selesai = $this->input->post('tanggal_selesai');
+
+        $simpanan = $this->Simpanan_model->get_data_by_id($id);
+        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
+        $setoran = $this->Setoran_model->get_data_by_id($simpanan->id);
+        $penarikan = $this->Penarikan_model->get_data_by_id($simpanan->id);
+
+        $data = [
+            
+        ];
+
+        $html = $this->load->view('simpanan/cetak_laporan', $data, true);
+
+        $this->load->library('dompdf_lib');
+        $this->dompdf_lib->loadHtml($html);
+        $this->dompdf_lib->setPaper([0, 0, 396.85, 283.46], 'landscape');
+        $this->dompdf_lib->render();
+
+        $filename = "nasabah_" . $nasabah->nama_lengkap . "_" . $simpanan->no_rekening . ".pdf";
         $this->dompdf_lib->stream($filename, false);
     }
 }
