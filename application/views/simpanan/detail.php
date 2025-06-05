@@ -1,5 +1,10 @@
 <div class="row">
-    <!-- Simpanan Info Card (Top) -->
+    <?php
+    function safe_base64_encode($string)
+    {
+        return strtr(base64_encode($string), '+/=', '-_.');
+    }
+    ?>
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-primary">
@@ -37,14 +42,18 @@
                         <th>Tanggal Simpanan</th>
                         <td>: <?= date('d-m-Y', strtotime($simpanan->tanggal_simpanan)) ?></td>
                     </tr>
-                    <tr>
-                        <th>Durasi</th>
-                        <td>: <?= format_durasi($simpanan->durasi) ?></td>
-                    </tr>
-                    <tr>
-                        <th>Ahli Waris</th>
-                        <td>: <?= $simpanan->nama_ahli_waris ?> (<?= $simpanan->hubungan_ahli_waris ?> dari <?= $nasabah->nama_lengkap ?>), <?= $simpanan->telp_ahli_waris ?></td>
-                    </tr>
+                    <?php if ($jenis->nama == 'Deposito'): ?>
+                        <tr id="field-durasi-deposito">
+                            <th>Durasi</th>
+                            <td>: <?= format_durasi($simpanan->durasi) ?></td>
+                        </tr>
+                        <?php if (empty($simpanan->nama_ahli_waris)): ?>
+                            <tr id="field-ahli-waris">
+                                <th>Ahli Waris</th>
+                                <td>: <?= $simpanan->nama_ahli_waris ?> (<?= $simpanan->hubungan_ahli_waris ?> dari <?= $nasabah->nama_lengkap ?>), <?= $simpanan->telp_ahli_waris ?></td>
+                            </tr>
+                        <?php endif ?>
+                    <?php endif; ?>
                     <tr>
                         <th>Status</th>
                         <td>
@@ -55,6 +64,14 @@
                         </td>
                     </tr>
                 </table>
+                <div class="d-flex justify-content-end gap-2">
+                    <button onclick="printNasabah('<?= $simpanan->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
+                        Cetak Nasabah <i class="fa fa-file ms-2"></i>
+                    </button>
+                    <button onclick="window.location='<?= base_url('simpanan/laporan') . '?id=' . safe_base64_encode($simpanan->no_rekening) . '&code=1' ?>'" class="btn btn-warning">
+                        Cetak Laporan <i class="fa fa-file ms-2"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -308,24 +325,24 @@
         });
     }
 
-    var tabel_detail_penarikan = $('#tabel_detail_penarikan').DataTable({ 
+    var tabel_detail_penarikan = $('#tabel_detail_penarikan').DataTable({
         "responsive": true,
         "destroy": true,
         "processing": true,
         "serverSide": true,
         "order": [
             [1, "desc"]
-        ], 
+        ],
         "autoWidth": false,
         "ajax": {
             "url": "<?= site_url('penarikan/fetch_detail_penarikan_by_simpanan') ?>",
             "type": "POST",
             "data": function(d) {
-                d.simpanan_id = simpananId; 
+                d.simpanan_id = simpananId;
             }
         },
         "columns": [
-            
+
             {
                 "data": 0,
                 "className": "text-center",
@@ -334,15 +351,15 @@
             },
             {
                 "data": 1
-            }, 
+            },
             {
                 "data": 2,
                 "className": "text-end"
-            }, 
+            },
             {
                 "data": 3,
                 "className": "text-end"
-            }, 
+            },
             {
                 "data": 4
             },
@@ -351,7 +368,7 @@
                 "orderable": false,
                 "className": "text-center",
                 "width": "10%"
-            } 
+            }
         ],
     });
 
@@ -393,6 +410,40 @@
                         Swal.fire("Error AJAX!", "Terjadi kesalahan: " + xhr.status + " \n" + xhr.responseText + " \n" + thrownError, "error");
                     }
                 });
+            }
+        });
+    }
+
+    function printNasabah(id, nama) {
+        Swal.fire({
+            title: "Print data ini?",
+            html: `Yakin ingin print data dari <strong>${nama}</strong>?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.open("<?= base_url('simpanan/print_nasabah?id=') ?>" + id, "_blank");
+                window.location.reload();
+            }
+        });
+    }
+
+    function printLaporan(id, nama) {
+        Swal.fire({
+            title: "Print data ini?",
+            html: `Yakin ingin print data dari <strong>${nama}</strong>?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.open("<?= base_url('simpanan/print_laporan?id=') ?>" + id, "_blank");
+                window.location.reload();
             }
         });
     }
