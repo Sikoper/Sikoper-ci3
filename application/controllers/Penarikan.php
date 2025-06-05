@@ -71,7 +71,7 @@ class Penarikan extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "<i class='fa fa-user-lock'></i> Penarikan",
+            'judul' => "<i class='fa fa-dollar'></i> Penarikan",
             'isi'   => $this->load->view('penarikan/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -92,6 +92,11 @@ class Penarikan extends CI_Controller
         $nasabah_id = $this->input->post('nasabah_id');
         $data = $this->Penarikan_model->get_rekening_dengan_jenis($nasabah_id);
         echo json_encode($data);
+    }
+
+    private function _safe_base64_encode($string)
+    {
+        return strtr(base64_encode($string), '+/=', '-_?');
     }
 
     public function proses()
@@ -191,6 +196,7 @@ class Penarikan extends CI_Controller
             $msg = ['error' => $errors];
         } else {
             $this->db->trans_start();
+
             $data_penarikan_header = [
                 'simpanan_id'       => $simpanan_id,
                 'pegawai_id'        => $pegawai_id,
@@ -212,13 +218,27 @@ class Penarikan extends CI_Controller
 
                 if ($inserted_detail) {
                     $total_deduction_from_saldo = $jumlah_penarikan_diminta + $penalty_rp_final;
-
                     log_message('debug', "Mencoba mengurangi saldo untuk simpanan_id: {$simpanan_id} sejumlah: {$total_deduction_from_saldo}");
                     $saldo_berkurang = $this->Penarikan_model->kurangi_saldo_simpanan($simpanan_id, $total_deduction_from_saldo);
 
                     if ($saldo_berkurang) {
                         $this->db->trans_commit();
-                        $msg = ['success' => 'Penarikan berhasil diproses, detail dicatat, dan saldo telah diperbarui.'];
+
+                        $redirect_url_final = site_url('simpanan');
+                        $pesan_sukses = 'Penarikan berhasil diproses, detail dicatat, dan saldo telah diperbarui.';
+
+                        if (!empty($simpanan_data) && isset($simpanan_data->no_rekening)) {
+                            $encoded_rek = $this->_safe_base64_encode($simpanan_data->no_rekening);
+                            $redirect_url_final = site_url('penarikan/detail/' . $encoded_rek);
+                        } else {
+                            $pesan_sukses .= ' Namun, gagal menyiapkan link detail otomatis karena data simpanan tidak lengkap.';
+                            log_message('error', 'Gagal mendapatkan no_rekening dari $simpanan_data untuk redirect setelah penarikan simpanan_id: ' . $simpanan_id . '. $simpanan_data: ' . print_r($simpanan_data, true));
+                        }
+
+                        $msg = [
+                            'success' => $pesan_sukses,
+                            'redirect' => $redirect_url_final
+                        ];
                     } else {
                         $this->db->trans_rollback();
                         $msg = ['error_save' => 'Gagal memperbarui saldo nasabah. Transaksi dibatalkan.'];
@@ -230,7 +250,7 @@ class Penarikan extends CI_Controller
                 }
             } else {
                 $this->db->trans_rollback();
-                $msg = ['error_save' => 'Gagal menyimpan data penarikan (header). Silakan coba lagi.'];
+                $msg = ['error_save' => 'Gagal menyimpan data penarikan (header). Transaksi dibatalkan.'];
             }
         }
         echo json_encode($msg);
@@ -270,12 +290,12 @@ class Penarikan extends CI_Controller
     public function delete()
     {
         $id = $this->input->post('id');
-            $deleted = $this->Penarikan_model->hapus_data_penarikan_by_id($id); 
-            if ($deleted) {
-                echo json_encode(['success' => 'Data berhasil dihapus.']);
-            } else {
-                echo json_encode(['error' => 'Gagal menghapus data.']);
-            }
+        $deleted = $this->Penarikan_model->hapus_data_penarikan_by_id($id);
+        if ($deleted) {
+            echo json_encode(['success' => 'Data berhasil dihapus.']);
+        } else {
+            echo json_encode(['error' => 'Gagal menghapus data.']);
+        }
     }
 
     public function getDataById()
@@ -408,25 +428,6 @@ class Penarikan extends CI_Controller
         }
     }
 
-
-
-    public function edit($id = null)
-    {
-        if ($id === null) {
-            show_404();
-        }
-        $data['penarikan'] = $this->Penarikan_model->getById($id);
-
-        if (!$data['penarikan']) {
-            show_404();
-        }
-        $parser = [
-            'judul' => "<i class='fa fa-user-edit'></i> Penarikan",
-            'isi'   => $this->load->view('penarikan/editForm', $data, TRUE)
-        ];
-        $this->parser->parse('templates/main', $parser);
-    }
-
     public function detail($encoded_rek = null)
     {
         $allowed_roles = ['Admin', 'Direktur', 'Pegawai'];
@@ -459,8 +460,8 @@ class Penarikan extends CI_Controller
 
         $akumulasi_penarikan = $this->Penarikan_model->get_akumulasi_penarikan_by_simpanan($simpanan->id);
 
-        if (!function_exists('format_durasi_simpanan')) {
-            function format_durasi_simpanan($bulan)
+        if (!function_exists('format_durasi')) {
+            function format_durasi($bulan)
             {
                 if (!$bulan || $bulan <= 0) return '-';
                 $tahun = floor($bulan / 12);
@@ -544,50 +545,48 @@ class Penarikan extends CI_Controller
     }
 
     public function hapus_detail_penarikan_ajax()
-{
-    $penarikan_id = $this->input->post('penarikan_id'); // Ini adalah ID dari tbpenarikan (header)
-    if (empty($penarikan_id) || !ctype_digit((string)$penarikan_id)) {
-        echo json_encode(['error' => 'ID Penarikan tidak valid.']);
-        return;
-    }
+    {
+        $penarikan_id = $this->input->post('penarikan_id');
+        if (empty($penarikan_id) || !ctype_digit((string)$penarikan_id)) {
+            echo json_encode(['error' => 'ID Penarikan tidak valid.']);
+            return;
+        }
 
-    $this->db->trans_start(); // Memulai transaksi database
+        $this->db->trans_start();
+        $penarikan_header_data = $this->Penarikan_model->get_penarikan_untuk_dihapus($penarikan_id);
+        if (!$penarikan_header_data) {
+            $this->db->trans_rollback();
+            echo json_encode(['error' => 'Data penarikan (header) tidak ditemukan.']);
+            return;
+        }
 
-    // 1. Mengambil data penarikan (header) yang akan dihapus
-    $penarikan_header_data = $this->Penarikan_model->get_penarikan_untuk_dihapus($penarikan_id);
-    if (!$penarikan_header_data) {
-        $this->db->trans_rollback();
-        echo json_encode(['error' => 'Data penarikan (header) tidak ditemukan.']);
-        return;
-    }
+        $simpanan_id = $penarikan_header_data->simpanan_id;
+        $jumlah_kembali_ke_saldo = (float)$penarikan_header_data->total_penarikan + (float)$penarikan_header_data->jumlah_denda;
+        $deleted_header = $this->Penarikan_model->hapus_data_penarikan_by_id($penarikan_id);
 
-    $simpanan_id = $penarikan_header_data->simpanan_id;
-    $jumlah_kembali_ke_saldo = (float)$penarikan_header_data->total_penarikan + (float)$penarikan_header_data->jumlah_denda;
-    $deleted_header = $this->Penarikan_model->hapus_data_penarikan_by_id($penarikan_id);
+        if ($deleted_header) {
+            $kriteria_hapus_detail = [
+                'simpanan_id'       => $penarikan_header_data->simpanan_id,
+                'tanggal_penarikan' => $penarikan_header_data->tanggal_penarikan,
+                'jumlah_penarikan'  => $penarikan_header_data->total_penarikan,
+                'pegawai_id'        => $penarikan_header_data->pegawai_id,
+                'status'            => 'disetujui'
+            ];
 
-    if ($deleted_header) {
-        $kriteria_hapus_detail = [
-            'simpanan_id'       => $penarikan_header_data->simpanan_id,
-            'tanggal_penarikan' => $penarikan_header_data->tanggal_penarikan,
-            'jumlah_penarikan'  => $penarikan_header_data->total_penarikan, 
-            'pegawai_id'        => $penarikan_header_data->pegawai_id,
-            'status'            => 'disetujui'
-        ];
+            $this->Tarik_model->hapus_detail_by_kriteria($kriteria_hapus_detail);
 
-        $this->Tarik_model->hapus_detail_by_kriteria($kriteria_hapus_detail);
+            $saldo_updated = $this->Penarikan_model->tambah_saldo_simpanan($simpanan_id, $jumlah_kembali_ke_saldo);
 
-        $saldo_updated = $this->Penarikan_model->tambah_saldo_simpanan($simpanan_id, $jumlah_kembali_ke_saldo);
-        
-        if ($saldo_updated) {
-            $this->db->trans_commit(); 
-            echo json_encode(['success' => 'Data penarikan berhasil dihapus dan saldo telah dikembalikan.']);
+            if ($saldo_updated) {
+                $this->db->trans_commit();
+                echo json_encode(['success' => 'Data penarikan berhasil dihapus dan saldo telah dikembalikan.']);
+            } else {
+                $this->db->trans_rollback();
+                echo json_encode(['error' => 'Gagal mengembalikan saldo simpanan setelah penghapusan. Transaksi dibatalkan.']);
+            }
         } else {
             $this->db->trans_rollback();
-            echo json_encode(['error' => 'Gagal mengembalikan saldo simpanan setelah penghapusan. Transaksi dibatalkan.']);
+            echo json_encode(['error' => 'Gagal menghapus data penarikan (header). Transaksi dibatalkan.']);
         }
-    } else {
-        $this->db->trans_rollback();
-        echo json_encode(['error' => 'Gagal menghapus data penarikan (header). Transaksi dibatalkan.']);
     }
-}
 }

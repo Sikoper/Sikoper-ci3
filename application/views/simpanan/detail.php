@@ -381,9 +381,7 @@
                                 text: response.success,
                                 icon: "success"
                             }).then(() => {
-                                tabel_detail_penarikan.ajax.reload(null, false);
                                 window.location.reload(); 
-                                updateTotalPenarikanInfo();
                             });
                         } else if (response.error) {
                             Swal.fire("Gagal!", response.error, "error");
