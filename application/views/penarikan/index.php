@@ -100,6 +100,14 @@
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label for="perkiraan_sisa_saldo_display">Perkiraan Sisa Saldo Setelah Transaksi</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="text" id="perkiraan_sisa_saldo_display" class="form-control text-end" readonly style="font-weight: bold; background-color: #e9ecef; opacity: 1;" />
+                        </div>
+                    </div>
+
                     <?php if ($level == 'Admin'): ?>
                         <div class="form-group mb-3" style="height: 80px;">
                             <label for="pegawai_id">Pegawai</label>
@@ -148,6 +156,9 @@
         const saldoAN = new AutoNumeric('#saldo', autoNumericV4OptionsRp);
         saldoAN.set(0);
 
+        const perkiraanSisaSaldoAN = new AutoNumeric('#perkiraan_sisa_saldo_display', autoNumericV4OptionsRp);
+        perkiraanSisaSaldoAN.set(0);
+
         const dendaRpAN = new AutoNumeric('#denda', autoNumericV4OptionsRp);
         dendaRpAN.set(0);
 
@@ -163,6 +174,16 @@
             const jumlahDendaVal = dendaRpAN.getNumber() || 0;
             const totalAkanDitarik = jumlahPenarikanVal + jumlahDendaVal;
             totalDitarikAN.set(totalAkanDitarik);
+
+            const saldoSaatIniVal = saldoAN.getNumber() || 0;
+            const sisaSaldo = saldoSaatIniVal - totalAkanDitarik;
+            perkiraanSisaSaldoAN.set(sisaSaldo);
+
+            if (sisaSaldo < 0) {
+                $('#perkiraan_sisa_saldo_display').css('color', 'red');
+            } else {
+                $('#perkiraan_sisa_saldo_display').css('color', '');
+            }
         }
 
         $('#jumlah_penarikan').on('input keyup change', function() {
@@ -171,71 +192,135 @@
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
-            let form = $('#form_simpan')[0];
-            let data = new FormData(form);
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('penarikan/proses') ?>",
-                data: data,
-                dataType: "json",
-                processData: false,
-                contentType: false,
-                cache: false,
-                beforeSend: function() {
-                    $('#tombol_simpan').prop('disabled', true)
-                    $('#tombol_simpan').html('<i class="fa fa-spin fa-spinner"></i>')
-                },
-                complete: function() {
-                    $('#tombol_simpan').prop('disabled', false)
-                    $('#tombol_simpan').html('Tarik Uang')
-                },
-                success: function(response) {
-                    if (response.error) {
-                        let dataError = response.error;
-                        if (dataError.errorNasabah) {
-                            $('#errorNasabah').html(dataError.errorNasabah).show();
-                            $('#nasabah').addClass('is-invalid');
-                        } else {
-                            $('#errorNasabah').fadeOut();
-                            $('#nasabah').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorSimpanan) {
-                            $('#errorSimpanan').html(dataError.errorSimpanan).show();
-                            $('#rekening').addClass('is-invalid');
-                        } else {
-                            $('#errorSimpanan').fadeOut();
-                            $('#rekening').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorJumlah) {
-                            $('#errorJumlah').html(dataError.errorJumlah).show();
-                            $('#jumlah_penarikan').addClass('is-invalid');
-                        } else {
-                            $('#errorJumlah').fadeOut();
-                            $('#jumlah_penarikan').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorPegawai) {
-                            $('#errorPegawai').html(dataError.errorPegawai).show();
-                            $('#pegawai_id').addClass('is-invalid');
-                        } else {
-                            if ($('#pegawai_id').is('select')) {
-                                $('#errorPegawai').fadeOut();
-                                $('#pegawai_id').removeClass('is-invalid').addClass('is-valid');
+            const namaNasabahText = $('#nasabah option:selected').text() || 'Nasabah belum dipilih';
+            const noRekeningText = $('#rekening option:selected').text() || 'Rekening belum dipilih';
+            const saldoSaatIniNum = saldoAN.getNumber() || 0;
+            const jumlahPenarikanNum = parseFloat($('#jumlah_penarikan').autoNumeric('get').replace(/\./g, '').replace(',', '.')) || 0;
+            const jumlahDendaNum = dendaRpAN.getNumber() || 0;
+            const totalAkanDitarikNum = jumlahPenarikanNum + jumlahDendaNum;
+            const perkiraanSisaSaldoNum = saldoSaatIniNum - totalAkanDitarikNum;
+            const formatRp = (num) => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
+
+            Swal.fire({
+                title: 'Konfirmasi Penarikan',
+                width: '600px',
+                html: `Mohon periksa kembali detail transaksi berikut:<br><br>` +
+                    `<table style="width:100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; line-height: 1.6;">` +
+                    `  <tr>` +
+                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 180px;">Nasabah:</td>` +
+                    `    <td style="padding: 4px 0 4px 5px; vertical-align: top;">${namaNasabahText}</td>` +
+                    `  </tr>` +
+                    `  <tr>` +
+                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">No. Rekening:</td>` +
+                    `    <td style="padding: 4px 0 4px 5px; vertical-align: top;">${noRekeningText}</td>` +
+                    `  </tr>` +
+                    `  <tr>` +
+                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Saldo Saat Ini:</td>` +
+                    `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(saldoSaatIniNum)}</td>` +
+                    `  </tr>` +
+                    `  <tr>` +
+                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Jumlah Penarikan:</td>` +
+                    `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(jumlahPenarikanNum)}</td>` +
+                    `  </tr>` +
+                    (jumlahDendaNum > 0 ?
+                        `  <tr>` +
+                        `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Jumlah Denda:</td>` +
+                        `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(jumlahDendaNum)}</td>` +
+                        `  </tr>` : '') +
+                    `  <tr>` +
+                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Total Akan Didebet:</td>` +
+                    `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(totalAkanDitarikNum)}</td>` +
+                    `  </tr>` +
+                    `  <tr>` +
+                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Perkiraan Sisa Saldo:</td>` +
+                    `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(perkiraanSisaSaldoNum)}</td>` +
+                    `  </tr>` +
+                    `</table>` +
+                    `Apakah Anda yakin ingin melanjutkan?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Lanjutkan Penarikan!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let form = $('#form_simpan')[0];
+                    let data = new FormData(form);
+
+                    $.ajax({
+                        type: "POST",
+                        url: "<?= base_url('penarikan/proses') ?>",
+                        data: data,
+                        dataType: "json",
+                        processData: false,
+                        contentType: false,
+                        cache: false,
+                        beforeSend: function() {
+                            $('#tombol_simpan').prop('disabled', true)
+                            $('#tombol_simpan').html('<i class="fa fa-spin fa-spinner"></i>')
+                        },
+                        complete: function() {
+                            $('#tombol_simpan').prop('disabled', false)
+                            $('#tombol_simpan').html('Tarik Uang')
+                        },
+                        success: function(response) {
+                            if (response.error) {
+                                let dataError = response.error;
+                                if (dataError.errorNasabah) {
+                                    $('#errorNasabah').html(dataError.errorNasabah).show();
+                                    $('#nasabah').addClass('is-invalid');
+                                } else {
+                                    $('#errorNasabah').fadeOut();
+                                    $('#nasabah').removeClass('is-invalid').addClass('is-valid');
+                                }
+                                if (dataError.errorSimpanan) {
+                                    $('#errorSimpanan').html(dataError.errorSimpanan).show();
+                                    $('#rekening').addClass('is-invalid');
+                                } else {
+                                    $('#errorSimpanan').fadeOut();
+                                    $('#rekening').removeClass('is-invalid').addClass('is-valid');
+                                }
+                                if (dataError.errorJumlah) {
+                                    $('#errorJumlah').html(dataError.errorJumlah).show();
+                                    $('#jumlah_penarikan').addClass('is-invalid');
+                                } else {
+                                    $('#errorJumlah').fadeOut();
+                                    $('#jumlah_penarikan').removeClass('is-invalid').addClass('is-valid');
+                                }
+                                if (dataError.errorPegawai) {
+                                    $('#errorPegawai').html(dataError.errorPegawai).show();
+                                    $('#pegawai_id').addClass('is-invalid');
+                                } else {
+                                    if ($('#pegawai_id').is('select')) {
+                                        $('#errorPegawai').fadeOut();
+                                        $('#pegawai_id').removeClass('is-invalid').addClass('is-valid');
+                                    }
+                                }
+                            } else if (response.error_save) {
+                                Swal.fire("Gagal!", response.error_save, "error");
+                            } else if (response.success) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Berhasil!",
+                                    html: response.success
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        if (response.redirect) {
+                                            window.location.href = response.redirect;
+                                        } else {
+                                            window.location.href = '<?= base_url('penarikan') ?>';
+                                        }
+                                    }
+                                });
+                            } else {
+                                Swal.fire("Error!", "Terjadi kesalahan yang tidak diketahui saat memproses.", "error");
                             }
+                        },
+                        error: function(xhr, thrownError) {
+                            alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                         }
-                    } else {
-                        Swal.fire({
-                            icon: "success",
-                            title: "Success!",
-                            html: response.success
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location = '<?= base_url('simpanan') ?>';
-                            }
-                        });
-                    }
-                },
-                error: function(xhr, thrownError) {
-                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                    });
                 }
             });
         });
@@ -334,9 +419,22 @@
 
                         if (response.kategori && response.kategori.nama === 'Deposito') {
                             $('#jenis_tabungan').show();
+
+                            if (response.calculated_penalty_rp > 0) {
+                                Swal.fire({
+                                    title: 'Informasi Denda Deposito',
+                                    html: `Peringatan: Penarikan untuk rekening Deposito ini sebelum tanggal jatuh tempo (<b>${response.tenor}</b>) akan dikenakan denda.<br><br>` +
+                                        `Perkiraan denda jika ditarik hari ini: <b>Rp ${new Intl.NumberFormat('id-ID').format(response.calculated_penalty_rp)}</b>.<br><br>` +
+                                        `Pastikan nasabah telah memahami ketentuan ini sebelum melanjutkan proses penarikan.`,
+                                    icon: 'warning',
+                                    confirmButtonText: 'Saya Mengerti'
+                                });
+                            }
+
                         } else {
                             $('#jenis_tabungan').hide();
                         }
+
                         updateTotalYangAkanDitarik();
                     },
                     error: function(xhr, thrownError) {
