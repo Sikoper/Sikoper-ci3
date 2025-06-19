@@ -25,7 +25,7 @@ class Nasabah extends CI_Controller
     public function index()
     {
         $parser = [
-            'judul' => "<i class='fa fa-users'></i> Nasabah",
+            'judul' => "Data Nasabah",
             'isi'   => $this->load->view('nasabah/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);

@@ -27,7 +27,7 @@ class Simpanan extends CI_Controller
     public function index()
     {
         $parser = [
-            'judul' => "<i class='fa fa-money-check'></i> Simpanan",
+            'judul' => "Data Tabungan",
             'isi'   => $this->load->view('simpanan/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -85,7 +85,7 @@ class Simpanan extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "<i class='fa fa-money-check'></i> Simpanan",
+            'judul' => "Buka Tabungan",
             'isi'   => $this->load->view('simpanan/addForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
