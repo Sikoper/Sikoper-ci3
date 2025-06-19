@@ -124,3 +124,4 @@ $route['setoran/get_no_rekening'] = 'setoran/get_no_rekening';
 $route['setoran/fetchData'] = 'setoran/fetchData';
 
 $route['bunga'] = 'bunga';
+$route['bunga/run_bunga'] = 'bunga/run_bunga';

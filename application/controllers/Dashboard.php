@@ -11,10 +11,6 @@ class Dashboard extends CI_Controller
         $this->load->model('Penarikan_model');
         $this->load->model('Pegawai_model');
         $this->load->model('Nasabah_model');
-
-        if (date('d') == '28') {
-            $this->Bunga_model->checkAndRunBunga();
-        }
     }
     public function index()
     {
