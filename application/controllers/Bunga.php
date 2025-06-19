@@ -31,7 +31,7 @@ class Bunga extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "<i class='fa fa-money-check'></i> Bunga",
+            'judul' => "Daftar Bunga Nasabah",
             'isi'   => $this->load->view('bunga/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
