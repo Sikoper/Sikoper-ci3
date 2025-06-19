@@ -418,10 +418,7 @@
 
         const preselectedNasabah = $('#preselectedNasabah').val();
 
-        console.log('Page Ready. Preselected Nasabah ID:', preselectedNasabah); // DEBUG 1
-
         if (preselectedNasabah) {
-            console.log('Triggering change on #nasabah to start the process.'); // DEBUG 2
             $('#nasabah').trigger('change');
         }
 
