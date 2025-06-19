@@ -18,20 +18,41 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="nasabah">Pilih Nasabah</label>
                         <div class="d-flex align-items-center">
-                            <select id="nasabah" class="form-control select2" name="nasabah" style="width: auto; flex: 1;"></select>
+                            <select id="nasabah" class="form-control select2" name="nasabah" <?= $disabled ? 'disabled' : '' ?> style="width: auto; flex: 1;">
+                                <option value="">-- Pilih Nasabah --</option>
+                                <?php foreach ($nasabah as $n): ?>
+                                    <option value="<?= $n->id ?>" <?= ($selected_nasabah == $n->id) ? 'selected' : '' ?>>
+                                        <?= $n->nama_lengkap ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div id="errorNasabah" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
-                        <label for="simpanan_id">Nomor Rekening</label>
-                        <select class="form-control select2" name="simpanan_id" id="rekening">
-                            <option value="">-- Pilih Rekening --</option>
+                        <label for="rekening">Nomor Rekening</label>
+                        <select class="form-control select2" name="simpanan_id" id="rekening" <?= $disabled ? 'disabled' : '' ?>>
+                            <?php if (!empty($tabungan)): ?>
+                                <option value="<?= $tabungan->id ?>" selected><?= $tabungan->no_rekening ?></option>
+                            <?php else: ?>
+                                <option value="">-- Pilih Rekening --</option>
+                            <?php endif; ?>
                         </select>
                         <div id="errorSimpanan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
+
+                    <?php if (!empty($tabungan)): ?>
+                        <input type="hidden" id="preselectedNasabah" value="<?= $tabungan->nasabah_id ?>">
+                        <input type="hidden" id="preselectedRekening" value="<?= $tabungan->id ?>">
+                    <?php endif; ?>
+
+                    <?php if (!empty($tabungan)): ?>
+                        <input type="hidden" name="nasabah" value="<?= $tabungan->nasabah_id ?>">
+                        <input type="hidden" name="simpanan_id" value="<?= $tabungan->id ?>">
+                    <?php endif; ?>
 
                     <div id="jenis_tabungan" style="display: none;">
                         <div class="row">
@@ -374,7 +395,14 @@
                                 html += `<option value="${item.id}">${item.text}</option>`;
                             });
                         }
+
                         $('#rekening').html(html);
+
+                        const preselected = $('#preselectedRekening').val();
+                        if (preselected) {
+                            $('#rekening').val(preselected).trigger('change');
+                            $('#rekening').prop('disabled', true);
+                        }
                     },
                     error: function() {
                         alert('Gagal mengambil data rekening.');
@@ -383,6 +411,19 @@
                 });
             }
         });
+
+        $('#rekening').select2({
+            placeholder: '-- Pilih Rekening --'
+        });
+
+        const preselectedNasabah = $('#preselectedNasabah').val();
+
+        console.log('Page Ready. Preselected Nasabah ID:', preselectedNasabah); // DEBUG 1
+
+        if (preselectedNasabah) {
+            console.log('Triggering change on #nasabah to start the process.'); // DEBUG 2
+            $('#nasabah').trigger('change');
+        }
 
         $('#rekening').on('change', function() {
             const id = $(this).val();
