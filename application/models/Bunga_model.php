@@ -85,6 +85,7 @@ class Bunga_model extends CI_Model
 
     public function bunga_proses()
     {
+
         $today = date('Y-m-d');
         $lastMonth = date('Y-m-d', strtotime('-1 month'));
 

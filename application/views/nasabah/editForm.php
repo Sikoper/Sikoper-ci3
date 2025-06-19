@@ -72,11 +72,52 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group" style="height: 80px;">
+                    <?php
+                    $pekerjaan_tersimpan = $nasabah->pekerjaan;
+                    $daftar_pekerjaan_standar = [
+                        'Petani/Pekebun',
+                        'Peternak',
+                        'Nelayan',
+                        'Pedagang',
+                        'Tukang (Kayu, Batu, dll)',
+                        'Guru',
+                        'Perangkat Desa',
+                        'Ibu Rumah Tangga',
+                        'Buruh Tani/Harian',
+                        'Wiraswasta',
+                        'Pensiunan',
+                        'Belum/Tidak Bekerja'
+                    ];
+
+                    $is_pekerjaan_standar = in_array($pekerjaan_tersimpan, $daftar_pekerjaan_standar);
+                    $pekerjaan_lainnya_value = '';
+
+                    if (!$is_pekerjaan_standar && !empty($pekerjaan_tersimpan)) {
+                        $pekerjaan_lainnya_value = $pekerjaan_tersimpan;
+                    }
+                    ?>
+
+                    <div class="form-group" style="min-height: 80px;">
                         <label for="pekerjaan">Pekerjaan</label>
-                        <input type="text" id="pekerjaan" name="pekerjaan" class="form-control" value="<?= $nasabah->pekerjaan ?>" placeholder="Pekerjaan sekarang" autocomplete="off">
+                        <select id="pekerjaan" name="pekerjaan" class="form-control">
+                            <option value="" <?= empty($pekerjaan_tersimpan) ? 'selected' : '' ?> disabled>Pilih pekerjaan Nasabah</option>
+
+                            <?php foreach ($daftar_pekerjaan_standar as $pekerjaan) : ?>
+                                <option value="<?= $pekerjaan ?>" <?= ($pekerjaan == $pekerjaan_tersimpan) ? 'selected' : '' ?>>
+                                    <?= $pekerjaan ?>
+                                </option>
+                            <?php endforeach; ?>
+
+                            <option value="Lainnya" <?= (!$is_pekerjaan_standar && !empty($pekerjaan_tersimpan)) ? 'selected' : '' ?>>
+                                Lainnya
+                            </option>
+                        </select>
                         <div id="errorPekerjaan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
+
+                        <div id="form-pekerjaan-lainnya" style="display: <?= (!$is_pekerjaan_standar && !empty($pekerjaan_tersimpan)) ? 'block' : 'none' ?>; margin-top: 15px;">
+                            <label for="pekerjaan_lainnya">Sebutkan Pekerjaan Nasabah</label>
+                            <input type="text" id="pekerjaan_lainnya" name="pekerjaan_lainnya" class="form-control" placeholder="Tulis pekerjaan di sini" value="<?= $pekerjaan_lainnya_value ?>">
+                        </div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
@@ -303,4 +344,22 @@
             });
         });
     });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectPekerjaan = document.getElementById('pekerjaan');
+    const formPekerjaanLainnya = document.getElementById('form-pekerjaan-lainnya');
+    const inputPekerjaanLainnya = document.getElementById('pekerjaan_lainnya');
+
+    selectPekerjaan.addEventListener('change', function() {
+        if (this.value === 'Lainnya') {
+            formPekerjaanLainnya.style.display = 'block';
+            inputPekerjaanLainnya.focus();
+        } else {
+            formPekerjaanLainnya.style.display = 'none';
+            inputPekerjaanLainnya.value = '';
+        }
+    });
+});
 </script>
