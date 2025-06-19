@@ -28,24 +28,8 @@
             </tr>
             <tr>
                 <th>Alamat</th>
-                <td><?= $nasabah->alamat ?> RT <?= $nasabah->rt ?> /RW <?= $nasabah->rw ?></td>
+                <td><?= $nasabah->alamat ?>
             </tr> 
-            <tr>
-                <th>Desa</th>
-                <td><?= $nama_desa ?></td>
-            </tr>
-            <tr>
-                <th>Kecamatan</th>
-                <td><?= $nama_kecamatan ?></td>
-            </tr>
-            <tr>
-                <th>Kabupaten</th>
-                <td><?= $nama_kabupaten ?></td>
-            </tr>
-            <tr>
-                <th>Provinsi</th>
-                <td><?= $nama_provinsi ?></td>
-            </tr>
             <tr>
                 <th>Pekerjaan</th>
                 <td><?= $nasabah->pekerjaan ?></td>
