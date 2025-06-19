@@ -62,8 +62,21 @@ class Penarikan extends CI_Controller
 
     public function index()
     {
+        function safe_base64_decode($string)
+        {
+            return base64_decode(strtr($string, '-_?', '+/='));
+        }
+        $encoded_rek = $this->input->get('id');
+        if (!empty($encoded_rek)) {
+            $no_rekening = safe_base64_decode($encoded_rek);
+            $tabungan = $this->Simpanan_model->get_data_by_norek($no_rekening);
+        }
 
         $data = [
+            'tabungan' => $tabungan ?? null,
+            'selected_nasabah' => $tabungan->nasabah_id ?? null,
+            'selected_rekening' => $tabungan->no_rekening ?? null,
+            'disabled' => !empty($tabungan),
             'jenis' => $this->Kategori_model->get_data(),
             'pegawai' => $this->Pegawai_model->get_data(),
             'nasabah' => $this->Nasabah_model->get_data(),

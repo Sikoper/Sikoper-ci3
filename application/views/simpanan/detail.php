@@ -7,8 +7,8 @@
     ?>
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-primary">
-                <h5 class="mb-0 text-white"><i class="fa fa-id-card"></i> Informasi Simpanan</h5>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fa fa-id-card"></i> Informasi Simpanan</h5>
             </div>
             <div class="card-body">
                 <table class="table table-borderless">
@@ -81,9 +81,9 @@
         <div class="col-md-6">
             <div class="col-md-12">
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail Simpanan</h5>
-                        <button class="btn btn-primary" onclick="window.location='<?= base_url('setoran') ?>'"><i class="fa fa-circle-plus"></i> Tambah Data</button>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fa fa-list"></i> Detail Setoran</h5>
+                        <button class="btn btn-success" onclick="window.location='<?= base_url('setoran') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Setor Tunai</button>
                     </div>
                     <div class="card-body">
                         <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
@@ -117,9 +117,9 @@
         <div class="col-md-6">
             <div class="col-md-12">
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                        <button class="btn btn-primary" onclick="window.location='<?= base_url('penarikan') ?>'"><i class="fa fa-circle-plus"></i> Tambah Data</button>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
+                        <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
                     </div>
                     <div class="card-body">
                         <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
