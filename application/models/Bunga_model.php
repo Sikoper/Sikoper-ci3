@@ -85,7 +85,7 @@ class Bunga_model extends CI_Model
 
     public function bunga_proses()
     {
-        if (date('d') != '28') {
+        if (date('d') != '19') {
             return;
         }
 

@@ -58,11 +58,30 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group" style="height: 80px;">
+                    <div class="form-group" style="min-height: 80px;">
                         <label for="pekerjaan">Pekerjaan</label>
-                        <input type="text" id="pekerjaan" name="pekerjaan" class="form-control" placeholder="Pekerjaan sekarang" autocomplete="off">
+                        <select id="pekerjaan" name="pekerjaan" class="form-control">
+                            <option value="" selected disabled>Pilih pekerjaan Nasabah</option>
+                            <option value="Petani/Pekebun">Petani/Pekebun</option>
+                            <option value="Peternak">Peternak</option>
+                            <option value="Nelayan">Nelayan</option>
+                            <option value="Pedagang">Pedagang</option>
+                            <option value="Tukang (Kayu, Batu, dll)">Tukang (Kayu, Batu, dll)</option>
+                            <option value="Guru">Guru</option>
+                            <option value="Perangkat Desa">Perangkat Desa</option>
+                            <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
+                            <option value="Buruh Tani/Harian">Buruh Tani/Harian</option>
+                            <option value="Wiraswasta">Wiraswasta</option>
+                            <option value="Pensiunan">Pensiunan</option>
+                            <option value="Belum/Tidak Bekerja">Belum/Tidak Bekerja</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
                         <div id="errorPekerjaan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
+
+                        <div id="form-pekerjaan-lainnya" style="display: none; margin-top: 15px;">
+                            <label for="pekerjaan_lainnya">Tulis Pekerjaan Nasabah</label>
+                            <input type="text" id="pekerjaan_lainnya" name="pekerjaan_lainnya" class="form-control" placeholder="Tulis pekerjaan di sini">
+                        </div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
@@ -513,4 +532,24 @@
             }
         });
     });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const selectPekerjaan = document.getElementById('pekerjaan');
+    const formPekerjaanLainnya = document.getElementById('form-pekerjaan-lainnya');
+    const inputPekerjaanLainnya = document.getElementById('pekerjaan_lainnya');
+
+    selectPekerjaan.addEventListener('change', function() {
+        if (this.value === 'Lainnya') {
+            formPekerjaanLainnya.style.display = 'block';
+            inputPekerjaanLainnya.focus();
+        } else {
+            formPekerjaanLainnya.style.display = 'none';
+            inputPekerjaanLainnya.value = '';
+        }
+    });
+
+});
 </script>

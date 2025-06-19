@@ -12,7 +12,7 @@ class Dashboard extends CI_Controller
         $this->load->model('Pegawai_model');
         $this->load->model('Nasabah_model');
 
-        if (date('d') == '28') {
+        if (date('d') == '19') {
             $this->Bunga_model->checkAndRunBunga();
         }
     }
