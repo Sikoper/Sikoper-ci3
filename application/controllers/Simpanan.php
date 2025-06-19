@@ -85,7 +85,7 @@ class Simpanan extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "Buka Tabungan",
+            'judul' => " Form Buka Tabungan Baru ",
             'isi'   => $this->load->view('simpanan/addForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -333,7 +333,7 @@ class Simpanan extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "<i class='fa fa-money-check'></i> Simpanan",
+            'judul' => "Form Edit Simpanan",
             'isi'   => $this->load->view('simpanan/editForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);

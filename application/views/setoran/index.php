@@ -181,7 +181,7 @@
                         cache: false,
                         beforeSend: function() {
                             $('#tombol_simpan_setoran').prop('disabled', true);
-                            $('#tombol_simpan-setoran').html('<i class="fa fa-spin fa-spinner"></i>');
+                            $('#tombol_simpan_setoran').html('<i class="fa fa-spin fa-spinner"></i>');
                         },
                         complete: function() {
                             $('#tombol_simpan_setoran').html('Simpan');

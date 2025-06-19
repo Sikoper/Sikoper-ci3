@@ -89,7 +89,7 @@ class Nasabah extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "<i class='fa fa-user-plus'></i> Nasabah",
+            'judul' => " Form Tambah Nasabah Baru",
             'isi'   => $this->load->view('nasabah/addForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -270,7 +270,7 @@ class Nasabah extends CI_Controller
             'pegawai' => $pegawai,
         ];
         $parser = [
-            'judul' => "<i class='fa fa-user-edit'></i> Nasabah",
+            'judul' => "Form Edit Nasabah",
             'isi'   => $this->load->view('nasabah/editForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -444,7 +444,7 @@ class Nasabah extends CI_Controller
             'level' => $this->session->userdata('level'),
         ];
         $parser = [
-            'judul' => "<i class='fa fa-user'></i> Nasabah",
+            'judul' => "Detail Nasabah",
             'isi'   => $this->load->view('nasabah/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);

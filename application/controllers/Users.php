@@ -16,7 +16,7 @@ class Users extends CI_Controller
     public function index()
     {
         $parser = [
-            'judul' => "<i class='fa fa-user-lock'></i> User",
+            'judul' => "Manajemen Akun Pengguna",
             'isi'   => $this->load->view('users/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -68,7 +68,7 @@ class Users extends CI_Controller
     public function add()
     {
         $parser = [
-            'judul' => "<i class='fa fa-user-plus'></i> User",
+            'judul' => "Form Tambah Akun Pengguna",
             'isi'   => $this->load->view('users/addForm', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -177,7 +177,7 @@ class Users extends CI_Controller
             'users' => $users,
         ];
         $parser = [
-            'judul' => "<i class='fa fa-user-edit'></i> User",
+            'judul' => "Edit Akun Pengguna",
             'isi'   => $this->load->view('users/editForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
