@@ -17,7 +17,7 @@ class Pegawai extends CI_Controller
     public function index()
     {
         $parser = [
-            'judul' => "<i class='fa fa-users'></i> Pegawai",
+            'judul' => "Data Pegawai",
             'isi'   => $this->load->view('pegawai/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -247,7 +247,7 @@ class Pegawai extends CI_Controller
             'pegawai' => $pegawai,
         ];
         $parser = [
-            'judul' => "<i class='fa fa-user-edit'></i> Pegawai",
+            'judul' => "Edit Data Pegawai",
             'isi'   => $this->load->view('pegawai/editForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -391,7 +391,7 @@ class Pegawai extends CI_Controller
             'pegawai' => $pegawai,
         ];
         $parser = [
-            'judul' => "<i class='fa fa-user'></i> Data Pegawai",
+            'judul' => "Detail Data Pegawai",
             'isi'   => $this->load->view('pegawai/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
