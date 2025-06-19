@@ -99,11 +99,12 @@ class Kategori extends CI_Controller
 
             $nama = $this->input->post('nama');
             $bunga = str_replace(',', '.', $this->input->post('bunga'));
-            $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
-            $simpanan_awal    = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
-            $pengendapan      = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
-            $jenis_denda      = $this->input->post('jenis_denda');
-            $jumlah_denda = str_replace(
+            $biaya_registrasi   = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
+            $simpanan_awal      = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
+            $pengendapan        = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
+            $tanggal_pembungaan = $this->input->post('tanggal_pembungaan');
+            $jenis_denda        = $this->input->post('jenis_denda');
+            $jumlah_denda       = str_replace(
                 ['.', ','],
                 ['', '.'],
                 $this->input->post('denda_idr') ?: $this->input->post('denda_persen') ?? ''
@@ -118,6 +119,9 @@ class Kategori extends CI_Controller
             ]);
             $this->form_validation->set_rules('biaya_registrasi', 'Biaya Registrasi', 'required', [
                 'required'     => 'Biaya Registrasi wajib diisi.',
+            ]);
+            $this->form_validation->set_rules('tanggal_pembungaan', 'Tanggal Pembungaan', 'required', [
+                'required'     => 'Tanggal Pembungaan wajib diisi.',
             ]);
             $this->form_validation->set_rules('simpanan_awal', 'Simpanan Awal', 'required', [
                 'required'     => 'Simpanan awal wajib diisi.',
@@ -137,6 +141,7 @@ class Kategori extends CI_Controller
                         'errorBiayaRegistrasi' => form_error('biaya_registrasi'),
                         'errorSimpananAwal' => form_error('simpanan_awal'),
                         'errorPengendapan' => form_error('pengendapan'),
+                        'errorTanggalPembungaan' => form_error('tanggal_pembungaan'),
                         'errorKeterangan' => form_error('keterangan'),
                     ]
                 ];
@@ -147,6 +152,7 @@ class Kategori extends CI_Controller
                     'biaya_registrasi' => $biaya_registrasi,
                     'simpanan_awal' => $simpanan_awal,
                     'pengendapan' => $pengendapan,
+                    'tanggal_bunga' => $tanggal_pembungaan,
                     'jenis_denda' => $jenis_denda,
                     'jumlah_denda' => $jumlah_denda,
                     'keterangan' => $keterangan,
@@ -246,6 +252,7 @@ class Kategori extends CI_Controller
             $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
             $simpanan_awal    = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
             $pengendapan      = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
+            $tanggal_pembungaan = $this->input->post('tanggal_pembungaan');
             $jenis_denda      = $this->input->post('jenis_denda');
             $jumlah_denda = $this->input->post('denda_idr')
                 ? str_replace(['.', ','], ['', '.'], $this->input->post('denda_idr'))
@@ -269,6 +276,9 @@ class Kategori extends CI_Controller
             $this->form_validation->set_rules('pengendapan', 'Pengendapan', 'required', [
                 'required'     => 'Pengendapan wajib diisi.',
             ]);
+            $this->form_validation->set_rules('tanggal_pembungaan', 'Tanggal Pembungaan', 'required', [
+                'required'     => 'Tanggal Pembungaan wajib diisi.',
+            ]);
             $this->form_validation->set_rules('keterangan', 'Keterangan', 'required', [
                 'required'     => 'Keterangan wajib diisi.',
             ]);
@@ -291,6 +301,7 @@ class Kategori extends CI_Controller
                     'biaya_registrasi' => $biaya_registrasi,
                     'simpanan_awal' => $simpanan_awal,
                     'pengendapan' => $pengendapan,
+                    'tanggal_bunga' => $tanggal_pembungaan,
                     'jenis_denda' => $jenis_denda,
                     'jumlah_denda' => $jumlah_denda,
                     'keterangan' => $keterangan,

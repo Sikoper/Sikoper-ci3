@@ -76,11 +76,14 @@ class Bunga_model extends CI_Model
     {
         $today = date('Y-m-d');
         $exists = $this->db->get_where('systems_log', ['tanggal' => $today])->num_rows();
-        if ($exists > 0) return;
-
+        if ($exists > 0) {
+            return false;
+        }
         $this->bunga_proses();
 
         $this->db->insert('systems_log', ['tanggal' => $today]);
+
+        return true;
     }
 
     public function bunga_proses()

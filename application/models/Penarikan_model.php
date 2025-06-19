@@ -174,7 +174,7 @@ class Penarikan_model extends CI_Model
     public function count_new_data($today)
     {
         $this->db->from('tbdetail_penarikan');
-        $this->db->where('tanggal_setoran', $today);
+        $this->db->where('tanggal_penarikan', $today);
         return $this->db->count_all_results();
     }
 
@@ -183,7 +183,7 @@ class Penarikan_model extends CI_Model
         return $this->db->get_where('tbdetail_penarikan', ['id' => $id])->row();
     }
 
-    public function jumlah_setoran()
+    public function jumlah_penarikan()
     {
         $this->db->select('MONTH(tanggal_penarikan) as bulan, COUNT(id) as total_penarikan');
         $this->db->from('tbdetail_penarikan');

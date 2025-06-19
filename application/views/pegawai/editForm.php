@@ -54,88 +54,16 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="tanggal_lahir">Tanggal Lahir</label>
-                        <input type="date" id="tanggal_lahir" name="tanggal_lahir" class="form-control"  value="<?= $pegawai->tanggal_lahir ?>">
+                        <input type="date" id="tanggal_lahir" name="tanggal_lahir" class="form-control" value="<?= $pegawai->tanggal_lahir ?>">
                         <div id="errorTanggalLahir" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="agama">Agama</label>
-                        <input type="text" id="agama" name="agama" class="form-control" placeholder="Agama sesuai KTP"  value="<?= $pegawai->agama ?>" autocomplete="off">
+                        <input type="text" id="agama" name="agama" class="form-control" placeholder="Agama sesuai KTP" value="<?= $pegawai->agama ?>" autocomplete="off">
                         <div id="errorAgama" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="provinsi">Provinsi Asal</label>
-                        <select class="form-select" id="provinsi" name="provinsi">
-                            <option value=""> -- Pilih Provinsi Asal -- </option>
-                            <?php foreach ($provList as $prov): ?>
-                                <option value="<?= $prov['code']; ?>" <?= ($prov['code'] == $provinsi) ? 'selected' : ''; ?>>
-                                    <?= $prov['name']; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div id="errorProvinsi" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="kabupaten">Kabupaten Asal</label>
-                        <select class="form-select" id="kabupaten" name="kabupaten">
-                            <?php foreach ($kabList as $kab): ?>
-                                <option value="<?= $kab['code']; ?>" <?= ($kab['code'] == $kabupaten) ? 'selected' : ''; ?>>
-                                    <?= $kab['name']; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div id="errorKabupaten" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="kecamatan">Kecamatan Asal</label>
-                        <select class="form-select" id="kecamatan" name="kecamatan">
-                            <?php foreach ($kecList as $kec): ?>
-                                <option value="<?= $kec['code']; ?>" <?= ($kec['code'] == $kecamatan) ? 'selected' : ''; ?>>
-                                    <?= $kec['name']; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div id="errorKecamatan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="desa">Desa Asal</label>
-                        <select class="form-select" id="desa" name="desa">
-                            <?php foreach ($kelList as $kel): ?>
-                                <option value="<?= $kel['code']; ?>" <?= ($kel['code'] == $desa) ? 'selected' : ''; ?>>
-                                    <?= $kel['name']; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div id="errorDesa" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 col-12 mb-3">
-                            <div class="form-group" style="height: 80px;">
-                                <label for="rt">RT <small class="text-muted"><i>opsional</i></small></label>
-                                <input type="text" id="rt" name="rt" class="form-control" value="000">
-                                <div id="errorRt" class="invalid-feedback" style="display: none;"></div>
-                                <div class="valid-feedback" style="display: none;"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-12 mb-3">
-                            <div class="form-group" style="height: 80px;">
-                                <label for="rw">RW <small class="text-muted"><i>opsional</i></small></label>
-                                <input type="text" id="rw" name="rw" class="form-control" value="000">
-                                <div id="errorRw" class="invalid-feedback" style="display: none;"></div>
-                                <div class="valid-feedback" style="display: none;"></div>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="form-group mb-3" style="height: 80px;">
@@ -174,142 +102,33 @@
     </div>
 </section>
 <script>
-    function formatInput($input, e, nextField, prevField) {
-        e.preventDefault();
-        let key = e.key;
-        let val = $input.val().split('');
-        let cursor = $input.data('cursor') || 0;
-
-        if (!/^[0-9]$/.test(key) && key !== "Backspace" && key !== "Delete") return;
-
-        if ((key === "Backspace" || key === "Delete") && cursor === 0 && prevField) {
-            const $prev = $('#' + prevField);
-            $prev.focus();
-            const prevCursor = Math.max(($prev.data('cursor') || 3) - 1, 0);
-            $prev.data('cursor', prevCursor);
-            const prevVal = $prev.val().split('');
-            prevVal[prevCursor] = '0';
-            $prev.val(prevVal.join(''));
-            setTimeout(() => {
-                $prev.get(0).setSelectionRange(prevCursor, prevCursor);
-            }, 10);
-            return;
-        }
-
-        if (key === "Backspace" || key === "Delete") {
-            if (cursor > 0) cursor--;
-            val[cursor] = '0';
-        } else {
-            if (cursor >= 3) return;
-            val[cursor] = key;
-            cursor++;
-        }
-
-        $input.val(val.join(''));
-        $input.data('cursor', cursor);
-
-        const inputEl = $input.get(0);
-        inputEl.setSelectionRange(cursor, cursor);
-
-        if (cursor >= 3 && nextField) {
-            setTimeout(() => {
-                const $next = $('#' + nextField);
-                $next.focus();
-                $next.data('cursor', 0);
-                $next.get(0).setSelectionRange(0, 0);
-            }, 10);
-        }
-    }
-
-    function setCursorToStart(input) {
-        $(input).data('cursor', 0);
-        input.setSelectionRange(0, 0);
-    }
-
     $(document).ready(function() {
-        $('#rt, #rw').val('000');
+        $('#nik').on('input', function() {
+            let value = $(this).val();
 
-        $('#rt, #rw').on('focus click', function() {
-            setCursorToStart(this);
+            value = value.replace(/\D/g, '');
+
+            if (value.length > 16) {
+                value = value.slice(0, 16);
+            }
+
+            $(this).val(value);
         });
 
-        $('#rt').on('keydown', function(e) {
-            formatInput($(this), e, 'rw', null);
-        });
+        $('#telp').on('input', function() {
+            let value = $(this).val();
 
-        $('#rw').on('keydown', function(e) {
-            formatInput($(this), e, null, 'rt');
-        });
-    });
-</script>
-<script>
-    $(document).ready(function() {
-        $('#provinsi').select2();
-        $('#kabupaten').select2();
-        $('#kecamatan').select2();
-        $('#desa').select2();
-        
-        $('#provinsi').on('change', function() {
-            let provinsi = $('#provinsi').val()
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('pegawai/getKab') ?>",
-                data: {
-                    provinsi: provinsi
-                },
-                dataType: "json",
-                success: function(response) {
-                    if (response.data) {
-                        $('#kabupaten').html(response.data);
-                        $('#kabupaten').prop('disabled', false);
-                    }
-                },
-                error: function(xhr, thrownError) {
-                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                }
-            });
-        });
+            value = value.replace(/\D/g, '');
 
-        $('#kabupaten').on('change', function() {
-            let kabupaten = $('#kabupaten').val()
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('pegawai/getKec') ?>",
-                data: {
-                    kabupaten: kabupaten
-                },
-                dataType: "json",
-                success: function(response) {
-                    if (response.data) {
-                        $('#kecamatan').html(response.data);
-                        $('#kecamatan').prop('disabled', false);
-                    }
-                },
-                error: function(xhr, thrownError) {
-                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                }
-            });
-        });
+            if (value.length > 0 && value.charAt(0) !== '0') {
+                value = value.replace(/^[^0]+/, '');
+            }
 
-        $('#kecamatan').on('change', function() {
-            let kecamatan = $('#kecamatan').val()
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('pegawai/getKel') ?>",
-                data: {
-                    kecamatan: kecamatan
-                },
-                dataType: "json",
-                success: function(response) {
-                    if (response.data) {
-                        $('#desa').html(response.data);
-                        $('#desa').prop('disabled', false);
-                    }
-                },
-                error: function(xhr, thrownError) {
-                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                }
-            });
+            if (value.length > 14) {
+                value = value.slice(0, 14);
+            }
+
+            $(this).val(value);
         });
 
         $('#tombol_simpan').click(function(e) {
@@ -378,48 +197,6 @@
                         } else {
                             $('#errorJenisKelamin').fadeOut();
                             $('#jenis_kelamin').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorProvinsi) {
-                            $('#errorProvinsi').html(dataError.errorProvinsi).show();
-                            $('#provinsi').addClass('is-invalid');
-                        } else {
-                            $('#errorProvinsi').fadeOut();
-                            $('#provinsi').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorKabupaten) {
-                            $('#errorKabupaten').html(dataError.errorKabupaten).show();
-                            $('#kabupaten').addClass('is-invalid');
-                        } else {
-                            $('#errorKabupaten').fadeOut();
-                            $('#kabupaten').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorKecamatan) {
-                            $('#errorKecamatan').html(dataError.errorKecamatan).show();
-                            $('#kecamatan').addClass('is-invalid');
-                        } else {
-                            $('#errorKecamatan').fadeOut();
-                            $('#kecamatan').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorDesa) {
-                            $('#errorDesa').html(dataError.errorDesa).show();
-                            $('#desa').addClass('is-invalid');
-                        } else {
-                            $('#errorDesa').fadeOut();
-                            $('#desa').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorRt) {
-                            $('#errorRt').html(dataError.errorRt).show();
-                            $('#rt').addClass('is-invalid');
-                        } else {
-                            $('#errorRt').fadeOut();
-                            $('#rt').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorRw) {
-                            $('#errorRw').html(dataError.errorRw).show();
-                            $('#rw').addClass('is-invalid');
-                        } else {
-                            $('#errorRw').fadeOut();
-                            $('#rw').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorAlamat) {
                             $('#errorAlamat').html(dataError.errorAlamat).show();

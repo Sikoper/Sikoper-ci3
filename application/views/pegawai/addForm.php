@@ -68,66 +68,6 @@
                     </div>
 
                     <div class="form-group" style="height: 80px;">
-                        <label for="provinsi">Provinsi Asal</label>
-                        <select class="form-select" id="provinsi" name="provinsi">
-                            <option value=""> -- Pilih Provinsi Asal -- </option>
-                            <?php foreach ($provinces as $prov): ?>
-                                <option value="<?= $prov['code'] ?>"><?= $prov['name'] ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div id="errorProvinsi" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="kabupaten">Kabupaten Asal</label>
-                        <select class="form-select" id="kabupaten" name="kabupaten">
-                            <option value=""> -- Pilih Kabupaten Asal -- </option>
-                        </select>
-                        <div id="errorKabupaten" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="kecamatan">Kecamatan Asal</label>
-                        <select class="form-select" id="kecamatan" name="kecamatan">
-                            <option value=""> -- Pilih Kecamatan Asal -- </option>
-                        </select>
-                        <div id="errorKecamatan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="desa">Desa Asal</label>
-                        <select class="form-select" id="desa" name="desa">
-                            <option value=""> -- Pilih Desa Asal -- </option>
-                        </select>
-                        <div id="errorDesa" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="row" style="height: 80px;">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="rt">RT</label>
-                                <small class="text-muted"><i>opsional</i></small>
-                                <input type="text" id="rt" name="rt" class="form-control" value="000">
-                                <div id="errorRt" class="invalid-feedback" style="display: none;"></div>
-                                <div class="valid-feedback" style="display: none;"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="rw">RW</label>
-                                <small class="text-muted"><i>opsional</i></small>
-                                <input type="text" id="rw" name="rw" class="form-control" value="000">
-                                <div id="errorRw" class="invalid-feedback" style="display: none;"></div>
-                                <div class="valid-feedback" style="display: none;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
                         <label for="alamat">Alamat</label>
                         <input type="text" id="alamat" name="alamat" class="form-control" placeholder="Alamat Sesuai KTP" autocomplete="off">
                         <div id="errorAlamat" class="invalid-feedback" style="display: none;"></div>
@@ -234,72 +174,32 @@
 </script>
 <script>
     $(document).ready(function() {
-        $('#provinsi').select2();
-        $('#kabupaten').select2();
-        $('#kecamatan').select2();
-        $('#desa').select2();
+        $('#nik').on('input', function() {
+            let value = $(this).val();
 
-        $('#provinsi').on('change', function() {
-            let provinsi = $('#provinsi').val()
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('pegawai/getKab') ?>",
-                data: {
-                    provinsi: provinsi
-                },
-                dataType: "json",
-                success: function(response) {
-                    if (response.data) {
-                        $('#kabupaten').html(response.data);
-                        $('#kabupaten').prop('disabled', false);
-                    }
-                },
-                error: function(xhr, thrownError) {
-                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                }
-            });
+            value = value.replace(/\D/g, '');
+
+            if (value.length > 16) {
+                value = value.slice(0, 16);
+            }
+
+            $(this).val(value);
         });
 
-        $('#kabupaten').on('change', function() {
-            let kabupaten = $('#kabupaten').val()
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('pegawai/getKec') ?>",
-                data: {
-                    kabupaten: kabupaten
-                },
-                dataType: "json",
-                success: function(response) {
-                    if (response.data) {
-                        $('#kecamatan').html(response.data);
-                        $('#kecamatan').prop('disabled', false);
-                    }
-                },
-                error: function(xhr, thrownError) {
-                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                }
-            });
-        });
+        $('#telp').on('input', function() {
+            let value = $(this).val();
 
-        $('#kecamatan').on('change', function() {
-            let kecamatan = $('#kecamatan').val()
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('pegawai/getKel') ?>",
-                data: {
-                    kecamatan: kecamatan
-                },
-                dataType: "json",
-                success: function(response) {
-                    if (response.data) {
-                        $('#desa').html(response.data);
-                        $('#desa').prop('disabled', false);
-                    }
-                },
-                error: function(xhr, thrownError) {
-                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                }
-            });
+            value = value.replace(/\D/g, '');
+
+            if (value.length > 0 && value.charAt(0) !== '0') {
+                value = value.replace(/^[^0]+/, '');
+            }
+
+            if (value.length > 14) {
+                value = value.slice(0, 14);
+            }
+
+            $(this).val(value);
         });
 
         $('#tombol_simpan').click(function(e) {
@@ -361,48 +261,6 @@
                         } else {
                             $('#errorJenisKelamin').fadeOut();
                             $('#jenis_kelamin').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorProvinsi) {
-                            $('#errorProvinsi').html(dataError.errorProvinsi).show();
-                            $('#provinsi').addClass('is-invalid');
-                        } else {
-                            $('#errorProvinsi').fadeOut();
-                            $('#provinsi').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorKabupaten) {
-                            $('#errorKabupaten').html(dataError.errorKabupaten).show();
-                            $('#kabupaten').addClass('is-invalid');
-                        } else {
-                            $('#errorKabupaten').fadeOut();
-                            $('#kabupaten').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorKecamatan) {
-                            $('#errorKecamatan').html(dataError.errorKecamatan).show();
-                            $('#kecamatan').addClass('is-invalid');
-                        } else {
-                            $('#errorKecamatan').fadeOut();
-                            $('#kecamatan').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorDesa) {
-                            $('#errorDesa').html(dataError.errorDesa).show();
-                            $('#desa').addClass('is-invalid');
-                        } else {
-                            $('#errorDesa').fadeOut();
-                            $('#desa').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorRt) {
-                            $('#errorRt').html(dataError.errorRt).show();
-                            $('#rt').addClass('is-invalid');
-                        } else {
-                            $('#errorRt').fadeOut();
-                            $('#rt').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorRw) {
-                            $('#errorRw').html(dataError.errorRw).show();
-                            $('#rw').addClass('is-invalid');
-                        } else {
-                            $('#errorRw').fadeOut();
-                            $('#rw').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorAlamat) {
                             $('#errorAlamat').html(dataError.errorAlamat).show();

@@ -114,7 +114,6 @@ class Simpanan extends CI_Controller
             $nama_ahli_waris = $this->input->post('nama_ahli_waris');
             $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
             $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
-            $signature_input = $this->input->post('signature_input');
             $no_rekening = $this->input->post('nomor_rekening');
 
             $this->form_validation->set_rules('tanggal_simpanan', 'Tanggal Simpanan', 'required', [
@@ -175,10 +174,6 @@ class Simpanan extends CI_Controller
                 'required' => 'Jumlah denda harus diisi.'
             ]);
 
-            $this->form_validation->set_rules('signature_input', 'Tanda tangan', 'required', [
-                'required' => 'Tanda tangan harus diisi.'
-            ]);
-
             $this->form_validation->set_rules('nomor_rekening', 'Nomer Rekening', 'required|is_unique[tbsimpanan.no_rekening]', [
                 'required' => 'Nomer rekening harus diisi.',
                 'is_unique' => 'Nomer rekening sudah terdaftar.'
@@ -197,22 +192,11 @@ class Simpanan extends CI_Controller
                         'errorJenisDenda'       => form_error('jenis_denda'),
                         'errorJumlahDenda'      => form_error('jumlah_denda'),
                         'errorJumlahSimpanan'   => form_error('jumlah_simpanan'),
-                        'errorTandaTangan'      => form_error('signature_input'),
                         'errorNoRekening'       => form_error('nomor_rekening'),
                         'errorDurasi'           => form_error('durasi'),
                     ]
                 ];
             } else {
-                $upload_path = FCPATH . 'assets/uploads/nasabah/tanda-tangan/';
-                $data_nasabah = $this->Nasabah_model->get_data_by_id($nasabah);
-                $file_name = $no_rekening . '-' . $data_nasabah->nik . '-ttd.png';
-
-                if ($signature_input) {
-                    $imgData = explode(',', $signature_input);
-                    $imageDecoded = base64_decode($imgData[1]);
-                    file_put_contents($upload_path . $file_name, $imageDecoded);
-                    $path_ttd = 'assets/uploads/nasabah/tanda-tangan/' . $file_name;
-                }
 
                 $data = [
                     'tanggal_simpanan' => $tanggal_simpanan,
@@ -225,7 +209,6 @@ class Simpanan extends CI_Controller
                     'nama_ahli_waris' => $nama_ahli_waris,
                     'telp_ahli_waris' => $kontak_ahli_waris,
                     'hubungan_ahli_waris' => $hubungan_ahli_waris,
-                    'tanda_tangan' => $path_ttd,
                 ];
 
                 // echo '<pre>';
@@ -278,13 +261,6 @@ class Simpanan extends CI_Controller
                 ];
                 echo json_encode($msg);
                 return;
-            }
-
-            if (!empty($data->tanda_tangan)) {
-                $foto = $data->tanda_tangan;
-                if (file_exists($foto)) {
-                    unlink(FCPATH . $foto);
-                }
             }
 
             $this->Simpanan_model->delete_data($id);
@@ -363,7 +339,6 @@ class Simpanan extends CI_Controller
             $nama_ahli_waris = $this->input->post('nama_ahli_waris');
             $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
             $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
-            $signature_input = $this->input->post('signature_input');
             $no_rekening = $this->input->post('nomor_rekening');
 
             $this->form_validation->set_rules('tanggal_simpanan', 'Tanggal Simpanan', 'required', [
@@ -424,10 +399,6 @@ class Simpanan extends CI_Controller
                 'required' => 'Jumlah denda harus diisi.'
             ]);
 
-            $this->form_validation->set_rules('signature_input', 'Tanda tangan', 'required', [
-                'required' => 'Tanda tangan harus diisi.'
-            ]);
-
             $Simpanan = $this->Simpanan_model->get_data_by_id($id);
             if ($Simpanan->no_rekening == $no_rekening) {
                 $this->form_validation->set_rules('nomor_rekening', 'Nomer Rekening', 'required', [
@@ -459,17 +430,6 @@ class Simpanan extends CI_Controller
                     ]
                 ];
             } else {
-                $upload_path = FCPATH . 'assets/uploads/nasabah/tanda-tangan/';
-                $data_nasabah = $this->Nasabah_model->get_data_by_id($nasabah);
-                $file_name = $no_rekening . '-' . $data_nasabah->nik . '-ttd.png';
-
-                if ($signature_input) {
-                    $imgData = explode(',', $signature_input);
-                    $imageDecoded = base64_decode($imgData[1]);
-                    file_put_contents($upload_path . $file_name, $imageDecoded);
-                    $path_ttd = 'assets/uploads/nasabah/tanda-tangan/' . $file_name;
-                }
-
                 $data = [
                     'tanggal_simpanan' => $tanggal_simpanan,
                     'no_rekening' => $no_rekening,
@@ -481,7 +441,6 @@ class Simpanan extends CI_Controller
                     'nama_ahli_waris' => $nama_ahli_waris,
                     'telp_ahli_waris' => $kontak_ahli_waris,
                     'hubungan_ahli_waris' => $hubungan_ahli_waris,
-                    'tanda_tangan' => $path_ttd,
                 ];
 
                 // echo '<pre>';

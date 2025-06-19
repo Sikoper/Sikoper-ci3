@@ -35,7 +35,9 @@
                     <tr>
                         <th>Total Penarikan Keseluruhan</th>
                         <td id="totalPenarikanValue">: Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?>
-                            (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
+                            <?php if($total_akumulasi_denda > 0): ?>
+                                (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <tr>
@@ -156,7 +158,7 @@
 
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-success d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail bunga</h5>
 
             </div>
