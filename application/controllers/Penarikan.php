@@ -84,7 +84,7 @@ class Penarikan extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "<i class='fa fa-dollar'></i> Penarikan",
+            'judul' => "Formulir Penarikan Tunai",
             'isi'   => $this->load->view('penarikan/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);

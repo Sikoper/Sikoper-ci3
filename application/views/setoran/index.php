@@ -1,89 +1,81 @@
 <section class="section">
     <div class="card">
         <div class="card-header">
-
         </div>
-
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-3"></div>
-                <div class="col-md-6">
-                    <?= form_open('', ['id' => 'form_simpan']) ?>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <?= form_open('', ['id' => 'form_simpan', 'data-level' => $this->session->userdata('level')]) ?>
 
-                    <div class="form-group" style="height: 80px;">
-                        <label for="tanggal_setoran">Tanggal</label>
-                        <div class="input-group">
-                            <input type="date" value="<?= date('Y-m-d') ?>" id="tanggal_setoran" class="form-control select2" name="tanggal_setoran" readonly>
-                            <div id="errorTanggalSetoran" class="invalid-feedback" style="display: none;"></div>
-                            <div class="valid-feedback" style="display: none;"></div>
+                        <div class="form-group mb-3">
+                            <label for="tanggal_setoran_display">Tanggal</label>
+                            <input type="text" id="tanggal_setoran_display" value="<?= date('d-m-Y') ?>" class="form-control" style="background-color: #e9ecef;" readonly>
+                            <input type="hidden" id="tanggal_setoran" name="tanggal_setoran" value="<?= date('Y-m-d') ?>">
+                            <div id="errorTanggalSetoran" class="invalid-feedback"></div>
                         </div>
-                    </div>
 
-                    <div class="form-group" style="height: 80px;">
-                        <label for="nasabah">Pilih Nasabah</label>
-                        <div class="input-group">
-                            <select id="nasabah" class="form-control select2" name="nasabah" style="width: auto; flex: 1;"></select>
-                            <div id="errorNasabah" class="invalid-feedback" style="display: none;"></div>
-                            <div class="valid-feedback" style="display: none;"></div>
+                        <div class="form-group mb-3">
+                            <label for="nasabah">Pilih Nasabah</label>
+                            <select id="nasabah" class="form-control select2" name="nasabah" style="width: 100%;"></select>
+                            <div id="errorNasabah" class="invalid-feedback"></div>
+                            <small class="form-text text-muted">Mulai ketik untuk mencari nama nasabah.</small>
                         </div>
-                    </div>
 
-                    <div id="detail_nasabah_info" class="alert alert-light mt-2" style="display:none;"></div>
+                        <div id="detail_nasabah_info" class="alert alert-light mt-2" style="display:none;"></div>
 
-                    <div class="form-group mb-3">
-                        <label for="tabungan">Pilih Tabungan</label>
-                        <div class="input-group">
-                            <select id="tabungan" class="form-control select2" name="tabungan" style="width: auto; flex: 1;">
-                                <option value=""> --- Pilih tabungan --- </option>
+                        <div class="form-group mb-3">
+                            <label for="tabungan">Pilih Tabungan</label>
+                            <select id="tabungan" class="form-control select2" name="tabungan" style="width: 100%;" disabled>
+                                <option value="">-- Pilih nasabah terlebih dahulu --</option>
                             </select>
+                            <div id="errorTabungan" class="invalid-feedback"></div>
                         </div>
-                        <div id="errorTabungan" class="invalid-feedback" style="display: none;"></div>
-                    </div>
 
-                    <div class="form-group mb-3" style="height: 80px;">
-                        <label for="sisa_saldo">Saldo Saat Ini</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">Rp</span>
+                        <div class="form-group mb-3">
+                            <label for="sisa_saldo">Saldo Saat Ini</label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="background-color: #e9ecef; border-right: none;">Rp</span>
+                                <input type="text" id="sisa_saldo" class="form-control border-0 shadow-none fw-bold fs-5 ps-2" style="background-color: #e9ecef;" value="Pilih Tabungan Untuk Melihat Saldo" readonly>
                             </div>
-                            <input type="text" id="sisa_saldo" class="form-control" placeholder="Pilih rekening untuk melihat saldo..." readonly>
                         </div>
-                    </div>
 
-                    <div class="form-group mb-3" style="height: 80px;">
-                        <label for="jumlah_setoran">Jumlah Setoran</label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="text" name="jumlah_setoran" id="jumlah_setoran" class="form-control text-end">
+                        <div class="form-group mb-3">
+                            <label for="jumlah_setoran">Jumlah Setoran</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" name="jumlah_setoran" id="jumlah_setoran" class="form-control text-end">
+                            </div>
+                            <div id="errorJumlahSetoran" class="invalid-feedback"></div>
+                            <small class="form-text text-muted">Hanya masukkan angka. Format ribuan akan ditambahkan otomatis.</small>
                         </div>
-                        <div id="errorJumlahSetoran" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
 
-                    <?php if ($level == 'Admin'): ?>
-                        <div class="form-group mb-5" style="height: 80px;">
-                            <label for="pegawai_id">Pegawai</label>
-                            <select id="pegawai_id" name="pegawai_id" class="form-control" autocomplete="off">
-                                <option value=""> -- Pilih Pegawai -- </option>
-                                <?php foreach ($pegawai as $item): ?>
-                                    <option value="<?= $item->id ?>"><?= $item->nama_lengkap ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div id="errorJabatan" class="invalid-feedback" style="display: none;"></div>
-                            <div class="valid-feedback" style="display: none;"></div>
+                        <?php if ($level == 'Admin') : ?>
+                            <div class="form-group mb-5">
+                                <label for="pegawai_id">Pegawai</label>
+                                <select id="pegawai_id" name="pegawai_id" class="form-control" autocomplete="off">
+                                    <option value="">-- Pilih Pegawai --</option>
+                                    <?php foreach ($pegawai as $item) : ?>
+                                        <option value="<?= $item->id ?>"><?= $item->nama_lengkap ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <div id="errorPegawai" class="invalid-feedback"></div>
+                            </div>
+                        <?php else : ?>
+                            <input type="hidden" name="pegawai_id" id="pegawai_id" value="<?= $this->session->userdata('pegawai_id') ?>">
+                        <?php endif; ?>
+
+                        <div class="text-center mb-3">
+                            <button type="submit" id="tombol_simpan_setoran" class="btn btn-success" disabled>
+                                <i class="bi bi-check-circle"></i> Simpan
+                            </button>
+                            <button type="button" onclick="window.location='<?= base_url('setoran') ?>'" class="btn btn-danger">Batal</button>
                         </div>
-                    <?php else: ?>
-                        <input type="hidden" name="pegawai_id" id="pegawai_id" value="<?= $this->session->userdata('pegawai_id') ?>">
-                    <?php endif; ?>
 
-                    <div class="text-center mb-3">
-                        <button type="submit" id="tombol_simpan" class="btn btn-success" disabled>Simpan</button>
-                        <button type="button" onclick="window.location='<?= base_url('users') ?>'" class="btn btn-danger">Batal</button>
+                        <?= form_close() ?>
                     </div>
-
-                    <?= form_close() ?>
                 </div>
-                <div class="col-md-3"></div>
             </div>
         </div>
     </div>
@@ -91,7 +83,6 @@
 
 <script>
     $(document).ready(function() {
-        // Inisialisasi plugin
         $('#jumlah_setoran').autoNumeric('init', {
             aSep: '.',
             aDec: ',',
@@ -122,15 +113,39 @@
             const nasabah = $('#nasabah').val();
             const tabungan = $('#tabungan').val();
             const jumlahSetoran = $('#jumlah_setoran').autoNumeric('get');
+            const level = $('#form_simpan').data('level');
+            let pegawaiValid = true;
 
-            if (nasabah && tabungan && parseFloat(jumlahSetoran) > 0) {
-                $('#tombol_simpan').prop('disabled', false);
+            if (level === 'Admin') {
+                const pegawai = $('#pegawai_id').val();
+                pegawaiValid = (pegawai && pegawai !== "");
+            }
+
+            if (nasabah && tabungan && parseFloat(jumlahSetoran) > 0 && pegawaiValid) {
+                $('#tombol_simpan_setoran').prop('disabled', false);
             } else {
-                $('#tombol_simpan').prop('disabled', true);
+                $('#tombol_simpan_setoran').prop('disabled', true);
             }
         }
 
-        $('#tombol_simpan').click(function(e) {
+        $('#nasabah, #tabungan').on('change', function() {
+            cekKesiapanForm();
+        });
+
+        $('#jumlah_setoran').on('keyup change', function() {
+            cekKesiapanForm();
+        });
+
+        $('#pegawai_id').on('change', function() {
+            if ($(this).val()) {
+                $('#errorPegawai').fadeOut();
+                $('#pegawai_id').removeClass('is-invalid');
+            }
+            cekKesiapanForm();
+        });
+
+        cekKesiapanForm();
+        $('#tombol_simpan_setoran').click(function(e) {
             e.preventDefault();
 
             const namaNasabah = $('#nasabah option:selected').text();
@@ -139,13 +154,13 @@
 
             Swal.fire({
                 title: 'Konfirmasi Setoran',
-                html: `Anda akan melakukan setoran dengan rincian:<br><br>
-                        <div style="text-align: left; margin-left: 20px;">
-                        <strong>Nasabah :</strong> ${namaNasabah}<br>
-                        <strong>Rekening:</strong> ${noRekening}<br>
-                        <strong>Jumlah :</strong> Rp ${jumlahSetoran}
-                        </div><br>
-                        Apakah data sudah benar?`,
+                html: 'Anda akan melakukan setoran dengan rincian:<br><br>' +
+                    '<div style="text-align: left; margin-left: 20px;">' +
+                    '<strong>Nasabah :</strong> ' + namaNasabah + '<br>' +
+                    '<strong>Rekening:</strong> ' + noRekening + '<br>' +
+                    '<strong>Jumlah :</strong> Rp ' + jumlahSetoran +
+                    '</div><br>' +
+                    'Apakah data sudah benar?',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
@@ -165,11 +180,11 @@
                         contentType: false,
                         cache: false,
                         beforeSend: function() {
-                            $('#tombol_simpan').prop('disabled', true);
-                            $('#tombol_simpan').html('<i class="fa fa-spin fa-spinner"></i>');
+                            $('#tombol_simpan_setoran').prop('disabled', true);
+                            $('#tombol_simpan-setoran').html('<i class="fa fa-spin fa-spinner"></i>');
                         },
                         complete: function() {
-                            $('#tombol_simpan').html('Simpan');
+                            $('#tombol_simpan_setoran').html('Simpan');
                         },
                         success: function(response) {
                             if (response.error) {
@@ -202,15 +217,24 @@
                                     $('#errorJumlahSetoran').fadeOut();
                                     $('#jumlah_setoran').removeClass('is-invalid').addClass('is-valid');
                                 }
+                                if (dataError.errorPegawai) {
+                                    $('#errorPegawai').html(dataError.errorPegawai).show();
+                                    $('#pegawai_id').addClass('is-invalid');
+                                } else {
+                                    $('#errorPegawai').fadeOut();
+                                    $('#pegawai_id').removeClass('is-invalid').addClass('is-valid');
+                                }
                             } else {
+                                // PERBAIKAN ADA DI SINI
                                 Swal.fire({
                                     icon: "success",
                                     title: "Berhasil!",
-                                    html: response.success
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        window.location.href = response.redirect;
-                                    }
+                                    html: response.success,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    // Langsung redirect setelah timer selesai, tanpa 'if'
+                                    window.location.href = response.redirect;
                                 });
                             }
                         },
@@ -253,8 +277,7 @@
                             }
                         }
                     },
-                    error: function(xhr, thrownError) {
-                    }
+                    error: function(xhr, thrownError) {}
                 });
             } else {
                 selectTabungan.prop('disabled', true);

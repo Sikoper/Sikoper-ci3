@@ -47,87 +47,75 @@
                     <ul class="menu">
                         <li class="sidebar-title">Menu</li>
 
-                        <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == '' ? 'active' : '' ?>">
-                                <a href="<?= base_url('/') ?>" class='sidebar-link'>
-                                    <i class="bi bi-grid-fill"></i>
-                                    <span>Dashboard</span>
-                                </a>
-                            </li>
-                        <?php endif; ?>
+                        <li class="sidebar-item <?= $this->uri->segment(1) == '' || $this->uri->segment(1) == 'dashboard' ? 'active' : '' ?>">
+                            <a href="<?= base_url('/') ?>" class='sidebar-link'>
+                                <i class="bi bi-grid-fill"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
 
                         <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == 'simpanan' ? 'active' : '' ?>">
-                                <a href="<?= base_url('simpanan') ?>" class='sidebar-link'>
-                                    <i class="fa fa-money-check"></i>
-                                    <span>Simpanan</span>
+                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga']) ? 'active' : '' ?>">
+                                <a href="#" class='sidebar-link'>
+                                    <i class="bi bi-cash-stack"></i>
+                                    <span>Transaksi</span>
                                 </a>
+                                <ul class="submenu <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga']) ? 'active' : '' ?>">
+                                    <li class="submenu-item <?= $this->uri->segment(1) == 'setoran' ? 'active' : '' ?>">
+                                        <a href="<?= base_url('setoran') ?>">Setoran Tunai</a>
+                                    </li>
+                                    <li class="submenu-item <?= $this->uri->segment(1) == 'penarikan' ? 'active' : '' ?>">
+                                        <a href="<?= base_url('penarikan') ?>">Penarikan Tunai</a>
+                                    </li>
+                                    <li class="submenu-item <?= $this->uri->segment(1) == 'bunga' ? 'active' : '' ?>">
+                                        <a href="<?= base_url('bunga') ?>">Proses Bunga</a>
+                                    </li>
+                                </ul>
                             </li>
                         <?php endif; ?>
-
                         <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == 'setoran' ? 'active' : '' ?>">
-                                <a href="<?= base_url('setoran') ?>" class='sidebar-link'>
-                                    <i class="fa fa-money-check"></i>
-                                    <span>Setoran</span>
+                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['simpanan', 'jenis_tabungan', 'nasabah', 'pegawai']) ? 'active' : '' ?>">
+                                <a href="#" class='sidebar-link'>
+                                    <i class="bi bi-server"></i>
+                                    <span>Data Master</span>
                                 </a>
+                                <ul class="submenu <?= in_array($this->uri->segment(1), ['simpanan', 'jenis_tabungan', 'nasabah', 'pegawai']) ? 'active' : '' ?>">
+                                    <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
+                                        <li class="submenu-item <?= $this->uri->segment(1) == 'simpanan' ? 'active' : '' ?>">
+                                            <a href="<?= base_url('simpanan') ?>">Data Simpanan</a>
+                                        </li>
+                                    <?php endif; ?>
+                                    <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
+                                        <li class="submenu-item <?= $this->uri->segment(1) == 'jenis_tabungan' ? 'active' : '' ?>">
+                                            <a href="<?= base_url('jenis_tabungan') ?>">Produk Simpanan</a>
+                                        </li>
+                                    <?php endif; ?>
+                                    <?php if ($level == 'Admin' || $level == 'Pegawai'): ?>
+                                        <li class="submenu-item <?= $this->uri->segment(1) == 'nasabah' ? 'active' : '' ?>">
+                                            <a href="<?= base_url('nasabah') ?>">Data Nasabah</a>
+                                        </li>
+                                    <?php endif; ?>
+                                    <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
+                                        <li class="submenu-item <?= $this->uri->segment(1) == 'pegawai' ? 'active' : '' ?>">
+                                            <a href="<?= base_url('pegawai') ?>">Data Pegawai</a>
+                                        </li>
+                                    <?php endif; ?>
+                                </ul>
                             </li>
                         <?php endif; ?>
-
-                        <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == 'bunga' ? 'active' : '' ?>">
-                                <a href="<?= base_url('bunga') ?>" class='sidebar-link'>
-                                    <i class="fa fa-money-check"></i>
-                                    <span>Bunga</span>
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
-                        <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == 'penarikan' ? 'active' : '' ?>">
-                                <a href="<?= base_url('penarikan') ?>" class='sidebar-link'>
-                                    <i class="fa fa-receipt"></i>
-                                    <span>Penarikan</span>
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
-                        <?php if ($level == 'Admin' || $level == 'Pegawai'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == 'nasabah' ? 'active' : '' ?>">
-                                <a href="<?= base_url('nasabah') ?>" class='sidebar-link'>
-                                    <i class="fa fa-user"></i>
-                                    <span>Nasabah</span>
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
-                        <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == 'jenis_tabungan' ? 'active' : '' ?>">
-                                <a href="<?= base_url('jenis_tabungan') ?>" class='sidebar-link'>
-                                    <i class="fa fa-list"></i>
-                                    <span>Jenis Tabungan</span>
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
-                        <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == 'pegawai' ? 'active' : '' ?>">
-                                <a href="<?= base_url('pegawai') ?>" class='sidebar-link'>
-                                    <i class="fa fa-users"></i>
-                                    <span>Pegawai</span>
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
                         <?php if ($level == 'Admin'): ?>
-                            <li class="sidebar-item <?= $this->uri->segment(1) == 'users' ? 'active' : '' ?>">
-                                <a href="<?= base_url('users') ?>" class='sidebar-link'>
-                                    <i class="fa fa-user-lock"></i>
-                                    <span>User</span>
+                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['users']) ? 'active' : '' ?>">
+                                <a href="#" class='sidebar-link'>
+                                    <i class="bi bi-person-badge-fill"></i>
+                                    <span>Administrasi</span>
                                 </a>
+                                <ul class="submenu <?= in_array($this->uri->segment(1), ['users']) ? 'active' : '' ?>">
+                                    <li class="submenu-item <?= $this->uri->segment(1) == 'users' ? 'active' : '' ?>">
+                                        <a href="<?= base_url('users') ?>">Pengguna Sistem</a>
+                                    </li>
+                                </ul>
                             </li>
                         <?php endif; ?>
-
                     </ul>
                 </div>
                 <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
