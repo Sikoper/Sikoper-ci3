@@ -85,9 +85,6 @@ class Bunga_model extends CI_Model
 
     public function bunga_proses()
     {
-        if (date('d') != '19') {
-            return;
-        }
 
         $today = date('Y-m-d');
         $lastMonth = date('Y-m-d', strtotime('-1 month'));
@@ -96,10 +93,12 @@ class Bunga_model extends CI_Model
         $this->db->from('tbsimpanan');
         $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');
         $this->db->where('tbsimpanan.tanggal_simpanan <=', $lastMonth);
+        $this->db->where('tbsimpanan.status', 'aktif');
+        $this->db->where('tbjenistabungan.bunga >', '0');
         $simpananList = $this->db->get()->result();
 
         foreach ($simpananList as $simpanan) {
-            $bungaRate = (float) $simpanan->bunga;
+            $bungaRate = (float) $simpanan->bunga / 12;
             $saldo = (float) $simpanan->jumlah_simpanan;
 
             if ($saldo <= 0) continue;

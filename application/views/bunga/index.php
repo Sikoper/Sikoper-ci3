@@ -1,7 +1,10 @@
 <div class="card">
     <div class="card-header">
         <h4 class="card-title">
-
+            <button class="btn btn-primary" id="btnPembungaan">
+                <i class="fa fa-credit-card"></i>
+                Pembungaan
+            </button>
         </h4>
     </div>
     <div class="card-body">
@@ -116,4 +119,38 @@
             }
         });
     }
+
+    $(document).ready(function() {
+        $('#btnPembungaan').click(function(e) {
+            e.preventDefault();
+            $.ajax({
+                type: "method",
+                url: "<?= base_url('bunga/run_bunga') ?>",
+                dataType: "json",
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: "Success!",
+                            text: response.success,
+                            icon: "success"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.reload();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "Error!",
+                            text: response.error,
+                            icon: "error"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    });
 </script>

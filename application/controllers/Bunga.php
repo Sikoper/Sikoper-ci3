@@ -141,8 +141,7 @@ class Bunga extends CI_Controller
             $selisih = $simpanan->jumlah_simpanan - $transaksi->jumlah_transaksi;
 
             $delete = $this->Bunga_model->delete_data($id);
-            if($delete)
-            {
+            if ($delete) {
                 $data = [
                     'jumlah_simpanan' => $selisih
                 ];
@@ -159,5 +158,24 @@ class Bunga extends CI_Controller
 
             echo json_encode($msg);
         }
+    }
+
+    public function run_bunga()
+    {
+        $today = "19";
+
+        if (date('d') == $today) {
+            $this->Bunga_model->checkAndRunBunga();
+
+            $msg = [
+                'success' => 'Pembungaan berhasil dihitung'
+            ];
+        } else {
+            $msg = [
+                'error' => 'Pembungaan belum mencapai tanggal yang telah ditentukan yaitu tanggal ' . $today
+            ];
+        }
+
+        echo json_encode($msg);
     }
 }

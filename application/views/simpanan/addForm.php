@@ -205,22 +205,6 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-3" style="height: 300px;">
-                        <label for="signature-pad" class="form-label fw-bold">Tanda Tangan</label>
-
-                        <div class="border rounded" style="width: 100%; max-width: 400px; height: 200px; position: relative;">
-                            <canvas id="signature-pad" width="400" height="200" style="width: 100%; height: 100%;"></canvas>
-                        </div>
-
-                        <div class="mt-2">
-                            <button type="button" id="clear" class="btn btn-sm btn-secondary me-2">Clear</button>
-                            <button type="button" id="save" class="btn btn-sm btn-primary">Save</button>
-                        </div>
-                        <div id="errorTandaTangan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                        <input type="hidden" name="signature_input" id="signature_input">
-                    </div>
-
                     <div class="form-group mb-5" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
@@ -246,7 +230,6 @@
     </div>
 </section>
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
     $(document).ready(function() {
 
