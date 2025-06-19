@@ -439,8 +439,8 @@ class Nasabah extends CI_Controller
             return;
         }
 
-
         $data = [
+            'nasabah' => $nasabah,
             'level' => $this->session->userdata('level'),
         ];
         $parser = [
