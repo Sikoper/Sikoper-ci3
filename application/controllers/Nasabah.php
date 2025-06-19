@@ -73,75 +73,6 @@ class Nasabah extends CI_Controller
         }
     }
 
-    public function getKab()
-    {
-        if ($this->input->is_ajax_request()) {
-            $provinsi = $this->input->post('provinsi');
-            $getKab = file_get_contents('https://wilayah.id/api/regencies/' . $provinsi . '.json');
-            $response = json_decode($getKab, true);
-            $Kab = $response['data'];
-            $Value = "<option value='' selected> -- Pilih Kabupaten Asal -- </option>";
-
-            foreach ($Kab as $row) :
-                $Value .= '<option value="' . $row['code'] . '">' . $row['name'] . '</option>';
-            endforeach;
-
-            $msg = [
-                'data' => $Value
-            ];
-
-            echo json_encode($msg);
-        } else {
-            show_404();
-        }
-    }
-
-    public function getKec()
-    {
-        if ($this->input->is_ajax_request()) {
-            $kabupaten = $this->input->post('kabupaten');
-            $getKab = file_get_contents('https://wilayah.id/api/districts/' . $kabupaten . '.json');
-            $response = json_decode($getKab, true);
-            $Kab = $response['data'];
-            $Value = "<option value='' selected> -- Pilih Kecamatan Asal -- </option>";
-
-            foreach ($Kab as $row) :
-                $Value .= '<option value="' . $row['code'] . '">' . $row['name'] . '</option>';
-            endforeach;
-
-            $msg = [
-                'data' => $Value
-            ];
-
-            echo json_encode($msg);
-        } else {
-            show_404();
-        }
-    }
-
-    public function getKel()
-    {
-        if ($this->input->is_ajax_request()) {
-            $kecamatan = $this->input->post('kecamatan');
-            $getKab = file_get_contents('https://wilayah.id/api/villages/' . $kecamatan . '.json');
-            $response = json_decode($getKab, true);
-            $Kab = $response['data'];
-            $Value = "<option value='' selected> -- Pilih Desa Asal -- </option>";
-
-            foreach ($Kab as $row) :
-                $Value .= '<option value="' . $row['code'] . '">' . $row['name'] . '</option>';
-            endforeach;
-
-            $msg = [
-                'data' => $Value
-            ];
-
-            echo json_encode($msg);
-        } else {
-            show_404();
-        }
-    }
-
     public function add()
     {
         $allowed_roles = ['Admin', 'Pegawai',];
@@ -150,13 +81,9 @@ class Nasabah extends CI_Controller
             redirect('unauthorized_403');
         }
 
-        $getProv = file_get_contents("https://wilayah.id/api/provinces.json");
-        $response = json_decode($getProv, true);
-
         $pegawai = $this->Pegawai_model->get_data();
 
         $data = [
-            'provinces' => $response['data'],
             'pegawai' => $pegawai,
             'level' => $this->session->userdata('level'),
         ];
@@ -191,21 +118,17 @@ class Nasabah extends CI_Controller
             $pekerjaan          = $input->post('pekerjaan');
             $nama_ibu_kandung   = $input->post('nama_ibu_kandung');
             $email              = $input->post('email');
-            $provinsi           = $input->post('provinsi');
-            $kabupaten          = $input->post('kabupaten');
-            $kecamatan          = $input->post('kecamatan');
-            $desa               = $input->post('desa');
-            $rt                 = $input->post('rt');
-            $rw                 = $input->post('rw');
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
             $pegawai_id         = $input->post('pegawai_id');
 
             // Validasi
-            $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbnasabah.nik]|numeric', [
-                'required'   => 'NIK wajib diisi.',
-                'is_unique'  => 'NIK sudah terdaftar.',
-                'numeric'    => 'NIK harus berupa angka.'
+            $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbnasabah.nik]|numeric|min_length[16]|max_length[16]', [
+                'required'     => 'NIK wajib diisi.',
+                'is_unique'    => 'NIK sudah terdaftar.',
+                'numeric'      => 'NIK harus berupa angka.',
+                'min_length'   => 'NIK harus terdiri dari 16 digit.',
+                'max_length'   => 'NIK harus terdiri dari 16 digit.'
             ]);
 
             $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]', [
@@ -236,25 +159,13 @@ class Nasabah extends CI_Controller
                 'required'   => 'Email tidak boleh kosong.',
                 'valid_email' => 'Format email tidak valid.'
             ]);
-            $this->form_validation->set_rules('provinsi', 'Provinsi', 'required', [
-                'required'   => 'Provinsi tidak boleh kosong.'
-            ]);
-            $this->form_validation->set_rules('kabupaten', 'Kabupaten', 'required', [
-                'required'   => 'Kabupaten tidak boleh kosong.'
-            ]);
-            $this->form_validation->set_rules('kecamatan', 'Kecamatan', 'required', [
-                'required'   => 'Kecamatan tidak boleh kosong.'
-            ]);
-            $this->form_validation->set_rules('desa', 'Desa', 'required', [
-                'required'   => 'Desa tidak boleh kosong.'
-            ]);
             $this->form_validation->set_rules('alamat', 'Alamat', 'required', [
                 'required'   => 'Alamat tidak boleh kosong.'
             ]);
-            $this->form_validation->set_rules('telp', 'No Telepon', 'required|numeric|min_length[10]', [
+            $this->form_validation->set_rules('telp', 'No Telepon', 'required|numeric|min_length[11]', [
                 'required'   => 'No Telepon tidak boleh kosong.',
                 'numeric'    => 'No Telepon harus berupa angka.',
-                'min_length' => 'No Telepon minimal 10 karakter.'
+                'min_length' => 'No Telepon minimal 11 karakter.'
             ]);
 
             if ($this->form_validation->run() == FALSE) {
@@ -291,12 +202,6 @@ class Nasabah extends CI_Controller
                     'pekerjaan'         => $pekerjaan,
                     'nama_ibu_kandung'  => $nama_ibu_kandung,
                     'email'             => $email,
-                    'provinsi'          => $provinsi,
-                    'kabupaten'         => $kabupaten,
-                    'kecamatan'         => $kecamatan,
-                    'desa'              => $desa,
-                    'rt'                => $rt ?: '000',
-                    'rw'                => $rw ?: '000',
                     'alamat'            => $alamat,
                     'telp'              => $telp,
                     'pegawai_id'        => $pegawai_id
@@ -357,28 +262,10 @@ class Nasabah extends CI_Controller
             return;
         }
 
-        $getProv = file_get_contents("https://wilayah.id/api/provinces.json");
-        $responseProv = json_decode($getProv, true);
-        $getKab = file_get_contents("https://wilayah.id/api/regencies/" . $nasabah->provinsi . ".json");
-        $responseKab = json_decode($getKab, true);
-        $getKec = file_get_contents("https://wilayah.id/api/districts/" . $nasabah->kabupaten . ".json");
-        $responseKec = json_decode($getKec, true);
-        $getKel = file_get_contents("https://wilayah.id/api/villages/" . $nasabah->kecamatan . ".json");
-        $responseKel = json_decode($getKel, true);
-
-        $kategori = $this->Kategori_model->get_data();
         $pegawai = $this->Pegawai_model->get_data();
 
         $data = [
             'nasabah' => $nasabah,
-            'desa' => $nasabah->desa,
-            'kecamatan' => $nasabah->kecamatan,
-            'kabupaten' => $nasabah->kabupaten,
-            'provinsi' => $nasabah->provinsi,
-            'provList' => $responseProv['data'],
-            'kabList' => $responseKab['data'],
-            'kecList' => $responseKec['data'],
-            'kelList' => $responseKel['data'],
             'level' => $this->session->userdata('level'),
             'pegawai' => $pegawai,
         ];
@@ -413,12 +300,6 @@ class Nasabah extends CI_Controller
             $pekerjaan          = $input->post('pekerjaan');
             $nama_ibu_kandung   = $input->post('nama_ibu_kandung');
             $email              = $input->post('email');
-            $provinsi           = $input->post('provinsi');
-            $kabupaten          = $input->post('kabupaten');
-            $kecamatan          = $input->post('kecamatan');
-            $desa               = $input->post('desa');
-            $rt                 = $input->post('rt');
-            $rw                 = $input->post('rw');
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
             $pegawai_id         = $input->post('pegawai_id');
@@ -426,13 +307,19 @@ class Nasabah extends CI_Controller
             // Validasi
             $nasabah = $this->Nasabah_model->get_data_by_id($id);
             if ($nasabah->nik == $nik) {
-                $this->form_validation->set_rules('nik', 'NIK', 'required', [
-                    'required'   => 'NIK wajib diisi.',
+                $this->form_validation->set_rules('nik', 'NIK', 'required|numeric|min_length[16]|max_length[16]', [
+                    'required'     => 'NIK wajib diisi.',
+                    'numeric'      => 'NIK harus berupa angka.',
+                    'min_length'   => 'NIK harus terdiri dari 16 digit.',
+                    'max_length'   => 'NIK harus terdiri dari 16 digit.'
                 ]);
             } else {
-                $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbnasabah.nik]', [
-                    'required'   => 'NIK wajib diisi.',
-                    'is_unique'  => 'NIK sudah terdaftar.'
+                $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbnasabah.nik]|numeric|min_length[16]|max_length[16]', [
+                    'required'     => 'NIK wajib diisi.',
+                    'is_unique'    => 'NIK sudah terdaftar.',
+                    'numeric'      => 'NIK harus berupa angka.',
+                    'min_length'   => 'NIK harus terdiri dari 16 digit.',
+                    'max_length'   => 'NIK harus terdiri dari 16 digit.'
                 ]);
             };
 
@@ -464,25 +351,13 @@ class Nasabah extends CI_Controller
                 'required'   => 'Email tidak boleh kosong.',
                 'valid_email' => 'Format email tidak valid.'
             ]);
-            $this->form_validation->set_rules('provinsi', 'Provinsi', 'required', [
-                'required'   => 'Provinsi tidak boleh kosong.'
-            ]);
-            $this->form_validation->set_rules('kabupaten', 'Kabupaten', 'required', [
-                'required'   => 'Kabupaten tidak boleh kosong.'
-            ]);
-            $this->form_validation->set_rules('kecamatan', 'Kecamatan', 'required', [
-                'required'   => 'Kecamatan tidak boleh kosong.'
-            ]);
-            $this->form_validation->set_rules('desa', 'Desa', 'required', [
-                'required'   => 'Desa tidak boleh kosong.'
-            ]);
             $this->form_validation->set_rules('alamat', 'Alamat', 'required', [
                 'required'   => 'Alamat tidak boleh kosong.'
             ]);
             $this->form_validation->set_rules('telp', 'No Telepon', 'required|numeric|min_length[10]', [
                 'required'   => 'No Telepon tidak boleh kosong.',
                 'numeric'    => 'No Telepon harus berupa angka.',
-                'min_length' => 'No Telepon minimal 10 karakter.'
+                'min_length' => 'No Telepon minimal 11 karakter.'
             ]);
 
             if ($this->form_validation->run() == FALSE) {
@@ -519,12 +394,6 @@ class Nasabah extends CI_Controller
                     'pekerjaan'         => $pekerjaan,
                     'nama_ibu_kandung'  => $nama_ibu_kandung,
                     'email'             => $email,
-                    'provinsi'          => $provinsi,
-                    'kabupaten'         => $kabupaten,
-                    'kecamatan'         => $kecamatan,
-                    'desa'              => $desa,
-                    'rt'                => $rt ?: '000',
-                    'rw'                => $rw ?: '000',
                     'alamat'            => $alamat,
                     'telp'              => $telp,
                     'pegawai_id'        => $pegawai_id
@@ -570,29 +439,8 @@ class Nasabah extends CI_Controller
             return;
         }
 
-        $getProv = json_decode(file_get_contents("https://wilayah.id/api/provinces.json"), true);
-        $nama_provinsi = array_column($getProv['data'], 'name', 'code')[$nasabah->provinsi] ?? '-';
-
-        $getKab = json_decode(file_get_contents("https://wilayah.id/api/regencies/" . $nasabah->provinsi . ".json"), true);
-        $nama_kabupaten = array_column($getKab['data'], 'name', 'code')[$nasabah->kabupaten] ?? '-';
-
-        $getKec = json_decode(file_get_contents("https://wilayah.id/api/districts/" . $nasabah->kabupaten . ".json"), true);
-        $nama_kecamatan = array_column($getKec['data'], 'name', 'code')[$nasabah->kecamatan] ?? '-';
-
-        $getKel = json_decode(file_get_contents("https://wilayah.id/api/villages/" . $nasabah->kecamatan . ".json"), true);
-        $nama_desa = array_column($getKel['data'], 'name', 'code')[$nasabah->desa] ?? '-';
-
-
         $data = [
-            'nasabah'   => $nasabah,
-            'desa'      => $nasabah->desa,
-            'kecamatan' => $nasabah->kecamatan,
-            'kabupaten' => $nasabah->kabupaten,
-            'provinsi' => $nasabah->provinsi,
-            'nama_provinsi' => $nama_provinsi,
-            'nama_kabupaten' => $nama_kabupaten,
-            'nama_kecamatan' => $nama_kecamatan,
-            'nama_desa' => $nama_desa,
+            'nasabah' => $nasabah,
             'level' => $this->session->userdata('level'),
         ];
         $parser = [
