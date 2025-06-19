@@ -2,7 +2,7 @@
     <div class="card-header">
         <h4 class="card-title">
             <button class="btn btn-primary" onclick="window.location='<?= base_url('users/add') ?>'">
-                <i class="fa fa-plus-circle"></i> Tambah Data
+                <i class="fa fa-plus-circle"></i> Tambah Akun
             </button>
         </h4>
     </div>

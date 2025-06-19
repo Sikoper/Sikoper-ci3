@@ -17,7 +17,7 @@ class Kategori extends CI_Controller
     public function index()
     {
         $parser = [
-            'judul' => "<i class='fa fa-list'></i> Jenis Tabungan",
+            'judul' => "Jenis Tabungan",
             'isi'   => $this->load->view('kategori/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -77,7 +77,7 @@ class Kategori extends CI_Controller
             redirect('unauthorized_403');
         }
         $parser = [
-            'judul' => "<i class='fa fa-list'></i> Jenis Tabungan",
+            'judul' => "Tambah Jenis Tabungan",
             'isi'   => $this->load->view('kategori/addForm', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -226,7 +226,7 @@ class Kategori extends CI_Controller
             'kategori' => $kategori,
         ];
         $parser = [
-            'judul' => "<i class='fa fa-list'></i> Jenis Tabungan",
+            'judul' => "Form Edit Jenis Tabungan",
             'isi'   => $this->load->view('kategori/editForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);

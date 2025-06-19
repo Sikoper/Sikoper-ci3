@@ -82,12 +82,12 @@
                                 <ul class="submenu <?= in_array($this->uri->segment(1), ['simpanan', 'jenis_tabungan', 'nasabah', 'pegawai']) ? 'active' : '' ?>">
                                     <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
                                         <li class="submenu-item <?= $this->uri->segment(1) == 'simpanan' ? 'active' : '' ?>">
-                                            <a href="<?= base_url('simpanan') ?>">Data Simpanan</a>
+                                            <a href="<?= base_url('simpanan') ?>">Data Tabungan</a>
                                         </li>
                                     <?php endif; ?>
                                     <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
                                         <li class="submenu-item <?= $this->uri->segment(1) == 'jenis_tabungan' ? 'active' : '' ?>">
-                                            <a href="<?= base_url('jenis_tabungan') ?>">Produk Simpanan</a>
+                                            <a href="<?= base_url('jenis_tabungan') ?>">Jenis Tabungan</a>
                                         </li>
                                     <?php endif; ?>
                                     <?php if ($level == 'Admin' || $level == 'Pegawai'): ?>
@@ -111,7 +111,7 @@
                                 </a>
                                 <ul class="submenu <?= in_array($this->uri->segment(1), ['users']) ? 'active' : '' ?>">
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'users' ? 'active' : '' ?>">
-                                        <a href="<?= base_url('users') ?>">Pengguna Sistem</a>
+                                        <a href="<?= base_url('users') ?>">Manajemen Akun</a>
                                     </li>
                                 </ul>
                             </li>
