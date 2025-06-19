@@ -49,7 +49,7 @@
                             <th>Durasi</th>
                             <td>: <?= format_durasi($simpanan->durasi) ?></td>
                         </tr>
-                        <?php if (empty($simpanan->nama_ahli_waris)): ?>
+                        <?php if (!empty($simpanan->nama_ahli_waris)): ?>
                             <tr id="field-ahli-waris">
                                 <th>Ahli Waris</th>
                                 <td>: <?= $simpanan->nama_ahli_waris ?> (<?= $simpanan->hubungan_ahli_waris ?> dari <?= $nasabah->nama_lengkap ?>), <?= $simpanan->telp_ahli_waris ?></td>
