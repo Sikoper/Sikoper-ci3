@@ -35,7 +35,9 @@
                     <tr>
                         <th>Total Penarikan Keseluruhan</th>
                         <td id="totalPenarikanValue">: Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?>
-                            (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
+                            <?php if($total_akumulasi_denda > 0): ?>
+                                (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <tr>
@@ -47,7 +49,7 @@
                             <th>Durasi</th>
                             <td>: <?= format_durasi($simpanan->durasi) ?></td>
                         </tr>
-                        <?php if (empty($simpanan->nama_ahli_waris)): ?>
+                        <?php if (!empty($simpanan->nama_ahli_waris)): ?>
                             <tr id="field-ahli-waris">
                                 <th>Ahli Waris</th>
                                 <td>: <?= $simpanan->nama_ahli_waris ?> (<?= $simpanan->hubungan_ahli_waris ?> dari <?= $nasabah->nama_lengkap ?>), <?= $simpanan->telp_ahli_waris ?></td>
@@ -156,7 +158,7 @@
 
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-success d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail bunga</h5>
 
             </div>

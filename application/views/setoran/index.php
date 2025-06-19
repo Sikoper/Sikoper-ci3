@@ -18,7 +18,14 @@
 
                         <div class="form-group mb-3">
                             <label for="nasabah">Pilih Nasabah</label>
-                            <select id="nasabah" class="form-control select2" name="nasabah" style="width: 100%;"></select>
+                            <select id="nasabah" class="form-control select2" name="nasabah" <?= $disabled ? 'disabled' : '' ?>>
+                                <option value="">-- Pilih Nasabah --</option>
+                                <?php foreach ($nasabah as $n): ?>
+                                    <option value="<?= $n->id ?>" <?= ($selected_nasabah == $n->id) ? 'selected' : '' ?>>
+                                        <?= $n->nama_lengkap ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                             <div id="errorNasabah" class="invalid-feedback"></div>
                             <small class="form-text text-muted">Klik untuk mencari nama nasabah.</small>
                         </div>
@@ -27,11 +34,25 @@
 
                         <div class="form-group mb-3">
                             <label for="tabungan">Pilih Tabungan</label>
-                            <select id="tabungan" class="form-control select2" name="tabungan" style="width: 100%;" disabled>
-                                <option value="">-- Pilih nasabah terlebih dahulu --</option>
+                            <select class="form-control select2" name="tabungan" id="tabungan" <?= $disabled ? 'disabled' : '' ?>>
+                                <?php if (!empty($tabungan)): ?>
+                                    <option value="<?= $tabungan->id ?>" selected><?= $tabungan->no_rekening ?></option>
+                                <?php else: ?>
+                                    <option value="">-- Pilih Rekening --</option>
+                                <?php endif; ?>
                             </select>
                             <div id="errorTabungan" class="invalid-feedback"></div>
                         </div>
+
+                        <?php if (!empty($tabungan)): ?>
+                            <input type="hidden" id="preselectedNasabah" value="<?= $tabungan->nasabah_id ?>">
+                            <input type="hidden" id="preselectedTabungan" value="<?= $tabungan->id ?>">
+                        <?php endif; ?>
+
+                        <?php if (!empty($tabungan)): ?>
+                            <input type="hidden" name="nasabah" value="<?= $tabungan->nasabah_id ?>">
+                            <input type="hidden" name="tabungan" value="<?= $tabungan->id ?>">
+                        <?php endif; ?>
 
                         <div class="form-group mb-3">
                             <label for="sisa_saldo">Saldo Saat Ini</label>
@@ -90,177 +111,30 @@
         });
 
         $('#nasabah').select2({
-            placeholder: 'Cari nama nasabah...',
-            ajax: {
-                url: '<?= base_url("nasabah/cari_nasabah") ?>',
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        q: params.term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data
-                    };
-                },
-                cache: true
-            }
+            placeholder: '-- Pilih Nasabah --'
         });
-
-        function cekKesiapanForm() {
-            const nasabah = $('#nasabah').val();
-            const tabungan = $('#tabungan').val();
-            const jumlahSetoran = $('#jumlah_setoran').autoNumeric('get');
-            const level = $('#form_simpan').data('level');
-            let pegawaiValid = true;
-
-            if (level === 'Admin') {
-                const pegawai = $('#pegawai_id').val();
-                pegawaiValid = (pegawai && pegawai !== "");
-            }
-
-            if (nasabah && tabungan && parseFloat(jumlahSetoran) > 0 && pegawaiValid) {
-                $('#tombol_simpan_setoran').prop('disabled', false);
-            } else {
-                $('#tombol_simpan_setoran').prop('disabled', true);
-            }
-        }
-
-        $('#nasabah, #tabungan').on('change', function() {
-            cekKesiapanForm();
+        $('#tabungan').select2({
+            placeholder: '-- Pilih Rekening --'
         });
-
-        $('#jumlah_setoran').on('keyup change', function() {
-            cekKesiapanForm();
-        });
-
-        $('#pegawai_id').on('change', function() {
-            if ($(this).val()) {
-                $('#errorPegawai').fadeOut();
-                $('#pegawai_id').removeClass('is-invalid');
-            }
-            cekKesiapanForm();
-        });
-
-        cekKesiapanForm();
-        $('#tombol_simpan_setoran').click(function(e) {
-            e.preventDefault();
-
-            const namaNasabah = $('#nasabah option:selected').text();
-            const noRekening = $('#tabungan option:selected').text();
-            const jumlahSetoran = $('#jumlah_setoran').val();
-
-            Swal.fire({
-                title: 'Konfirmasi Setoran',
-                html: 'Anda akan melakukan setoran dengan rincian:<br><br>' +
-                    '<div style="text-align: left; margin-left: 20px;">' +
-                    '<strong>Nasabah :</strong> ' + namaNasabah + '<br>' +
-                    '<strong>Rekening:</strong> ' + noRekening + '<br>' +
-                    '<strong>Jumlah :</strong> Rp ' + jumlahSetoran +
-                    '</div><br>' +
-                    'Apakah data sudah benar?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, Lanjutkan & Simpan!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    let form = $('#form_simpan')[0];
-                    let data = new FormData(form);
-                    $.ajax({
-                        type: "POST",
-                        url: "<?= base_url('setoran/simpanData') ?>",
-                        data: data,
-                        dataType: "json",
-                        processData: false,
-                        contentType: false,
-                        cache: false,
-                        beforeSend: function() {
-                            $('#tombol_simpan_setoran').prop('disabled', true);
-                            $('#tombol_simpan_setoran').html('<i class="fa fa-spin fa-spinner"></i>');
-                        },
-                        complete: function() {
-                            $('#tombol_simpan_setoran').html('Simpan');
-                        },
-                        success: function(response) {
-                            if (response.error) {
-                                let dataError = response.error;
-                                if (dataError.errorTanggalSetoran) {
-                                    $('#errorTanggalSetoran').html(dataError.errorTanggalSetoran).show();
-                                    $('#tanggal_setoran').addClass('is-invalid');
-                                } else {
-                                    $('#errorTanggalSetoran').fadeOut();
-                                    $('#tanggal_setoran').removeClass('is-invalid').addClass('is-valid');
-                                }
-                                if (dataError.errorNasabah) {
-                                    $('#errorNasabah').html(dataError.errorNasabah).show();
-                                    $('#nasabah').addClass('is-invalid');
-                                } else {
-                                    $('#errorNasabah').fadeOut();
-                                    $('#nasabah').removeClass('is-invalid').addClass('is-valid');
-                                }
-                                if (dataError.errorTabungan) {
-                                    $('#errorTabungan').html(dataError.errorTabungan).show();
-                                    $('#tabungan').addClass('is-invalid');
-                                } else {
-                                    $('#errorTabungan').fadeOut();
-                                    $('#tabungan').removeClass('is-invalid').addClass('is-valid');
-                                }
-                                if (dataError.errorJumlahSetoran) {
-                                    $('#errorJumlahSetoran').html(dataError.errorJumlahSetoran).show();
-                                    $('#jumlah_setoran').addClass('is-invalid');
-                                } else {
-                                    $('#errorJumlahSetoran').fadeOut();
-                                    $('#jumlah_setoran').removeClass('is-invalid').addClass('is-valid');
-                                }
-                                if (dataError.errorPegawai) {
-                                    $('#errorPegawai').html(dataError.errorPegawai).show();
-                                    $('#pegawai_id').addClass('is-invalid');
-                                } else {
-                                    $('#errorPegawai').fadeOut();
-                                    $('#pegawai_id').removeClass('is-invalid').addClass('is-valid');
-                                }
-                            } else {
-                                // PERBAIKAN ADA DI SINI
-                                Swal.fire({
-                                    icon: "success",
-                                    title: "Berhasil!",
-                                    html: response.success,
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    // Langsung redirect setelah timer selesai, tanpa 'if'
-                                    window.location.href = response.redirect;
-                                });
-                            }
-                        },
-                        error: function(xhr, thrownError) {
-                            alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                        }
-                    });
-                }
+        <?php if ($level == 'Admin'): ?>
+            $('#pegawai_id').select2({
+                placeholder: '-- Pilih Pegawai --'
             });
-        });
+        <?php endif; ?>
 
         $('#nasabah').on('change', function() {
+            console.log('Nasabah selection changed. Firing event...');
             let nasabahId = $(this).val();
             const selectTabungan = $('#tabungan');
-            const inputSaldo = $('#sisa_saldo');
-            const inputJumlahSetoran = $('#jumlah_setoran');
             const detailInfo = $('#detail_nasabah_info');
 
+            $('#sisa_saldo').val('Pilih Tabungan Untuk Melihat Saldo');
+            $('#jumlah_setoran').autoNumeric('set', '');
             detailInfo.hide().html('');
-            selectTabungan.html('<option value="">--- Pilih tabungan ---</option>').trigger('change.select2');
-            inputSaldo.val('');
-            inputJumlahSetoran.autoNumeric('set', '');
+            selectTabungan.html('<option value="">--- Pilih tabungan ---</option>').trigger('change');
 
             if (nasabahId) {
-                selectTabungan.prop('disabled', false);
-                selectTabungan.html('<option value="">--- Memuat rekening... ---</option>');
+                selectTabungan.prop('disabled', false).html('<option value="">--- Memuat rekening... ---</option>');
                 $.ajax({
                     type: "POST",
                     url: "<?= base_url('setoran/get_no_rekening') ?>",
@@ -269,15 +143,30 @@
                     },
                     dataType: "json",
                     success: function(response) {
+                        console.log('AJAX success: Received rekening data.');
                         if (response.data) {
                             selectTabungan.html(response.data);
+
                             if (response.detail_nasabah) {
                                 let detail = response.detail_nasabah;
                                 detailInfo.html(`<strong>NIK:</strong> ${detail.nik || '-'}<br><strong>Alamat:</strong> ${detail.alamat || '-'}`).show();
                             }
+
+                            const preselectedTabunganId = $('#preselectedTabungan').val();
+                            if (preselectedTabunganId) {
+                                console.log('Preselected tabungan found. Triggering its change event.');
+                                selectTabungan.val(preselectedTabunganId).trigger('change');
+
+                                $('#nasabah').prop('disabled', true);
+                                selectTabungan.prop('disabled', true);
+                            }
+                        } else {
+                            selectTabungan.html('<option value="">-- Tidak ada rekening --</option>');
                         }
                     },
-                    error: function(xhr, thrownError) {}
+                    error: function() {
+                        selectTabungan.html('<option value="">-- Gagal memuat --</option>');
+                    }
                 });
             } else {
                 selectTabungan.prop('disabled', true);
@@ -286,9 +175,9 @@
         });
 
         $('#tabungan').on('change', function() {
+            console.log('SUCCESS: Tabungan change event fired!');
             let idRekening = $(this).val();
             let inputSaldo = $('#sisa_saldo');
-            inputSaldo.val('');
 
             if (idRekening) {
                 inputSaldo.val('Memuat...');
@@ -301,23 +190,127 @@
                     },
                     success: function(response) {
                         if (response.status === 'success') {
-                            let saldoFormatted = new Intl.NumberFormat('id-ID').format(response.saldo);
+                            let saldoFormatted = new Intl.NumberFormat('id-ID', {
+                                style: 'decimal',
+                                minimumFractionDigits: 0
+                            }).format(response.saldo);
+
                             inputSaldo.val(saldoFormatted);
                         } else {
-                            inputSaldo.val(response.message);
+                            inputSaldo.val(response.message || 'Gagal memuat');
                         }
+                        cekKesiapanForm();
                     },
                     error: function() {
                         inputSaldo.val('Gagal memuat saldo.');
+                        cekKesiapanForm();
                     }
                 });
+            } else {
+                inputSaldo.val('Pilih Tabungan Untuk Melihat Saldo');
+                cekKesiapanForm();
             }
+        });
+
+        $('#jumlah_setoran, #pegawai_id').on('keyup change', function() {
             cekKesiapanForm();
         });
 
-        $('#jumlah_setoran').on('keyup change', function() {
-            cekKesiapanForm();
+        function cekKesiapanForm() {
+            const nasabah = $('#nasabah').val();
+            const tabungan = $('#tabungan').val();
+            const jumlahSetoran = $('#jumlah_setoran').autoNumeric('get');
+            const level = $('#form_simpan').data('level');
+            let pegawaiValid = true;
+
+            if (level === 'Admin') {
+                pegawaiValid = ($('#pegawai_id').val() !== "");
+            }
+
+            if (nasabah && tabungan && parseFloat(jumlahSetoran) > 0 && pegawaiValid) {
+                $('#tombol_simpan_setoran').prop('disabled', false);
+            } else {
+                $('#tombol_simpan_setoran').prop('disabled', true);
+            }
+        }
+
+        $('#tombol_simpan_setoran').click(function(e) {
+            e.preventDefault();
+
+            let form = $('#form_simpan')[0];
+            let data = new FormData(form);
+
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('setoran/simpanData') ?>",
+                data: data,
+                dataType: "json",
+                processData: false,
+                contentType: false,
+                cache: false,
+                beforeSend: function() {
+                    $('#tombol_simpan_setoran').prop('disabled', true)
+                    $('#tombol_simpan_setoran').html('<i class="fa fa-spin fa-spinner"></i>')
+                },
+                complete: function() {
+                    $('#tombol_simpan_setoran').prop('disabled', false)
+                    $('#tombol_simpan_setoran').html('Simpan')
+                },
+                success: function(response) {
+                    if (response.error) {
+                        let dataError = response.error;
+                        if (dataError.errorTanggalSetoran) {
+                            $('#errorTanggalSetoran').html(dataError.errorTanggalSetoran).show();
+                            $('#tanggal_setoran').addClass('is-invalid');
+                        } else {
+                            $('#errorTanggalSetoran').fadeOut();
+                            $('#tanggal_setoran').removeClass('is-invalid').addClass('is-valid');
+                        }
+                        if (dataError.errorNasabah) {
+                            $('#errorNasabah').html(dataError.errorNasabah).show();
+                            $('#nasabah').addClass('is-invalid');
+                        } else {
+                            $('#errorNasabah').fadeOut();
+                            $('#nasabah').removeClass('is-invalid').addClass('is-valid');
+                        }
+                        if (dataError.errorTabungan) {
+                            $('#errorTabungan').html(dataError.errorTabungan).show();
+                            $('#tabungan').addClass('is-invalid');
+                        } else {
+                            $('#errorTabungan').fadeOut();
+                            $('#tabungan').removeClass('is-invalid').addClass('is-valid');
+                        }
+                        if (dataError.errorJumlahSetoran) {
+                            $('#errorJumlahSetoran').html(dataError.errorJumlahSetoran).show();
+                            $('#jumlah_setoran').addClass('is-invalid');
+                        } else {
+                            $('#errorJumlahSetoran').fadeOut();
+                            $('#jumlah_setoran').removeClass('is-invalid').addClass('is-valid');
+                        }
+                    } else {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Success!",
+                            html: response.success
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = response.redirect;
+                            }
+                        });
+                    }
+                },
+                error: function(xhr, thrownError) {
+                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                }
+            });
         });
+
         cekKesiapanForm();
+
+        const preselectedNasabah = $('#preselectedNasabah').val();
+        if (preselectedNasabah) {
+            console.log('Page loaded with preselected nasabah. Firing trigger...');
+            $('#nasabah').trigger('change');
+        }
     });
 </script>

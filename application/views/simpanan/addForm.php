@@ -232,31 +232,6 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
-
-        var canvas = document.getElementById('signature-pad');
-        var signaturePad = new SignaturePad(canvas);
-
-        $('#clear').on('click', function() {
-            signaturePad.clear();
-            $('#signature_input').val('');
-        });
-
-        $('#save').on('click', function() {
-            if (signaturePad.isEmpty()) {
-                alert('Please provide a signature first.');
-            } else {
-                var dataURL = signaturePad.toDataURL();
-                $('#signature_input').val(dataURL);
-                Swal.fire({
-                    icon: "success",
-                    title: "Success!",
-                    html: "Tanda tangan berhasil disimpan"
-                }).then((result) => {
-
-                });
-            }
-        });
-
         $('#bunga').autoNumeric('init', {
             aSep: ',',
             aDec: '.',

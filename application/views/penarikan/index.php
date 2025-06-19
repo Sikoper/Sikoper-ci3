@@ -6,133 +6,148 @@
                 <div class="col-md-6">
                     <?= form_open('', ['id' => 'form_simpan']) ?>
 
-                    <div class="form-group mb-3">
+                    <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_penarikan">Tanggal</label>
-                        <input type="text" value="<?= date('d-m-Y') ?>" class="form-control" style="background-color: #e9ecef;" readonly>
-                        <input type="hidden" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
+                        <div class="input-group">
+                            <input type="date" name="tanggal_penarikan" id="tanggal_penarikan" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
+                        </div>
+                        <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-3">
+                    <div class="form-group" style="height: 80px;">
                         <label for="nasabah">Pilih Nasabah</label>
-                        <select id="nasabah" class="form-control select2" name="nasabah" <?= isset($disabled) && $disabled ? 'disabled' : '' ?> style="width: 100%;">
-                            <?php if (isset($selected_nasabah) && isset($nasabah_info)): ?>
-                               <option value="<?= $selected_nasabah ?>" selected><?= $nasabah_info->nama_lengkap ?></option>
-                            <?php else: ?>
-                               <option value="">-- Pilih Nasabah --</option>
-                            <?php endif; ?>
-                        </select>
-                        <small class="form-text text-muted">Mulai ketik untuk mencari nama nasabah.</small>
+                        <div class="d-flex align-items-center">
+                            <select id="nasabah" class="form-control select2" name="nasabah" <?= $disabled ? 'disabled' : '' ?> style="width: auto; flex: 1;">
+                                <option value="">-- Pilih Nasabah --</option>
+                                <?php foreach ($nasabah as $n): ?>
+                                    <option value="<?= $n->id ?>" <?= ($selected_nasabah == $n->id) ? 'selected' : '' ?>>
+                                        <?= $n->nama_lengkap ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div id="errorNasabah" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-3">
+                    <div class="form-group" style="height: 80px;">
                         <label for="rekening">Nomor Rekening</label>
-                        <select class="form-control select2" name="simpanan_id" id="rekening" <?= isset($disabled) && $disabled ? 'disabled' : '' ?>>
-                             <?php if (isset($tabungan) && !empty($tabungan)): ?>
+                        <select class="form-control select2" name="simpanan_id" id="rekening" <?= $disabled ? 'disabled' : '' ?>>
+                            <?php if (!empty($tabungan)): ?>
                                 <option value="<?= $tabungan->id ?>" selected><?= $tabungan->no_rekening ?></option>
                             <?php else: ?>
                                 <option value="">-- Pilih Rekening --</option>
                             <?php endif; ?>
                         </select>
+                        <div id="errorSimpanan" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <?php if (isset($tabungan) && !empty($tabungan)): ?>
+                    <?php if (!empty($tabungan)): ?>
                         <input type="hidden" id="preselectedNasabah" value="<?= $tabungan->nasabah_id ?>">
                         <input type="hidden" id="preselectedRekening" value="<?= $tabungan->id ?>">
+                    <?php endif; ?>
+
+                    <?php if (!empty($tabungan)): ?>
                         <input type="hidden" name="nasabah" value="<?= $tabungan->nasabah_id ?>">
                         <input type="hidden" name="simpanan_id" value="<?= $tabungan->id ?>">
                     <?php endif; ?>
 
-                    <div class="form-group mb-3">
-                        <label for="saldo">Saldo Tersedia</label>
-                        <div class="input-group">
-                            <span class="input-group-text" style="background-color: #e9ecef; border-right: none;">Rp</span>
-                            <input type="text" class="form-control border-0 shadow-none fw-bold fs-5 ps-2" id="saldo" name="saldo" style="background-color: #e9ecef;" readonly>
+                    <div id="jenis_tabungan" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="durasi">Durasi</label>
+                                    <input type="text" class="form-control" id="durasi" name="durasi" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="tenor">Tenor</label>
+                                    <input type="text" class="form-control" id="tenor" name="tenor" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="jenis_denda">Jenis denda</label>
+                                    <input type="text" class="form-control" id="jenis_denda" name="jenis_denda" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="jumlah_denda">Denda</label>
+                                    <input type="text" class="form-control" id="jumlah_denda" name="jumlah_denda" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="denda">Jumlah Denda</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" class="form-control" id="denda" name="denda" readonly>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label for="jumlah_penarikan">Jumlah Penarikan</label>
+                    <div class="form-group">
+                        <label for="saldo">Saldo</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="text" class="form-control" id="saldo" name="saldo" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3"> <label for="jumlah_penarikan">Jumlah Penarikan</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
                             <input type="text" name="jumlah_penarikan" id="jumlah_penarikan" class="form-control text-end" autocomplete="off" />
                         </div>
-                        <div id="errorJumlah" class="invalid-feedback"></div>
-                        <small class="form-text text-muted">Pastikan jumlah tidak melebihi saldo tersedia.</small>
-                    </div>
-
-                    <div id="jenis_tabungan" style="display: none;">
-                        <div class="card border bg-light mb-3">
-                            <div class="card-header py-2">
-                                <h5 class="mb-0 fs-6">Informasi Tambahan (Deposito)</h5>
-                            </div>
-                            <div class="card-body p-3">
-                                <div class="row">
-                                    <div class="col-md-6 mb-2">
-                                        <label class="form-label small">Durasi</label>
-                                        <input type="text" class="form-control form-control-sm" id="durasi" name="durasi" readonly>
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <label class="form-label small">Jatuh Tempo</label>
-                                        <input type="text" class="form-control form-control-sm" id="tenor" name="tenor" readonly>
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <label class="form-label small">Jenis Denda</label>
-                                        <input type="text" class="form-control form-control-sm" id="jenis_denda" name="jenis_denda" readonly>
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <label class="form-label small">Denda (%)</label>
-                                        <input type="text" class="form-control form-control-sm" id="jumlah_denda" name="jumlah_denda" readonly>
-                                    </div>
-                                </div>
-                                <div class="form-group mb-0">
-                                    <label class="form-label small">Jumlah Denda (Rp)</label>
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">Rp</span>
-                                        <input type="text" class="form-control" id="denda" name="denda" readonly>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="errorJumlah" class="invalid-feedback" style="display: none;">
                         </div>
+                        <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-3">
+                    <div class="form-group">
                         <label for="total_yang_ditarik_display">Total Akan Ditarik</label>
                         <div class="input-group">
-                            <span class="input-group-text" style="background-color: #e9ecef; border-right: none;">Rp</span>
-                            <input type="text" id="total_yang_ditarik_display" class="form-control border-0 shadow-none text-end fw-bold fs-5 ps-2" readonly style="background-color: #e9ecef;" />
+                            <span class="input-group-text">Rp</span>
+                            <input type="text" id="total_yang_ditarik_display" class="form-control text-end" readonly
+                                style="font-weight: bold; background-color: #e9ecef; opacity: 1;" />
                         </div>
                     </div>
 
-                    <div class="form-group mb-4">
-                        <label for="perkiraan_sisa_saldo_display">Perkiraan Sisa Saldo</label>
+                    <div class="form-group">
+                        <label for="perkiraan_sisa_saldo_display">Perkiraan Sisa Saldo Setelah Transaksi</label>
                         <div class="input-group">
-                            <span class="input-group-text" style="background-color: #e9ecef; border-right: none;">Rp</span>
-                            <input type="text" id="perkiraan_sisa_saldo_display" class="form-control border-0 shadow-none text-end fw-bold fs-5 ps-2" readonly style="background-color: #e9ecef;" />
+                            <span class="input-group-text">Rp</span>
+                            <input type="text" id="perkiraan_sisa_saldo_display" class="form-control text-end" readonly style="font-weight: bold; background-color: #e9ecef; opacity: 1;" />
                         </div>
                     </div>
 
-                    <?php if ($this->session->userdata('level') == 'Admin'): ?>
-                        <div class="form-group mb-4">
+                    <?php if ($level == 'Admin'): ?>
+                        <div class="form-group mb-3" style="height: 80px;">
                             <label for="pegawai_id">Pegawai</label>
                             <select id="pegawai_id" name="pegawai_id" class="form-control" autocomplete="off">
-                                <option value="">-- Pilih Pegawai --</option>
+                                <option value=""> -- Pilih Pegawai -- </option>
                                 <?php foreach ($pegawai as $item): ?>
                                     <option value="<?= $item->id ?>"><?= $item->nama_lengkap ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <div id="errorPegawai" class="invalid-feedback"></div>
+                            <div id="errorPegawai" class="invalid-feedback" style="display: none;"></div>
+                            <div class="valid-feedback" style="display: none;"></div>
                         </div>
                     <?php else: ?>
                         <input type="hidden" name="pegawai_id" id="pegawai_id" value="<?= $this->session->userdata('pegawai_id') ?>">
                     <?php endif; ?>
 
                     <div class="text-center mb-3">
-                        <button type="submit" id="tombol_simpan" class="btn btn-success">
-                            <i></i> Tarik Uang
-                        </button>
-                        <button type="button" onclick="window.location='<?= base_url('penarikan') ?>'" class="btn btn-danger">
-                            <i></i> Batal
-                        </button>
+                        <button type="submit" id="tombol_simpan" class="btn btn-success">Tarik Uang</button>
+                        <button type="button" onclick="window.location='<?= base_url('penarikan') ?>'" class="btn btn-danger">Batal</button>
                     </div>
 
                     <?= form_close() ?>

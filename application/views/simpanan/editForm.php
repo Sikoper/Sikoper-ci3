@@ -212,24 +212,6 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-3" style="height: 300px;">
-                        <label for="signature-pad" class="form-label fw-bold">Tanda Tangan</label>
-                        <?php if (!empty($simpanan->tanda_tangan)): ?>
-                            <img id="existing-signature" src="<?= base_url($simpanan->tanda_tangan) ?>" style="display: none;">
-                        <?php endif; ?>
-                        <div class="border rounded" style="width: 100%; max-width: 400px; height: 200px; position: relative;">
-                            <canvas id="signature-pad" width="400" height="200" style="width: 100%; height: 100%;"></canvas>
-                        </div>
-
-                        <div class="mt-2">
-                            <button type="button" id="clear" class="btn btn-sm btn-secondary me-2">Clear</button>
-                            <button type="button" id="save" class="btn btn-sm btn-primary">Save</button>
-                        </div>
-                        <div id="errorTandaTangan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                        <input type="hidden" name="signature_input" id="signature_input">
-                    </div>
-
                     <div class="form-group mb-5" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
@@ -252,48 +234,8 @@
     </div>
 </section>
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
     $(document).ready(function() {
-
-        const canvas = document.getElementById('signature-pad');
-        const signaturePad = new SignaturePad(canvas);
-
-        const $existingImg = $('#existing-signature');
-
-        if ($existingImg.length) {
-            const context = canvas.getContext('2d');
-            const image = new Image();
-
-            image.onload = function() {
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                context.drawImage(image, 0, 0, canvas.width, canvas.height);
-                $('#signature_input').val(canvas.toDataURL());
-            };
-
-            image.src = $existingImg.attr('src');
-        }
-
-        $('#clear').on('click', function() {
-            signaturePad.clear();
-            $('#signature_input').val('');
-        });
-
-        $('#save').on('click', function() {
-            if (signaturePad.isEmpty()) {
-                alert('Please provide a signature first.');
-            } else {
-                var dataURL = signaturePad.toDataURL();
-                $('#signature_input').val(dataURL);
-                Swal.fire({
-                    icon: "success",
-                    title: "Success!",
-                    html: "Tanda tangan berhasil disimpan"
-                }).then((result) => {
-
-                });
-            }
-        });
 
         $('#bunga').autoNumeric('init', {
             aSep: ',',

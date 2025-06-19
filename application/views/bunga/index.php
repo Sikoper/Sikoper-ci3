@@ -124,7 +124,7 @@
         $('#btnPembungaan').click(function(e) {
             e.preventDefault();
             $.ajax({
-                type: "method",
+                type: "POST",
                 url: "<?= base_url('bunga/run_bunga') ?>",
                 dataType: "json",
                 success: function(response) {
@@ -149,6 +149,9 @@
                             }
                         });
                     }
+                },
+                error: function(xhr, thrownError) {
+                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                 }
             });
         });

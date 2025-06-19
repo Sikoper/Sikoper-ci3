@@ -64,6 +64,16 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
+                    <div class="form-group" style="height: 110px;">
+                        <label for="tanggal_pembungaan">Tanggal Pembungaan</label>
+                        <div class="input-group">
+                            <input type="text" id="tanggal_pembungaan" name="tanggal_pembungaan" class="form-control">
+                        </div>
+                        <small class="form-text text-muted">Tanggal bunga bisa dipilih dari 1 - 28</small>
+                        <div id="errorTanggalPembungaan" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
                     <div class="form-group" style="height: 80px;">
                         <label for="jenis_denda">Jenis Denda</label>
                         <div class="input-group">
@@ -155,6 +165,25 @@
             vMin: '0',
             vMax: '100',
         });
+        $('#tanggal_pembungaan').on('input', function() {
+            let value = $(this).val();
+
+            value = value.replace(/\D/g, '');
+
+            if (value === '') {
+                $(this).val('');
+                return;
+            }
+
+            let num = parseInt(value, 10);
+
+            if (num >= 1 && num <= 28) {
+                $(this).val(num);
+            } else {
+                value = value.slice(0, -1);
+                $(this).val(value);
+            }
+        });
 
         $('#jenis_denda').on('change', function() {
             let value = $(this).val();
@@ -231,6 +260,13 @@
                         } else {
                             $('#errorPengendapan').fadeOut();
                             $('#pengendapan').removeClass('is-invalid').addClass('is-valid');
+                        }
+                        if (dataError.errorTanggalPembungaan) {
+                            $('#errorTanggalPembungaan').html(dataError.errorTanggalPembungaan).show();
+                            $('#tanggal_pembungaan').addClass('is-invalid');
+                        } else {
+                            $('#errorTanggalPembungaan').fadeOut();
+                            $('#tanggal_pembungaan').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorKeterangan) {
                             $('#errorKeterangan').html(dataError.errorKeterangan).show();

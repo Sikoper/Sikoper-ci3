@@ -26,7 +26,7 @@ class Dashboard extends CI_Controller
         $today = date('Y-m-d');
         $jumlah_pegawai = $this->Pegawai_model->count_all();
         $jumlah_nasabah = $this->Nasabah_model->count_all();
-        
+
         $setoran_raw = $this->Setoran_model->jumlah_setoran();
         $setoran = array_fill(0, 12, 0);
         foreach ($setoran_raw as $item) {
@@ -34,15 +34,15 @@ class Dashboard extends CI_Controller
             $setoran[$monthIndex] = (int) $item->total_setoran;
         }
 
-        $penarikan_raw = $this->Penarikan_model->jumlah_setoran();
+        $penarikan_raw = $this->Penarikan_model->jumlah_penarikan();
         $penarikan = array_fill(0, 12, 0);
         foreach ($penarikan_raw as $item) {
             $monthIndex = $item->bulan - 1;
-            $setoran[$monthIndex] = (int) $item->total_penarikan;
+            $penarikan[$monthIndex] = (int) $item->total_penarikan;
         }
 
         $setoran_baru = $this->Setoran_model->count_new_data($today);
-        $penarikan_baru = $this->Setoran_model->count_new_data($today);
+        $penarikan_baru = $this->Penarikan_model->count_new_data($today);
 
         $data = [
             'jumlah_pegawai' => $jumlah_pegawai,

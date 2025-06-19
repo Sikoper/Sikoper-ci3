@@ -162,20 +162,36 @@ class Bunga extends CI_Controller
 
     public function run_bunga()
     {
-        $today = "19";
+        $jenis_tabungan = $this->Kategori_model->get_data();
+        $today = date('d');
 
-        if (date('d') == $today) {
-            $this->Bunga_model->checkAndRunBunga();
+        $matchingTanggal = false;
+        foreach ($jenis_tabungan as $jenis) {
+            if ($today == $jenis->tanggal_bunga) {
+                $matchingTanggal = true;
+                break;
+            }
+        }
 
-            $msg = [
-                'success' => 'Pembungaan berhasil dihitung'
-            ];
+        if ($matchingTanggal) {
+            $processed = $this->Bunga_model->checkAndRunBunga();
+
+            if ($processed) {
+                $msg = [
+                    'success' => 'Pembungaan berhasil dihitung'
+                ];
+            } else {
+                $msg = [
+                    'error' => 'Bunga sudah diperbarui hari ini'
+                ];
+            }
         } else {
             $msg = [
-                'error' => 'Pembungaan belum mencapai tanggal yang telah ditentukan yaitu tanggal ' . $today
+                'error' => 'Tidak ada jenis tabungan dengan tanggal bunga hari ini (' . $today . ')'
             ];
         }
 
+        header('Content-Type: application/json');
         echo json_encode($msg);
     }
 }

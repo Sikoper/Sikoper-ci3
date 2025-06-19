@@ -42,6 +42,13 @@
                     <div class="fs-5">Rp <?= number_format($kategori->pengendapan, 0, ',', '.') ?></div>
                 </div>
             </div>
+
+            <div class="col-md-6">
+                <div class="p-3 border rounded bg-light">
+                    <label class="text-muted mb-1"><strong>Tanggal Bunga</strong></label>
+                    <div class="fs-5"><?= number_format($kategori->tanggal_bunga, 0, ',', '.') ?></div>
+                </div>
+            </div>
         </div>
         <div class="col-md">
             <div class="p-3 border rounded bg-light">
@@ -97,7 +104,7 @@
                                 icon: "success"
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    window.location.reload();
+                                    window.location='<?= base_url('jenis_tabungan') ?>';
                                 }
                             });
                         } else {

@@ -39,7 +39,7 @@
         <div class="row mb-3">
             <div class="col-md-6">
                 <label><strong>Alamat Lengkap:</strong></label>
-                <div><?= $pegawai->alamat ?>, Desa <?= $nama_desa ?>, Kecamatan <?= $nama_kecamatan ?>, <br /> Kabupaten <?= $nama_kabupaten ?>, Provinsi <?= $nama_provinsi ?></div>
+                <div><?= $pegawai->alamat ?></div>
             </div>
             <div class="col-md-6">
                 <label><strong>Jabatan:</strong></label>
