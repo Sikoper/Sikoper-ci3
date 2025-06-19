@@ -3,7 +3,7 @@
         <h4 class="card-title">
             <?php if ($this->session->userdata('level') != 'Direktur') : ?>
                 <button class="btn btn-primary" onclick="window.location='<?= base_url('jenis_tabungan/add') ?>'">
-                    <i class="fa fa-plus-circle"></i> Tambah Data
+                    <i class="fa fa-plus-circle"></i> Tambah Jenis Tabungan
                 </button>
             <?php endif; ?>
         </h4>

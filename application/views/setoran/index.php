@@ -20,7 +20,7 @@
                             <label for="nasabah">Pilih Nasabah</label>
                             <select id="nasabah" class="form-control select2" name="nasabah" style="width: 100%;"></select>
                             <div id="errorNasabah" class="invalid-feedback"></div>
-                            <small class="form-text text-muted">Mulai ketik untuk mencari nama nasabah.</small>
+                            <small class="form-text text-muted">Klik untuk mencari nama nasabah.</small>
                         </div>
 
                         <div id="detail_nasabah_info" class="alert alert-light mt-2" style="display:none;"></div>
@@ -68,7 +68,7 @@
 
                         <div class="text-center mb-3">
                             <button type="submit" id="tombol_simpan_setoran" class="btn btn-success" disabled>
-                                <i class="bi bi-check-circle"></i> Simpan
+                                <i></i> Simpan
                             </button>
                             <button type="button" onclick="window.location='<?= base_url('setoran') ?>'" class="btn btn-danger">Batal</button>
                         </div>
@@ -181,7 +181,7 @@
                         cache: false,
                         beforeSend: function() {
                             $('#tombol_simpan_setoran').prop('disabled', true);
-                            $('#tombol_simpan-setoran').html('<i class="fa fa-spin fa-spinner"></i>');
+                            $('#tombol_simpan_setoran').html('<i class="fa fa-spin fa-spinner"></i>');
                         },
                         complete: function() {
                             $('#tombol_simpan_setoran').html('Simpan');
