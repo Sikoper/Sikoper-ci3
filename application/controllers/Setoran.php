@@ -158,7 +158,42 @@ class Setoran extends CI_Controller
                 $Value .= '<option value="' . $row->id . '">' . $row->no_rekening . ' (' . $kategori_nama . ')</option>';
             }
 
-            echo json_encode(['data' => $Value]);
+            $nasabah_detail = $this->Nasabah_model->get_data_by_id($nasabah);
+
+            echo json_encode([
+                'data' => $Value,
+                'detail_nasabah' => [
+                    'nik' => $nasabah_detail->nik,
+                    'alamat' => $nasabah_detail->alamat
+                ]
+            ]);
+        }
+    }
+
+    public function get_saldo_rekening()
+    {
+        if ($this->input->is_ajax_request()) {
+            header('Content-Type: application/json');
+            $id_rekening = $this->input->post('id_rekening');
+
+            if ($id_rekening) {
+                $data_simpanan = $this->Simpanan_model->get_data_by_id($id_rekening);
+
+                if ($data_simpanan) {
+                    $response = [
+                        'status' => 'success',
+                        'saldo'  => $data_simpanan->jumlah_simpanan
+                    ];
+                } else {
+                    $response = ['status' => 'error', 'message' => 'Data rekening tidak ditemukan.'];
+                }
+            } else {
+                $response = ['status' => 'error', 'message' => 'ID Rekening tidak valid.'];
+            }
+
+            echo json_encode($response);
+        } else {
+            exit('No direct script access allowed');
         }
     }
 

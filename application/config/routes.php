@@ -122,6 +122,7 @@ $route['simpanan/print_laporan'] = 'simpanan/print_laporan';
 $route['setoran'] = 'setoran';
 $route['setoran/get_no_rekening'] = 'setoran/get_no_rekening';
 $route['setoran/fetchData'] = 'setoran/fetchData';
+$route['setoran/get-saldo'] = 'setoran/get_saldo_rekening';
 
 $route['bunga'] = 'bunga';
 $route['bunga/run_bunga'] = 'bunga/run_bunga';
