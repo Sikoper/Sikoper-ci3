@@ -1,12 +1,12 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Simpanan extends CI_Controller
+class Deposito extends CI_Controller
 {
     public function __construct()
     {
         parent::__construct();
-        $this->load->model('Simpanan_model');
+        $this->load->model('Deposito_model');
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
@@ -27,8 +27,8 @@ class Simpanan extends CI_Controller
     public function index()
     {
         $parser = [
-            'judul' => "Data Tabungan",
-            'isi'   => $this->load->view('simpanan/index', '', TRUE)
+            'judul' => "Data Deposito",
+            'isi'   => $this->load->view('deposito/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -41,7 +41,7 @@ class Simpanan extends CI_Controller
         }
 
         if ($this->input->is_ajax_request() == true) {
-            $list = $this->Simpanan_model->get_datatables();
+            $list = $this->Deposito_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
 
@@ -65,8 +65,8 @@ class Simpanan extends CI_Controller
 
             $output = array(
                 "draw" => $_POST['draw'],
-                "recordsTotal" => $this->Simpanan_model->count_all(),
-                "recordsFiltered" => $this->Simpanan_model->count_filtered(),
+                "recordsTotal" => $this->Deposito_model->count_all(),
+                "recordsFiltered" => $this->Deposito_model->count_filtered(),
                 "data" => $data,
             );
 
@@ -81,7 +81,7 @@ class Simpanan extends CI_Controller
         $query_jenis = $this->db
             ->select('nama, id')
             ->from('tbjenistabungan')
-            ->like('nama', 'tabungan')
+            ->like('nama', 'deposito')
             ->get();
 
         $jenistabungan = $query_jenis->row();
@@ -93,8 +93,8 @@ class Simpanan extends CI_Controller
         ];
 
         $parser = [
-            'judul' => " Form Buka Tabungan Baru ",
-            'isi'   => $this->load->view('simpanan/addForm', $data, TRUE)
+            'judul' => " Form Buka Deposito Baru ",
+            'isi'   => $this->load->view('deposito/addForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -113,18 +113,18 @@ class Simpanan extends CI_Controller
                 return;
             }
 
-            $tanggal_simpanan = $this->input->post('tanggal_simpanan');
+            $tanggal_deposito = $this->input->post('tanggal_deposito');
             $nasabah = $this->input->post('nasabah');
             $jenis_tabungan = $this->input->post('jenis_tabungan');
             $pegawai = $this->input->post('pegawai_id');
             $jumlah_simpanan = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_simpanan'));
-            // $durasi = $this->input->post('durasi');
-            // $nama_ahli_waris = $this->input->post('nama_ahli_waris');
-            // $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
-            // $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
+            $durasi = $this->input->post('durasi');
+            $nama_ahli_waris = $this->input->post('nama_ahli_waris');
+            $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
+            $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
             $no_rekening = $this->session->userdata('temp_no_rekening');
 
-            $this->form_validation->set_rules('tanggal_simpanan', 'Tanggal Simpanan', 'required', [
+            $this->form_validation->set_rules('tanggal_deposito', 'Tanggal Simpanan', 'required', [
                 'required'   => 'Tanggal simpanan wajib diisi.'
             ]);
 
@@ -174,13 +174,13 @@ class Simpanan extends CI_Controller
                 'required' => 'Pengendapan harus diisi.'
             ]);
 
-            // $this->form_validation->set_rules('jenis_denda', 'Jenis Denda', 'required', [
-            //     'required' => 'Jenis denda harus diisi.'
-            // ]);
+            $this->form_validation->set_rules('jenis_denda', 'Jenis Denda', 'required', [
+                'required' => 'Jenis denda harus diisi.'
+            ]);
 
-            // $this->form_validation->set_rules('jumlah_denda', 'Jumlah Denda', 'required', [
-            //     'required' => 'Jumlah denda harus diisi.'
-            // ]);
+            $this->form_validation->set_rules('jumlah_denda', 'Jumlah Denda', 'required', [
+                'required' => 'Jumlah denda harus diisi.'
+            ]);
 
             $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
                 'required' => 'Pegawai sebagai penanggung jawab wajib dipilih.',
@@ -194,7 +194,7 @@ class Simpanan extends CI_Controller
             if ($this->form_validation->run() == FALSE) {
                 $msg = [
                     'error' => [
-                        'errorTanggalSimpanan'  => form_error('tanggal_simpanan'),
+                        'errorTanggalSimpanan'  => form_error('tanggal_deposito'),
                         'errorNasabah'          => form_error('nasabah'),
                         'errorJenisTabungan'    => form_error('jenis_tabungan'),
                         'errorBunga'            => form_error('bunga'),
@@ -202,8 +202,8 @@ class Simpanan extends CI_Controller
                         'errorSimpananAwal'     => form_error('simpanan_awal'),
                         'errorPengendapan'      => form_error('pengendapan'),
                         'errorPegawai'          => form_error('pegawai_id'),
-                        // 'errorJenisDenda'       => form_error('jenis_denda'),
-                        // 'errorJumlahDenda'      => form_error('jumlah_denda'),
+                        'errorJenisDenda'       => form_error('jenis_denda'),
+                        'errorJumlahDenda'      => form_error('jumlah_denda'),
                         'errorJumlahSimpanan'   => form_error('jumlah_simpanan'),
                         'errorNoRekening'       => form_error('nomor_rekening'),
                         'errorDurasi'           => form_error('durasi'),
@@ -212,16 +212,16 @@ class Simpanan extends CI_Controller
             } else {
 
                 $data = [
-                    'tanggal_simpanan' => $tanggal_simpanan,
+                    'tanggal_deposito' => $tanggal_deposito,
                     'no_rekening' => $no_rekening,
                     'nasabah_id' => $nasabah,
                     'pegawai_id' => $pegawai,
                     'jenistabungan_id' => $jenis_tabungan,
                     'jumlah_simpanan' => $jumlah_simpanan,
-                    // 'durasi' => $durasi,
-                    // 'nama_ahli_waris' => $nama_ahli_waris,
-                    // 'telp_ahli_waris' => $kontak_ahli_waris,
-                    // 'hubungan_ahli_waris' => $hubungan_ahli_waris,
+                    'durasi' => $durasi,
+                    'nama_ahli_waris' => $nama_ahli_waris,
+                    'telp_ahli_waris' => $kontak_ahli_waris,
+                    'hubungan_ahli_waris' => $hubungan_ahli_waris,
                 ];
 
                 // echo '<pre>';
@@ -230,20 +230,19 @@ class Simpanan extends CI_Controller
 
                 $this->db->trans_start();
 
-                // Insert main simpanan
-                $inserted = $this->Simpanan_model->insert_data($data);
+                $inserted = $this->Deposito_model->insert_data($data);
 
                 if ($inserted) {
-                    $simpanan_id = $this->db->insert_id();
+                    $deposito_id = $this->db->insert_id();
 
                     $detail_setoran = [
-                        'simpanan_id'      => $simpanan_id,
-                        'tanggal_setoran'  => $tanggal_simpanan,
+                        'simpanan_id'      => $deposito_id,
+                        'tanggal_setoran'  => $tanggal_deposito,
                         'jumlah_setoran'   => $jumlah_simpanan,
                         'pegawai_id'       => $pegawai,
                     ];
 
-                    $this->db->insert('tbdetail_simpanan', $detail_setoran);
+                    $this->db->insert('tbdetail_deposito', $detail_setoran);
                 }
 
                 $this->db->trans_complete();
@@ -355,7 +354,7 @@ class Simpanan extends CI_Controller
             }
 
             $id = $this->input->post('id');
-            $tanggal_simpanan = $this->input->post('tanggal_simpanan');
+            $tanggal_deposito = $this->input->post('tanggal_deposito');
             $nasabah = $this->input->post('nasabah');
             $jenis_tabungan = $this->input->post('jenis_tabungan');
             $pegawai = $this->input->post('pegawai_id');
@@ -366,7 +365,7 @@ class Simpanan extends CI_Controller
             // $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
             $no_rekening = $this->input->post('nomor_rekening');
 
-            $this->form_validation->set_rules('tanggal_simpanan', 'Tanggal Simpanan', 'required', [
+            $this->form_validation->set_rules('tanggal_deposito', 'Tanggal Simpanan', 'required', [
                 'required'   => 'Tanggal simpanan wajib diisi.'
             ]);
 
@@ -439,7 +438,7 @@ class Simpanan extends CI_Controller
             if ($this->form_validation->run() == FALSE) {
                 $msg = [
                     'error' => [
-                        'errorTanggalSimpanan'  => form_error('tanggal_simpanan'),
+                        'errorTanggalSimpanan'  => form_error('tanggal_deposito'),
                         'errorNasabah'          => form_error('nasabah'),
                         'errorJenisTabungan'    => form_error('jenis_tabungan'),
                         'errorBunga'            => form_error('bunga'),
@@ -455,7 +454,7 @@ class Simpanan extends CI_Controller
                 ];
             } else {
                 $data = [
-                    'tanggal_simpanan' => $tanggal_simpanan,
+                    'tanggal_deposito' => $tanggal_deposito,
                     'no_rekening' => $no_rekening,
                     'nasabah_id' => $nasabah,
                     'pegawai_id' => $pegawai,
@@ -639,7 +638,7 @@ class Simpanan extends CI_Controller
             'nama_nasabah' => $nasabah->nama_lengkap,
             'no_rekening' => $simpanan->no_rekening,
             'jenis_tabungan' => $jenis->nama,
-            'tanggal_simpanan' => $simpanan->tanggal_simpanan
+            'tanggal_deposito' => $simpanan->tanggal_deposito
         ];
 
         $html = $this->load->view('simpanan/cetak_nasabah', $data, true);

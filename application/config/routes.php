@@ -119,6 +119,18 @@ $route['simpanan/print_nasabah'] = 'simpanan/print_nasabah';
 $route['simpanan/laporan'] = 'simpanan/laporan';
 $route['simpanan/print_laporan'] = 'simpanan/print_laporan';
 
+$route['deposito'] = 'deposito';
+$route['deposito/add'] = 'deposito/add';
+$route['deposito/simpanData'] = 'deposito/simpanData';
+$route['deposito/getJenisData'] = 'deposito/getJenisData';
+$route['deposito/delete'] = 'deposito/delete';
+$route['deposito/edit/(:any)'] = 'deposito/edit/$1';
+$route['deposito/depositoData'] = 'deposito/depositoData';
+$route['deposito/detail/(:any)'] = 'deposito/detail/$1';
+$route['deposito/print_nasabah'] = 'deposito/print_nasabah';
+$route['deposito/laporan'] = 'deposito/laporan';
+$route['deposito/print_laporan'] = 'deposito/print_laporan';
+
 $route['setoran'] = 'setoran';
 $route['setoran/get_no_rekening'] = 'setoran/get_no_rekening';
 $route['setoran/fetchData'] = 'setoran/fetchData';

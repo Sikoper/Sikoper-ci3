@@ -1,15 +1,15 @@
 <div class="card">
     <div class="card-header">
         <h4 class="card-title">
-            <button class="btn btn-primary" onclick="window.location='<?= base_url('simpanan/add') ?>'">
-                <i class="fa fa-plus-circle"></i> Buka Tabungan Baru
+            <button class="btn btn-primary" onclick="window.location='<?= base_url('deposito/add') ?>'">
+                <i class="fa fa-plus-circle"></i> Buka Deposito Baru
             </button>
         </h4>
     </div>
     <div class="card-body">
         <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
             <div class="dataTable-container">
-                <table class="table table-striped dataTable-table" id="tabel_simpanan">
+                <table class="table table-striped dataTable-table" id="tabel_deposito">
                     <thead>
                         <tr>
                             <th class="text-center" width="40px">No</th>
@@ -35,7 +35,7 @@
 </div>
 <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
 <script>
-    table = $('#tabel_simpanan').DataTable({
+    table = $('#tabel_deposito').DataTable({
         responsive: true,
         "destroy": true,
         "processing": true,
@@ -44,7 +44,7 @@
         autoWidth: false,
 
         "ajax": {
-            "url": "<?= site_url('simpanan/fetchData') ?>",
+            "url": "<?= site_url('deposito/fetchData') ?>",
             "type": "POST"
         },
 
@@ -94,7 +94,7 @@
             if (result.isConfirmed) {
                 $.ajax({
                     type: "POST",
-                    url: "<?= base_url('simpanan/delete') ?>",
+                    url: "<?= base_url('deposito/delete') ?>",
                     data: {
                         id: id
                     },
@@ -141,7 +141,7 @@
             confirmButtonText: "Yes!",
         }).then((result) => {
             if (result.isConfirmed) {
-                window.open("<?= base_url('simpanan/print_nasabah?id=') ?>" + id, "_blank");
+                window.open("<?= base_url('deposito/print_nasabah?id=') ?>" + id, "_blank");
                 window.location.reload();
             }
         });
@@ -153,8 +153,8 @@
         cluster: 'ap1'
     });
 
-    var channel = pusher.subscribe('simpanan-channel');
-    channel.bind('simpanan-event', function(data) {
+    var channel = pusher.subscribe('deposito-channel');
+    channel.bind('deposito-event', function(data) {
         console.log("Received update:", data);
         table.ajax.reload(null, false);
     });

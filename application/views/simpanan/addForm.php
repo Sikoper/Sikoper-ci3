@@ -34,16 +34,14 @@
                     </div>
 
                     <div class="form-group" style="height: 80px;">
-                        <label for="jenis_tabungan">Jenis Tabungan</label>
-                        <select type="text" class="form-control" id="jenis_tabungan" name="jenis_tabungan">
-                            <option value=""> -- Pilih Jenis Tabungan -- </option>
-                            <?php foreach ($jenis as $item): ?>
-                                <option value="<?= $item->id ?>"><?= $item->nama ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <label for="jenis_tabungan_display">Jenis Rekening</label>
+                        <input type="text" class="form-control" id="jenis_tabungan_display" value="<?= $jenis->nama ?>" name="jenis_tabungan_display" readonly>
+                        </input>
                         <div id="errorJenisTabungan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
+
+                    <input type="hidden" value="<?= $jenis->id ?>" id="jenis_tabungan" name="jenis_tabungan">
 
                     <div class="row">
                         <div class="col-6">
@@ -105,7 +103,7 @@
                         </div>
                     </div>
 
-                    <label for="jenis_denda" class="form-label">Denda apabila menarik lebih awal (khusus deposito)</label>
+                    <!-- <label for="jenis_denda" class="form-label">Denda apabila menarik lebih awal (khusus deposito)</label>
                     <div class="row g-3 align-items-end mb-3">
                         <div class="col-md-6">
                             <div class="form-group" style="height: 80px;">
@@ -128,7 +126,7 @@
                                 <div class="valid-feedback" style="display: none;"></div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div id="form_deposito" style="display: none;">
                         <div class="form-group mb-3" style="height: 80px;">
@@ -208,10 +206,7 @@
                     <div class="form-group mb-5" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
-                            <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control" readonly>
-                            <span class="input-group-btn">
-                                <button type="button" id="btn-generate" class="btn btn-success" disabled>Buat</button>
-                            </span>
+                            <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control text-end" readonly>
                         </div>
                         <div id="errorNoRekening" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -232,6 +227,7 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
+        createNomerRekening();
         $('#bunga').autoNumeric('init', {
             aSep: ',',
             aDec: '.',
@@ -254,8 +250,14 @@
 
         $('#jenis_tabungan').on('change', function() {
             var jenis_id = $(this).val();
+            fetchJenisData(jenis_id);
+        });
 
-            if (jenis_id !== null) {
+        var initial_jenis_id = $('#jenis_tabungan').val();
+        fetchJenisData(initial_jenis_id);
+
+        function fetchJenisData(jenis_id) {
+            if (jenis_id !== null && jenis_id !== '') {
                 $.ajax({
                     url: '<?= base_url('simpanan/getJenisData') ?>',
                     method: 'POST',
@@ -265,19 +267,13 @@
                     },
                     success: function(response) {
                         jenis_tabungan_handler(response);
-                        $('#btn-generate').attr('disabled', false);
-                        if (response.kategori.nama === 'Deposito') {
-                            $('#form_deposito').show();
-                        } else {
-                            $('#form_deposito').hide();
-                        }
                     },
                     error: function(xhr, thrownError) {
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });
             }
-        });
+        }
 
         function jenis_tabungan_handler(response) {
             const kategori = response?.kategori;
@@ -325,21 +321,21 @@
 
             let jumlahDendaAN;
 
-            if (jenis_denda === 'Rp') {
-                jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
-                    digitGroupSeparator: '.',
-                    decimalCharacter: ',',
-                    decimalPlaces: 0
-                });
-            } else if (jenis_denda === '%') {
-                jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
-                    digitGroupSeparator: ',',
-                    decimalCharacter: '.',
-                    decimalPlaces: 2,
-                    minimumValue: '0',
-                    maximumValue: '100'
-                });
-            }
+            // if (jenis_denda === 'Rp') {
+            //     jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
+            //         digitGroupSeparator: '.',
+            //         decimalCharacter: ',',
+            //         decimalPlaces: 0
+            //     });
+            // } else if (jenis_denda === '%') {
+            //     jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
+            //         digitGroupSeparator: ',',
+            //         decimalCharacter: '.',
+            //         decimalPlaces: 2,
+            //         minimumValue: '0',
+            //         maximumValue: '100'
+            //     });
+            // }
 
             bungaAN.set(kategori.bunga ?? '');
             biayaAN.set(biaya ?? '');
@@ -425,27 +421,20 @@
                             $('#errorPengendapan').fadeOut();
                             $('#pengendapan').removeClass('is-invalid').addClass('is-valid');
                         }
-                        if (dataError.errorJenisDenda) {
-                            $('#errorJenisDenda').html(dataError.errorJenisDenda).show();
-                            $('#jenis_denda').addClass('is-invalid');
-                        } else {
-                            $('#errorJenisDenda').fadeOut();
-                            $('#jenis_denda').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorJumlahDenda) {
-                            $('#errorJumlahDenda').html(dataError.errorJumlahDenda).show();
-                            $('#jumlah_denda').addClass('is-invalid');
-                        } else {
-                            $('#errorJumlahDenda').fadeOut();
-                            $('#jumlah_denda').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorJumlahDenda) {
-                            $('#errorJumlahDenda').html(dataError.errorJumlahDenda).show();
-                            $('#jumlah_denda').addClass('is-invalid');
-                        } else {
-                            $('#errorJumlahDenda').fadeOut();
-                            $('#jumlah_denda').removeClass('is-invalid').addClass('is-valid');
-                        }
+                        // if (dataError.errorJenisDenda) {
+                        //     $('#errorJenisDenda').html(dataError.errorJenisDenda).show();
+                        //     $('#jenis_denda').addClass('is-invalid');
+                        // } else {
+                        //     $('#errorJenisDenda').fadeOut();
+                        //     $('#jenis_denda').removeClass('is-invalid').addClass('is-valid');
+                        // }
+                        // if (dataError.errorJumlahDenda) {
+                        //     $('#errorJumlahDenda').html(dataError.errorJumlahDenda).show();
+                        //     $('#jumlah_denda').addClass('is-invalid');
+                        // } else {
+                        //     $('#errorJumlahDenda').fadeOut();
+                        //     $('#jumlah_denda').removeClass('is-invalid').addClass('is-valid');
+                        // }
                         if (dataError.errorJumlahSimpanan) {
                             $('#errorJumlahSimpanan').html(dataError.errorJumlahSimpanan).show();
                             $('#jumlah_simpanan').addClass('is-invalid');
@@ -453,12 +442,12 @@
                             $('#errorJumlahSimpanan').fadeOut();
                             $('#jumlah_simpanan').removeClass('is-invalid').addClass('is-valid');
                         }
-                        if (dataError.errorTandaTangan) {
-                            $('#errorTandaTangan').html(dataError.errorTandaTangan).show();
-                            $('#signature_input').addClass('is-invalid');
+                        if (dataError.errorPegawai) {
+                            $('#errorPegawai').html(dataError.errorPegawai).show();
+                            $('#pegawai_id').addClass('is-invalid');
                         } else {
-                            $('#errorTandaTangan').fadeOut();
-                            $('#signature_input').removeClass('is-invalid').addClass('is-valid');
+                            $('#errorPegawai').fadeOut();
+                            $('#pegawai_id').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorNoRekening) {
                             $('#errorNoRekening').html(dataError.errorNoRekening).show();
@@ -467,13 +456,13 @@
                             $('#errorNoRekening').fadeOut();
                             $('#nomor_rekening').removeClass('is-invalid').addClass('is-valid');
                         }
-                        if (dataError.errorDurasi) {
-                            $('#errorDurasi').html(dataError.errorDurasi).show();
-                            $('#durasi').addClass('is-invalid');
-                        } else {
-                            $('#errorDurasi').fadeOut();
-                            $('#durasi').removeClass('is-invalid').addClass('is-valid');
-                        }
+                        // if (dataError.errorDurasi) {
+                        //     $('#errorDurasi').html(dataError.errorDurasi).show();
+                        //     $('#durasi').addClass('is-invalid');
+                        // } else {
+                        //     $('#errorDurasi').fadeOut();
+                        //     $('#durasi').removeClass('is-invalid').addClass('is-valid');
+                        // }
                     } else {
                         Swal.fire({
                             icon: "success",
@@ -519,22 +508,27 @@
         $('#nasabah_id').val(id);
     });
 
-    $('#btn-generate').click(function() {
-        let kategori = $('#jenis_tabungan').val();
+    let norekGenerated = false;
+
+    function createNomerRekening() {
+        if (norekGenerated) return;
+        norekGenerated = true;
 
         $.ajax({
-            url: '<?= base_url("simpanan/generate_norek") ?>',
-            type: 'POST',
+            type: "POST",
+            url: "<?= base_url('simpanan/create_nomer_rekening') ?>",
             data: {
-                kategori: kategori
+                trigger: true
             },
-            dataType: 'json',
-            success: function(data) {
-                $('#nomor_rekening').val(data.norek);
+            dataType: "json",
+            success: function(response) {
+                if (response.no_rekening) {
+                    $('#nomor_rekening').val(response.no_rekening)
+                }
             },
-            error: function() {
-                alert("Gagal generate nomor rekening.");
+            error: function(xhr, thrownError) {
+                alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
             }
         });
-    });
+    }
 </script>
