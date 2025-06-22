@@ -17,7 +17,7 @@
                         <div class="input-group">
                             <input type="date" name="tanggal_deposito" id="tanggal_deposito" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
                         </div>
-                        <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
+                        <div id="errorTanggalDeposito" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
@@ -191,10 +191,10 @@
                     <?php endif; ?>
 
                     <div class="form-group mb-3" style="height: 80px;">
-                        <label for="jumlah_simpanan">Jumlah Simpanan</label>
+                        <label for="jumlah_deposito">Jumlah Simpanan</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" name="jumlah_simpanan" id="jumlah_simpanan" class="form-control text-end">
+                            <input type="text" name="jumlah_deposito" id="jumlah_deposito" class="form-control text-end">
                         </div>
                         <div id="errorJumlahSimpanan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -239,7 +239,7 @@
             mDec: '0'
         });
 
-        $('#jumlah_simpanan').autoNumeric('init', {
+        $('#jumlah_deposito').autoNumeric('init', {
             aSep: '.',
             aDec: ',',
             mDec: '0'
@@ -352,7 +352,7 @@
 
             $.ajax({
                 type: "POST",
-                url: "<?= base_url('simpanan/simpanData') ?>",
+                url: "<?= base_url('deposito/simpanData') ?>",
                 data: data,
                 dataType: "json",
                 processData: false,
@@ -369,11 +369,11 @@
                 success: function(response) {
                     if (response.error) {
                         let dataError = response.error;
-                        if (dataError.errorTanggalSimpanan) {
-                            $('#errorTanggalSimpanan').html(dataError.errorTanggalSimpanan).show();
+                        if (dataError.errorTanggalDeposito) {
+                            $('#errorTanggalDeposito').html(dataError.errorTanggalDeposito).show();
                             $('#tanggal_deposito').addClass('is-invalid');
                         } else {
-                            $('#errorTanggalSimpanan').fadeOut();
+                            $('#errorTanggalDeposito').fadeOut();
                             $('#tanggal_deposito').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorNasabah) {
@@ -434,10 +434,10 @@
                         }
                         if (dataError.errorJumlahSimpanan) {
                             $('#errorJumlahSimpanan').html(dataError.errorJumlahSimpanan).show();
-                            $('#jumlah_simpanan').addClass('is-invalid');
+                            $('#jumlah_deposito').addClass('is-invalid');
                         } else {
                             $('#errorJumlahSimpanan').fadeOut();
-                            $('#jumlah_simpanan').removeClass('is-invalid').addClass('is-valid');
+                            $('#jumlah_deposito').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorPegawai) {
                             $('#errorPegawai').html(dataError.errorPegawai).show();
@@ -467,7 +467,7 @@
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('simpanan') ?>';
+                                window.location = '<?= base_url('deposito') ?>';
                             }
                         });
                     }
@@ -513,7 +513,7 @@
 
         $.ajax({
             type: "POST",
-            url: "<?= base_url('simpanan/create_nomer_rekening') ?>",
+            url: "<?= base_url('deposito/create_nomer_rekening') ?>",
             data: {
                 trigger: true
             },

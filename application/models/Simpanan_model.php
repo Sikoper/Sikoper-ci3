@@ -107,23 +107,23 @@ class Simpanan_model extends CI_Model
         return $query->result();
     }
 
-    public function checkAndRunBunga()
-    {
-        if (date('d') != '25') {
-            return;
-        }
+    // public function checkAndRunBunga()
+    // {
+    //     if (date('d') != '25') {
+    //         return;
+    //     }
 
-        $today = date('Y-m-d');
+    //     $today = date('Y-m-d');
 
-        $exists = $this->db->get_where('system_log', ['tanggal' => $today])->num_rows();
-        if ($exists > 0) {
-            return;
-        }
+    //     $exists = $this->db->get_where('system_log', ['tanggal' => $today])->num_rows();
+    //     if ($exists > 0) {
+    //         return;
+    //     }
 
-        $this->add_bunga();
+    //     $this->add_bunga();
 
-        $this->db->insert('system_log', ['tanggal' => $today]);
-    }
+    //     $this->db->insert('system_log', ['tanggal' => $today]);
+    // }
 
     public function get_akumulasi_penarikan_dan_denda($simpanan_id)
     {

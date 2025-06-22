@@ -150,7 +150,7 @@
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail bunga</h5>
+                <h5 class="mb-0"><i class="fa fa-list"></i> Detail bunga</h5>
 
             </div>
             <div class="card-body">

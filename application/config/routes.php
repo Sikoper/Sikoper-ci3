@@ -122,6 +122,7 @@ $route['simpanan/print_laporan'] = 'simpanan/print_laporan';
 $route['deposito'] = 'deposito';
 $route['deposito/add'] = 'deposito/add';
 $route['deposito/simpanData'] = 'deposito/simpanData';
+$route['deposito/updateData'] = 'deposito/updateData';
 $route['deposito/getJenisData'] = 'deposito/getJenisData';
 $route['deposito/delete'] = 'deposito/delete';
 $route['deposito/edit/(:any)'] = 'deposito/edit/$1';

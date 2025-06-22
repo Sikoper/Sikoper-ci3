@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Deposito_model extends CI_Model
 {
     var $table = 'tbdeposito';
-    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_simpanan',  null);
+    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_deposito',  null);
     var $column_search = array('tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
     var $order = array('no_rekening' => 'ASC');
 
@@ -107,23 +107,23 @@ class Deposito_model extends CI_Model
         return $query->result();
     }
 
-    public function checkAndRunBunga()
-    {
-        if (date('d') != '25') {
-            return;
-        }
+    // public function checkAndRunBunga()
+    // {
+    //     if (date('d') != '25') {
+    //         return;
+    //     }
 
-        $today = date('Y-m-d');
+    //     $today = date('Y-m-d');
 
-        $exists = $this->db->get_where('system_log', ['tanggal' => $today])->num_rows();
-        if ($exists > 0) {
-            return;
-        }
+    //     $exists = $this->db->get_where('system_log', ['tanggal' => $today])->num_rows();
+    //     if ($exists > 0) {
+    //         return;
+    //     }
 
-        $this->add_bunga();
+    //     $this->add_bunga();
 
-        $this->db->insert('system_log', ['tanggal' => $today]);
-    }
+    //     $this->db->insert('system_log', ['tanggal' => $today]);
+    // }
 
     public function get_akumulasi_penarikan_dan_denda($simpanan_id)
     {

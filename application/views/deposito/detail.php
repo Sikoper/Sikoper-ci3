@@ -8,13 +8,13 @@
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fa fa-id-card"></i> Informasi Simpanan</h5>
+                <h5 class="mb-0"><i class="fa fa-id-card"></i> Informasi Deposito</h5>
             </div>
             <div class="card-body">
                 <table class="table table-borderless">
                     <tr>
                         <th>No. Rekening</th>
-                        <td>: <?= $simpanan->no_rekening ?></td>
+                        <td>: <?= $deposito->no_rekening ?></td>
                     </tr>
                     <tr>
                         <th>Nasabah</th>
@@ -29,39 +29,39 @@
                         <td>: <?= $jenis->nama ?? '-' ?></td>
                     </tr>
                     <tr>
-                        <th>Total Simpanan</th>
-                        <td>: Rp <?= number_format($simpanan->jumlah_simpanan, 2, ',', '.') ?></td>
+                        <th>Total Deposito</th>
+                        <td>: Rp <?= number_format($deposito->jumlah_deposito, 2, ',', '.') ?></td>
                     </tr>
                     <tr>
                         <th>Total Penarikan Keseluruhan</th>
                         <td id="totalPenarikanValue">: Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?>
-                            <?php if($total_akumulasi_denda > 0): ?>
+                            <?php if ($total_akumulasi_denda > 0): ?>
                                 (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
                             <?php endif; ?>
                         </td>
                     </tr>
                     <tr>
-                        <th>Tanggal Simpanan</th>
-                        <td>: <?= date('d-m-Y', strtotime($simpanan->tanggal_simpanan)) ?></td>
+                        <th>Tanggal Deposito</th>
+                        <td>: <?= date('d-m-Y', strtotime($deposito->tanggal_deposito)) ?></td>
                     </tr>
                     <?php if ($jenis->nama == 'Deposito'): ?>
                         <tr id="field-durasi-deposito">
                             <th>Durasi</th>
-                            <td>: <?= format_durasi($simpanan->durasi) ?></td>
+                            <td>: <?= format_durasi($deposito->durasi) ?></td>
                         </tr>
-                        <?php if (!empty($simpanan->nama_ahli_waris)): ?>
+                        <?php if (!empty($deposito->nama_ahli_waris)): ?>
                             <tr id="field-ahli-waris">
                                 <th>Ahli Waris</th>
-                                <td>: <?= $simpanan->nama_ahli_waris ?> (<?= $simpanan->hubungan_ahli_waris ?> dari <?= $nasabah->nama_lengkap ?>), <?= $simpanan->telp_ahli_waris ?></td>
+                                <td>: <?= $deposito->nama_ahli_waris ?> (<?= $deposito->hubungan_ahli_waris ?> dari <?= $nasabah->nama_lengkap ?>), <?= $deposito->telp_ahli_waris ?></td>
                             </tr>
                         <?php endif ?>
                     <?php endif; ?>
                 </table>
                 <div class="d-flex justify-content-end gap-2">
-                    <button onclick="printNasabah('<?= $simpanan->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
+                    <button onclick="printNasabah('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
                         Cetak Nasabah <i class="fa fa-file ms-2"></i>
                     </button>
-                    <button onclick="window.location='<?= base_url('simpanan/laporan') . '?id=' . safe_base64_encode($simpanan->no_rekening) . '&code=1' ?>'" class="btn btn-warning">
+                    <button onclick="window.location='<?= base_url('deposito/laporan') . '?id=' . safe_base64_encode($deposito->no_rekening) . '&code=1' ?>'" class="btn btn-warning">
                         Cetak Laporan <i class="fa fa-file ms-2"></i>
                     </button>
                 </div>
@@ -69,89 +69,10 @@
         </div>
     </div>
 
-    <!-- Detail Simpanan Table (Bottom) -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="col-md-12">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fa fa-list"></i> Detail Setoran</h5>
-                        <button class="btn btn-success" onclick="window.location='<?= base_url('setoran') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Setor Tunai</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
-                            <div class="dataTable-container">
-                                <table class="table table-bordered table-striped" id="detail_simpanan">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Tanggal</th>
-                                            <th>Jumlah Simpanan</th>
-                                            <th>Pegawai</th>
-                                            <th>#</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="dataTable-bottom">
-                                <ul class="pagination pagination-primary float-end dataTable-pagination">
-
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="col-md-12">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                        <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
-                            <div class="dataTable-container">
-                                <table class="table table-bordered table-striped" id="tabel_detail_penarikan">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Tanggal</th>
-                                            <th>Jumlah Penarikan</th>
-                                            <th>Jumlah Denda</th>
-                                            <th>Pegawai</th>
-                                            <th>#</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="dataTable-bottom">
-                                <ul class="pagination pagination-primary float-end dataTable-pagination">
-
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail bunga</h5>
-
+                <h5 class="mb-0"><i class="fa fa-list"></i> Detail bunga</h5>
             </div>
             <div class="card-body">
                 <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
@@ -179,56 +100,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Detail Simpanan Table (Bottom) -->
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
+                <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($deposito->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+            </div>
+            <div class="card-body">
+                <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
+                    <div class="dataTable-container">
+                        <table class="table table-bordered table-striped" id="tabel_detail_penarikan">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal</th>
+                                    <th>Jumlah Penarikan</th>
+                                    <th>Jumlah Denda</th>
+                                    <th>Pegawai</th>
+                                    <th>#</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="dataTable-bottom">
+                        <ul class="pagination pagination-primary float-end dataTable-pagination">
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
-    table = $('#detail_simpanan').DataTable({
-        responsive: true,
-        "destroy": true,
-        "processing": true,
-        "serverSide": true,
-        "order": [],
-        autoWidth: false,
-
-        "ajax": {
-            "url": "<?= site_url('setoran/fetchData') ?>",
-            "type": "POST",
-            "data": {
-                id: <?= $simpanan->id ?>
-            }
-        },
-
-        "columns": [{
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "orderable": false
-            }
-        ],
-
-        "columnDefs": [{
-                "targets": 0,
-                "orderable": false,
-                "width": "5%"
-            },
-            {
-                "targets": 4,
-                "orderable": false,
-                "width": "10%"
-            }
-        ],
-    });
-
-    var simpananId = '<?= $simpanan->id ?>';
+    var depositoId = '<?= $deposito->id ?>';
 
     table = $('#tabel_bunga').DataTable({
         responsive: true,
@@ -242,7 +154,7 @@
             "url": "<?= site_url('bunga/fetchNasabahBunga') ?>",
             "type": "POST",
             data: function(d) {
-                d.simpanan_id = simpananId;
+                d.deposito_id = depositoId;
             }
         },
 
@@ -270,54 +182,6 @@
         ],
     });
 
-    function deleteSetoran(id, jumlah) {
-        Swal.fire({
-            title: "Hapus data ini?",
-            html: `Yakin ingin menghapus setoran sejumlah:<br/> <strong><span id="jumlah_setoran">${jumlah}</span></strong>?`,
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes!",
-            didOpen: () => {
-                new AutoNumeric('#jumlah_setoran', jumlah, {
-                    decimalCharacter: ',',
-                    digitGroupSeparator: '.',
-                    currencySymbol: 'Rp ',
-                    currencySymbolPlacement: 'p',
-                    decimalPlaces: 0
-                });
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    type: "POST",
-                    url: "<?= base_url('setoran/delete') ?>",
-                    data: {
-                        id: id
-                    },
-                    dataType: "json",
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: "Success!",
-                                text: response.success,
-                                icon: "success"
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.reload();
-                                }
-                            });
-                        }
-                    },
-                    error: function(xhr, thrownError) {
-                        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                    }
-                });
-            }
-        });
-    }
-
     var tabel_detail_penarikan = $('#tabel_detail_penarikan').DataTable({
         "responsive": true,
         "destroy": true,
@@ -328,10 +192,10 @@
         ],
         "autoWidth": false,
         "ajax": {
-            "url": "<?= site_url('penarikan/fetch_detail_penarikan_by_simpanan') ?>",
+            "url": "<?= site_url('penarikan/fetch_detail_penarikan_by_deposito') ?>",
             "type": "POST",
             "data": function(d) {
-                d.simpanan_id = simpananId;
+                d.deposito_id = depositoId;
             }
         },
         "columns": [
@@ -391,7 +255,7 @@
                                 text: response.success,
                                 icon: "success"
                             }).then(() => {
-                                window.location.reload(); 
+                                window.location.reload();
                             });
                         } else if (response.error) {
                             Swal.fire("Gagal!", response.error, "error");
@@ -418,7 +282,7 @@
             confirmButtonText: "Yes!",
         }).then((result) => {
             if (result.isConfirmed) {
-                window.open("<?= base_url('simpanan/print_nasabah?id=') ?>" + id, "_blank");
+                window.open("<?= base_url('deposito/print_nasabah?id=') ?>" + id, "_blank");
                 window.location.reload();
             }
         });
@@ -435,7 +299,7 @@
             confirmButtonText: "Yes!",
         }).then((result) => {
             if (result.isConfirmed) {
-                window.open("<?= base_url('simpanan/print_laporan?id=') ?>" + id, "_blank");
+                window.open("<?= base_url('deposito/print_laporan?id=') ?>" + id, "_blank");
                 window.location.reload();
             }
         });
