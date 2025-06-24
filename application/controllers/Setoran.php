@@ -147,6 +147,7 @@ class Setoran extends CI_Controller
                 $row[] = "<div class=\"text-center\">$no</div>";
                 $row[] = $field->tanggal_setoran;
                 $row[] = "Rp " . number_format($field->jumlah_setoran, 2, ',', '.');
+                $row[] = "Setor";
                 $row[] = $field->pegawai;
                 $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteSetoran('" . $field->id . "', '" . $field->jumlah_setoran . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
                 $data[] = $row;

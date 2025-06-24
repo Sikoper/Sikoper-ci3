@@ -470,8 +470,19 @@ class Simpanan extends CI_Controller
                 // echo '<pre>';
                 // print_r($data);
                 // exit;
-
+                $this->db->trans_start();
                 $updated = $this->Simpanan_model->edit_data($id, $data);
+
+                $first_setoran = $this->Setoran_model->get_first_by_simpanan_id($id);
+                if ($first_setoran) {
+                    $this->Setoran_model->edit_data($first_setoran->id, [
+                        'jumlah_setoran' => $jumlah_simpanan
+                    ]);
+                }
+                $this->Simpanan_model->sync_total_simpanan($id);
+                $this->db->trans_complete();
+
+                
                 if ($updated) {
                     $msg = ['success' => 'Data tabungan berhasil dirubah.'];
                     push_event('simpanan-channel', 'simpanan-event', ['message' => 'Simpanan berhasil diubah!']);

@@ -121,4 +121,13 @@ class Setoran_model extends CI_Model
         $query = $this->db->get('tbdetail_simpanan');
         return $query->result();
     }
+
+    public function get_first_by_simpanan_id($simpanan_id)
+    {
+        return $this->db->where('simpanan_id', $simpanan_id)
+            ->order_by('tanggal_setoran', 'ASC')
+            ->limit(1)
+            ->get('tbdetail_simpanan')
+            ->row();
+    }
 }

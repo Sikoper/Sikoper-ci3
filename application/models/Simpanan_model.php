@@ -153,4 +153,16 @@ class Simpanan_model extends CI_Model
             'total_denda'     => 0,
         ];
     }
+
+    public function sync_total_simpanan($simpanan_id)
+    {
+        $total = $this->db->select_sum('jumlah_setoran')
+            ->where('simpanan_id', $simpanan_id)
+            ->get('tbdetail_simpanan')
+            ->row()
+            ->jumlah_setoran;
+
+        return $this->db->where('id', $simpanan_id)
+            ->update('tbsimpanan', ['jumlah_simpanan' => $total]);
+    }
 }

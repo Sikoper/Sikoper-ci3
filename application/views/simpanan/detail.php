@@ -35,7 +35,7 @@
                     <tr>
                         <th>Total Penarikan Keseluruhan</th>
                         <td id="totalPenarikanValue">: Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?>
-                            <?php if($total_akumulasi_denda > 0): ?>
+                            <?php if ($total_akumulasi_denda > 0): ?>
                                 (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
                             <?php endif; ?>
                         </td>
@@ -70,81 +70,82 @@
     </div>
 
     <!-- Detail Simpanan Table (Bottom) -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="col-md-12">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fa fa-list"></i> Detail Setoran</h5>
-                        <button class="btn btn-success" onclick="window.location='<?= base_url('setoran') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Setor Tunai</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
-                            <div class="dataTable-container">
-                                <table class="table table-bordered table-striped" id="detail_simpanan">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Tanggal</th>
-                                            <th>Jumlah Simpanan</th>
-                                            <th>Pegawai</th>
-                                            <th>#</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="dataTable-bottom">
-                                <ul class="pagination pagination-primary float-end dataTable-pagination">
-
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fa fa-list"></i> Detail Tabungan</h5>
+                <div>
+                    <button class="btn btn-success" onclick="window.location='<?= base_url('setoran') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Setor Tunai</button>
+                    <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="col-md-12">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                        <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+            <div class="card-body">
+                <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
+                    <div class="dataTable-container">
+                        <table class="table table-bordered table-striped" id="detail_tabungan">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal</th>
+                                    <th>Jumlah Uang</th>
+                                    <th>Keterangan</th>
+                                    <th>Pegawai</th>
+                                    <th>#</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="card-body">
-                        <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
-                            <div class="dataTable-container">
-                                <table class="table table-bordered table-striped" id="tabel_detail_penarikan">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Tanggal</th>
-                                            <th>Jumlah Penarikan</th>
-                                            <th>Jumlah Denda</th>
-                                            <th>Pegawai</th>
-                                            <th>#</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="dataTable-bottom">
-                                <ul class="pagination pagination-primary float-end dataTable-pagination">
+                    <div class="dataTable-bottom">
+                        <ul class="pagination pagination-primary float-end dataTable-pagination">
 
-                                </ul>
-                            </div>
-                        </div>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- <div class="col-md-6">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
+                    <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+                </div>
+                <div class="card-body">
+                    <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
+                        <div class="dataTable-container">
+                            <table class="table table-bordered table-striped" id="tabel_detail_penarikan">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Tanggal</th>
+                                        <th>Jumlah Penarikan</th>
+                                        <th>Jumlah Denda</th>
+                                        <th>Pegawai</th>
+                                        <th>#</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="dataTable-bottom">
+                            <ul class="pagination pagination-primary float-end dataTable-pagination">
+
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
 
 
     <div class="col-md-12">
@@ -182,7 +183,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
-    table = $('#detail_simpanan').DataTable({
+    table = $('#detail_tabungan').DataTable({
         responsive: true,
         "destroy": true,
         "processing": true,
@@ -191,7 +192,7 @@
         autoWidth: false,
 
         "ajax": {
-            "url": "<?= site_url('setoran/fetchData') ?>",
+            "url": "<?= site_url('tabungan/fetchTabungan') ?>",
             "type": "POST",
             "data": {
                 id: <?= $simpanan->id ?>
@@ -199,6 +200,9 @@
         },
 
         "columns": [{
+                "type": "string"
+            },
+            {
                 "type": "string"
             },
             {
@@ -221,7 +225,7 @@
                 "width": "5%"
             },
             {
-                "targets": 4,
+                "targets": 5,
                 "orderable": false,
                 "width": "10%"
             }
@@ -270,10 +274,10 @@
         ],
     });
 
-    function deleteSetoran(id, jumlah) {
+    function deleteRecord(id, jumlah, keterangan) {
         Swal.fire({
             title: "Hapus data ini?",
-            html: `Yakin ingin menghapus setoran sejumlah:<br/> <strong><span id="jumlah_setoran">${jumlah}</span></strong>?`,
+            html: `Yakin ingin menghapus history sejumlah:<br/> <strong><span id="jumlah_setoran">${jumlah}</span></strong>?`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
@@ -292,9 +296,10 @@
             if (result.isConfirmed) {
                 $.ajax({
                     type: "POST",
-                    url: "<?= base_url('setoran/delete') ?>",
+                    url: "<?= base_url('tabungan/delete') ?>",
                     data: {
-                        id: id
+                        id: id,
+                        keterangan: keterangan
                     },
                     dataType: "json",
                     success: function(response) {
@@ -391,7 +396,7 @@
                                 text: response.success,
                                 icon: "success"
                             }).then(() => {
-                                window.location.reload(); 
+                                window.location.reload();
                             });
                         } else if (response.error) {
                             Swal.fire("Gagal!", response.error, "error");
