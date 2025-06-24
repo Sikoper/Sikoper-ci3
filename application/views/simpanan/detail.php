@@ -56,15 +56,6 @@
                             </tr>
                         <?php endif ?>
                     <?php endif; ?>
-                    <tr>
-                        <th>Status</th>
-                        <td>
-                            : <span class="badge 
-                                <?= $simpanan->status == 'aktif' ? 'bg-success' : ($simpanan->status == 'nonaktif' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                <?= ucfirst($simpanan->status) ?>
-                            </span>
-                        </td>
-                    </tr>
                 </table>
                 <div class="d-flex justify-content-end gap-2">
                     <button onclick="printNasabah('<?= $simpanan->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
@@ -159,7 +150,7 @@
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-white"><i class="fa fa-list"></i> Detail bunga</h5>
+                <h5 class="mb-0"><i class="fa fa-list"></i> Detail bunga</h5>
 
             </div>
             <div class="card-body">

@@ -1,7 +1,7 @@
 <section class="section">
     <div class="card">
         <div class="card-header">
-            <a href="<?= site_url('simpanan') ?>" class="btn btn-warning">
+            <a href="<?= site_url('deposito') ?>" class="btn btn-warning">
                 <i class="fa fa-backward"></i> Kembali
             </a>
         </div>
@@ -11,24 +11,23 @@
                 <div class="col-md-3"></div>
                 <div class="col-md-6">
                     <?= form_open('', ['id' => 'form_simpan']) ?>
-                    <input type="hidden" name="id" id="id" value="<?= $simpanan->id ?>">
+
                     <div class="form-group mb-3" style="height: 80px;">
-                        <label for="tanggal_simpanan">Tanggal</label>
+                        <label for="tanggal_deposito">Tanggal</label>
                         <div class="input-group">
-                            <input type="date" name="tanggal_simpanan" id="tanggal_simpanan" class="form-control" value="<?= $simpanan->tanggal_simpanan ?>" readonly>
+                            <input type="date" name="tanggal_deposito" id="tanggal_deposito" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
                         </div>
-                        <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
+                        <div id="errorTanggalDeposito" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
-                        <label for="nasabah">Nasabah</label>
+                        <label for="nasabah">Pilih Nasabah</label>
                         <div class="d-flex align-items-center">
-                            <select id="nasabah" class="form-control select2" name="nasabah" style="width: auto; flex: 1;" disabled>
-                                <option value="<?= $nasabah->id ?>"><?= $nasabah->nama_lengkap ?></option>
-                            </select>
-
-                            <input type="hidden" name="nasabah" id="nasabah" value="<?= $nasabah->id ?>">
+                            <select id="nasabah" class="form-control select2" name="nasabah" style="width: auto; flex: 1;"></select>
+                            <button type="button" onclick="window.location='<?= base_url('nasabah/add') . '?code=1' ?>'" class="btn btn-primary ml-2">
+                                <i class="fa fa-circle-plus"></i>
+                            </button>
                         </div>
                         <div id="errorNasabah" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -104,7 +103,6 @@
                         </div>
                     </div>
 
-                    <!-- <label for="jenis_denda" class="form-label">Denda apabila menarik lebih awal (khusus deposito)</label>
                     <div class="row g-3 align-items-end mb-3">
                         <div class="col-md-6">
                             <div class="form-group" style="height: 80px;">
@@ -127,20 +125,64 @@
                                 <div class="valid-feedback" style="display: none;"></div>
                             </div>
                         </div>
-                    </div> -->
+                    </div>
+
+                    <div class="form-group mb-3" style="height: 80px;">
+                        <label for="durasi">Jangka Waktu Deposito</label>
+                        <select id="durasi" name="durasi" class="form-control" autocomplete="off">
+                            <option value=""> -- Pilih Jangka Waktu -- </option>
+                            <option value="6">6 Bulan / &frac12; Tahun</option>
+                            <option value="12">12 Bulan / 1 Tahun</option>
+                            <option value="18">18 Bulan / 1.5 Tahun</option>
+                            <option value="24">24 Bulan / 2 Tahun</option>
+                            <option value="30">30 Bulan / 2.5 Tahun</option>
+                            <option value="36">36 Bulan / 3 Tahun</option>
+                        </select>
+                        <div id="errorDurasi" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group" style="height: 80px;">
+                        <label for="nama_ahli_waris" class="form-label">Nama Ahli Waris</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="nama_ahli_waris" id="nama_ahli_waris">
+                        </div>
+                        <div id="errorNamaAhliWaris" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group" style="height: 80px;">
+                        <label for="kontak_ahli_waris" class="form-label">Kontak Ahli Waris</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="kontak_ahli_waris" id="kontak_ahli_waris">
+                        </div>
+                        <div id="errorKontakAhliWaris" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group" style="height: 80px;">
+                        <label for="hubungan_ahli_waris" class="form-label">Hubungan Dengan Deposan</label>
+                        <div class="input-group">
+                            <select class="form-control" name="hubungan_ahli_waris" id="hubungan_ahli_waris">
+                                <option value=""> -- Pilih hubungan -- </option>
+                                <option value="Anak">Anak dari Deposan</option>
+                                <option value="Cucu">Cucu dari Deposan</option>
+                                <option value="Suami/Istri">Suami / Istri dari Deposan</option>
+                            </select>
+                        </div>
+                        <div id="errorHubunganAhliWaris" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
 
                     <?php if ($level == 'Admin'): ?>
                         <div class="form-group mb-3" style="height: 80px;">
-                            <label for="pegawai_display">Pegawai</label>
-                            <select id="pegawai_display" name="pegawai_display" class="form-control" autocomplete="off" disabled>
+                            <label for="pegawai_id">Pegawai</label>
+                            <select id="pegawai_id" name="pegawai_id" class="form-control" autocomplete="off">
                                 <option value=""> -- Pilih Pegawai -- </option>
                                 <?php foreach ($pegawai as $item): ?>
-                                    <option value="<?= $item->id ?>" <?= ($item->id == $simpanan->pegawai_id) ? 'selected' : '' ?>>
-                                        <?= $item->nama_lengkap ?>
-                                    </option>
+                                    <option value="<?= $item->id ?>"><?= $item->nama_lengkap ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <input type="hidden" id="pegawai_id" name="pegawai_id" value="<?= $simpanan->pegawai_id ?>">
                             <div id="errorPegawai" class="invalid-feedback" style="display: none;"></div>
                             <div class="valid-feedback" style="display: none;"></div>
                         </div>
@@ -149,10 +191,10 @@
                     <?php endif; ?>
 
                     <div class="form-group mb-3" style="height: 80px;">
-                        <label for="jumlah_simpanan">Jumlah Simpanan</label>
+                        <label for="jumlah_deposito">Jumlah Simpanan</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" name="jumlah_simpanan" id="jumlah_simpanan" class="form-control text-end" value="<?= $simpanan->jumlah_simpanan ?>">
+                            <input type="text" name="jumlah_deposito" id="jumlah_deposito" class="form-control text-end">
                         </div>
                         <div id="errorJumlahSimpanan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -161,7 +203,7 @@
                     <div class="form-group mb-5" style="height: 80px;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
-                            <input type="text" name="nomor_rekening" value="<?= $simpanan->no_rekening ?>" id="nomor_rekening" class="form-control" readonly>
+                            <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control text-end" readonly>
                         </div>
                         <div id="errorNoRekening" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -182,7 +224,7 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
-
+        createNomerRekening();
         $('#bunga').autoNumeric('init', {
             aSep: ',',
             aDec: '.',
@@ -197,7 +239,7 @@
             mDec: '0'
         });
 
-        $('#jumlah_simpanan').autoNumeric('init', {
+        $('#jumlah_deposito').autoNumeric('init', {
             aSep: '.',
             aDec: ',',
             mDec: '0'
@@ -205,8 +247,14 @@
 
         $('#jenis_tabungan').on('change', function() {
             var jenis_id = $(this).val();
+            fetchJenisData(jenis_id);
+        });
 
-            if (jenis_id !== null) {
+        var initial_jenis_id = $('#jenis_tabungan').val();
+        fetchJenisData(initial_jenis_id);
+
+        function fetchJenisData(jenis_id) {
+            if (jenis_id !== null && jenis_id !== '') {
                 $.ajax({
                     url: '<?= base_url('simpanan/getJenisData') ?>',
                     method: 'POST',
@@ -216,21 +264,13 @@
                     },
                     success: function(response) {
                         jenis_tabungan_handler(response);
-                        $('#btn-generate').attr('disabled', false);
-                        if (response.kategori.nama === 'Deposito') {
-                            $('#form_deposito').show();
-                        } else {
-                            $('#form_deposito').hide();
-                        }
                     },
                     error: function(xhr, thrownError) {
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });
             }
-        });
-
-        $('#jenis_tabungan').trigger('change');
+        }
 
         function jenis_tabungan_handler(response) {
             const kategori = response?.kategori;
@@ -278,21 +318,21 @@
 
             let jumlahDendaAN;
 
-            // if (jenis_denda === 'Rp') {
-            //     jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
-            //         digitGroupSeparator: '.',
-            //         decimalCharacter: ',',
-            //         decimalPlaces: 0
-            //     });
-            // } else if (jenis_denda === '%') {
-            //     jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
-            //         digitGroupSeparator: ',',
-            //         decimalCharacter: '.',
-            //         decimalPlaces: 2,
-            //         minimumValue: '0',
-            //         maximumValue: '100'
-            //     });
-            // }
+            if (jenis_denda === 'Rp') {
+                jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
+                    digitGroupSeparator: '.',
+                    decimalCharacter: ',',
+                    decimalPlaces: 0
+                });
+            } else if (jenis_denda === '%') {
+                jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
+                    digitGroupSeparator: ',',
+                    decimalCharacter: '.',
+                    decimalPlaces: 2,
+                    minimumValue: '0',
+                    maximumValue: '100'
+                });
+            }
 
             bungaAN.set(kategori.bunga ?? '');
             biayaAN.set(biaya ?? '');
@@ -312,7 +352,7 @@
 
             $.ajax({
                 type: "POST",
-                url: "<?= base_url('simpanan/updateData') ?>",
+                url: "<?= base_url('deposito/simpanData') ?>",
                 data: data,
                 dataType: "json",
                 processData: false,
@@ -329,12 +369,12 @@
                 success: function(response) {
                     if (response.error) {
                         let dataError = response.error;
-                        if (dataError.errorTanggalSimpanan) {
-                            $('#errorTanggalSimpanan').html(dataError.errorTanggalSimpanan).show();
-                            $('#tanggal_simpanan').addClass('is-invalid');
+                        if (dataError.errorTanggalDeposito) {
+                            $('#errorTanggalDeposito').html(dataError.errorTanggalDeposito).show();
+                            $('#tanggal_deposito').addClass('is-invalid');
                         } else {
-                            $('#errorTanggalSimpanan').fadeOut();
-                            $('#tanggal_simpanan').removeClass('is-invalid').addClass('is-valid');
+                            $('#errorTanggalDeposito').fadeOut();
+                            $('#tanggal_deposito').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorNasabah) {
                             $('#errorNasabah').html(dataError.errorNasabah).show();
@@ -392,26 +432,19 @@
                             $('#errorJumlahDenda').fadeOut();
                             $('#jumlah_denda').removeClass('is-invalid').addClass('is-valid');
                         }
-                        if (dataError.errorJumlahDenda) {
-                            $('#errorJumlahDenda').html(dataError.errorJumlahDenda).show();
-                            $('#jumlah_denda').addClass('is-invalid');
-                        } else {
-                            $('#errorJumlahDenda').fadeOut();
-                            $('#jumlah_denda').removeClass('is-invalid').addClass('is-valid');
-                        }
                         if (dataError.errorJumlahSimpanan) {
                             $('#errorJumlahSimpanan').html(dataError.errorJumlahSimpanan).show();
-                            $('#jumlah_simpanan').addClass('is-invalid');
+                            $('#jumlah_deposito').addClass('is-invalid');
                         } else {
                             $('#errorJumlahSimpanan').fadeOut();
-                            $('#jumlah_simpanan').removeClass('is-invalid').addClass('is-valid');
+                            $('#jumlah_deposito').removeClass('is-invalid').addClass('is-valid');
                         }
-                        if (dataError.errorTandaTangan) {
-                            $('#errorTandaTangan').html(dataError.errorTandaTangan).show();
-                            $('#signature_input').addClass('is-invalid');
+                        if (dataError.errorPegawai) {
+                            $('#errorPegawai').html(dataError.errorPegawai).show();
+                            $('#pegawai_id').addClass('is-invalid');
                         } else {
-                            $('#errorTandaTangan').fadeOut();
-                            $('#signature_input').removeClass('is-invalid').addClass('is-valid');
+                            $('#errorPegawai').fadeOut();
+                            $('#pegawai_id').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorNoRekening) {
                             $('#errorNoRekening').html(dataError.errorNoRekening).show();
@@ -434,7 +467,7 @@
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('simpanan') ?>';
+                                window.location = '<?= base_url('deposito') ?>';
                             }
                         });
                     }
@@ -446,10 +479,44 @@
         });
     });
 
+
+    $('#nasabah').select2({
+        placeholder: 'Cari nama nasabah...',
+        ajax: {
+            url: '<?= base_url("nasabah/cari_nasabah") ?>',
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: data
+                };
+            },
+            cache: true
+        }
+    });
+
+    $('#nasabah').on('select2:select', function(e) {
+        let id = e.params.data.id;
+        $('#nasabah_id').val(id);
+    });
+
+    let norekGenerated = false;
+
     function createNomerRekening() {
+        if (norekGenerated) return;
+        norekGenerated = true;
+
         $.ajax({
             type: "POST",
-            url: "<?= base_url('simpanan/create_nomer_rekening') ?>",
+            url: "<?= base_url('deposito/create_nomer_rekening') ?>",
+            data: {
+                trigger: true
+            },
             dataType: "json",
             success: function(response) {
                 if (response.no_rekening) {

@@ -68,7 +68,7 @@
             <td class="value"><?= $no_rekening ?></td>
         </tr>
         <tr>
-            <td class="label">Jenis Rekening</td>
+            <td class="label">Jenis Tabungan</td>
             <td class="colon">:</td>
             <td class="value"><?= $jenis_tabungan ?></td>
         </tr>

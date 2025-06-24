@@ -1,19 +1,19 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Simpanan_model extends CI_Model
+class Deposito_model extends CI_Model
 {
-    var $table = 'tbsimpanan';
-    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_simpanan',  null);
-    var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
+    var $table = 'tbdeposito';
+    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_deposito',  null);
+    var $column_search = array('tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
     var $order = array('no_rekening' => 'ASC');
 
     private function _get_datatables_query()
     {
-        $this->db->select('tbsimpanan.*, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah');
+        $this->db->select('tbdeposito.*, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah');
         $this->db->from($this->table);
-        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
-        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
+        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
 
         $i = 0;
 
@@ -65,37 +65,37 @@ class Simpanan_model extends CI_Model
 
     public function count_all_data()
     {
-        return $this->db->count_all('tbsimpanan');
+        return $this->db->count_all('tbdeposito');
     }
 
     public function insert_data($data)
     {
-        return $this->db->insert('tbsimpanan', $data);
+        return $this->db->insert('tbdeposito', $data);
     }
 
     public function delete_data($id)
     {
-        return $this->db->delete('tbsimpanan', ['id' => $id]);
+        return $this->db->delete('tbdeposito', ['id' => $id]);
     }
 
     public function edit_data($id, $data)
     {
-        return $this->db->where('id', $id)->update('tbsimpanan', $data);
+        return $this->db->where('id', $id)->update('tbdeposito', $data);
     }
 
     public function get_data_by_id($id)
     {
-        return $this->db->get_where('tbsimpanan', ['id' => $id])->row();
+        return $this->db->get_where('tbdeposito', ['id' => $id])->row();
     }
 
     public function get_data_by_norek($no_rekening)
     {
-        return $this->db->get_where('tbsimpanan', ['no_rekening' => $no_rekening])->row();
+        return $this->db->get_where('tbdeposito', ['no_rekening' => $no_rekening])->row();
     }
 
     public function get_data_by_nasabah($id)
     {
-        return $this->db->get_where('tbsimpanan', ['nasabah_id' => $id])->result();
+        return $this->db->get_where('tbdeposito', ['nasabah_id' => $id])->result();
     }
 
     public function search_nasabah($keyword)

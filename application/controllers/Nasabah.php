@@ -155,8 +155,7 @@ class Nasabah extends CI_Controller
             $this->form_validation->set_rules('nama_ibu_kandung', 'Nama Ibu Kandung', 'required', [
                 'required'   => 'Nama Ibu Kandung tidak boleh kosong.'
             ]);
-            $this->form_validation->set_rules('email', 'Email', 'required|valid_email', [
-                'required'   => 'Email tidak boleh kosong.',
+            $this->form_validation->set_rules('email', 'Email', 'valid_email', [
                 'valid_email' => 'Format email tidak valid.'
             ]);
             $this->form_validation->set_rules('alamat', 'Alamat', 'required', [
@@ -347,8 +346,7 @@ class Nasabah extends CI_Controller
             $this->form_validation->set_rules('nama_ibu_kandung', 'Nama Ibu Kandung', 'required', [
                 'required'   => 'Nama Ibu Kandung tidak boleh kosong.'
             ]);
-            $this->form_validation->set_rules('email', 'Email', 'required|valid_email', [
-                'required'   => 'Email tidak boleh kosong.',
+            $this->form_validation->set_rules('email', 'Email', 'valid_email', [
                 'valid_email' => 'Format email tidak valid.'
             ]);
             $this->form_validation->set_rules('alamat', 'Alamat', 'required', [
