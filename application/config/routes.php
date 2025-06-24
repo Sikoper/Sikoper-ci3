@@ -118,6 +118,7 @@ $route['simpanan/detail/(:any)'] = 'simpanan/detail/$1';
 $route['simpanan/print_nasabah'] = 'simpanan/print_nasabah';
 $route['simpanan/laporan'] = 'simpanan/laporan';
 $route['simpanan/print_laporan'] = 'simpanan/print_laporan';
+$route['tabungan/fetchTabungan'] = 'tabungan/fetchTabungan';
 
 $route['deposito'] = 'deposito';
 $route['deposito/add'] = 'deposito/add';

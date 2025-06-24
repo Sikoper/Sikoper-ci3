@@ -155,7 +155,7 @@ class Penarikan extends CI_Controller
                     $pengendapan_minimal = (float) $jenis_tabungan_data->pengendapan;
 
                     $original_deposit_date_dt = new DateTime($simpanan_data->tanggal_simpanan);
-                    $duration_months = (int) $simpanan_data->durasi;
+                    // $duration_months = (int) $simpanan_data->durasi;
                     $grace_period_days = 7;
 
                     $date_of_withdrawal_dt = new DateTime($tanggal_penarikan_input);
@@ -164,28 +164,28 @@ class Penarikan extends CI_Controller
 
                     $current_eval_deposit_date_dt = clone $original_deposit_date_dt;
 
-                    if ($jenis_tabungan_data->nama === 'Deposito') {
-                        while (true) {
-                            $current_eval_tenor_date_dt = clone $current_eval_deposit_date_dt;
-                            $current_eval_tenor_date_dt->modify("+{$duration_months} months");
+                    // if ($jenis_tabungan_data->nama === 'Deposito') {
+                    //     while (true) {
+                    //         $current_eval_tenor_date_dt = clone $current_eval_deposit_date_dt;
+                    //         $current_eval_tenor_date_dt->modify("+{$duration_months} months");
 
-                            $current_eval_grace_end_dt = clone $current_eval_tenor_date_dt;
-                            $current_eval_grace_end_dt->modify("+{$grace_period_days} days");
+                    //         $current_eval_grace_end_dt = clone $current_eval_tenor_date_dt;
+                    //         $current_eval_grace_end_dt->modify("+{$grace_period_days} days");
 
-                            if ($date_of_withdrawal_dt < $current_eval_tenor_date_dt) {
-                                $penalty_rp_final = round(($penalty_rate / 100) * $simpanan_data->jumlah_simpanan);
-                                break;
-                            } else if ($date_of_withdrawal_dt >= $current_eval_tenor_date_dt && $date_of_withdrawal_dt <= $current_eval_grace_end_dt) {
-                                $penalty_rp_final = 0;
-                                break;
-                            } else {
-                                $current_eval_deposit_date_dt = clone $current_eval_grace_end_dt;
-                                $current_eval_deposit_date_dt->modify('+1 day');
-                            }
-                        }
-                    } else {
+                    //         if ($date_of_withdrawal_dt < $current_eval_tenor_date_dt) {
+                    //             $penalty_rp_final = round(($penalty_rate / 100) * $simpanan_data->jumlah_simpanan);
+                    //             break;
+                    //         } else if ($date_of_withdrawal_dt >= $current_eval_tenor_date_dt && $date_of_withdrawal_dt <= $current_eval_grace_end_dt) {
+                    //             $penalty_rp_final = 0;
+                    //             break;
+                    //         } else {
+                    //             $current_eval_deposit_date_dt = clone $current_eval_grace_end_dt;
+                    //             $current_eval_deposit_date_dt->modify('+1 day');
+                    //         }
+                    //     }
+                    // } else {
                         $penalty_rp_final = 0;
-                    }
+                    // }
 
                     $this->form_validation->set_rules(
                         'jumlah_penarikan',
@@ -340,59 +340,59 @@ class Penarikan extends CI_Controller
                 return;
             }
 
-            $original_deposit_date_dt = new DateTime($simpanan->tanggal_simpanan);
-            $duration_months = (int) $simpanan->durasi;
-            $grace_period_days = 7;
-            $current_date_dt = new DateTime(date('Y-m-d'));
+            // $original_deposit_date_dt = new DateTime($simpanan->tanggal_simpanan);
+            // // $duration_months = (int) $simpanan->durasi;
+            // $grace_period_days = 7;
+            // $current_date_dt = new DateTime(date('Y-m-d'));
 
-            $penalty_rate = (float) $jenis_tabungan->jumlah_denda;
-            $final_calculated_penalty_rp = 0;
-            $display_penalty_rate_config = 0;
+            // $penalty_rate = (float) $jenis_tabungan->jumlah_denda;
+            // $final_calculated_penalty_rp = 0;
+            // $display_penalty_rate_config = 0;
 
-            $current_eval_deposit_date_dt = clone $original_deposit_date_dt;
-            $effective_tenor_to_display_dt = clone $current_eval_deposit_date_dt;
-            $effective_tenor_to_display_dt->modify("+{$duration_months} months");
+            // $current_eval_deposit_date_dt = clone $original_deposit_date_dt;
+            // $effective_tenor_to_display_dt = clone $current_eval_deposit_date_dt;
+            // // $effective_tenor_to_display_dt->modify("+{$duration_months} months");
 
-            if ($jenis_tabungan->nama === 'Deposito') {
-                $display_penalty_rate_config = $penalty_rate;
+            // if ($jenis_tabungan->nama === 'Deposito') {
+            //     $display_penalty_rate_config = $penalty_rate;
 
-                while (true) {
-                    $current_eval_tenor_date_dt = clone $current_eval_deposit_date_dt;
-                    $current_eval_tenor_date_dt->modify("+{$duration_months} months");
+            //     while (true) {
+            //         $current_eval_tenor_date_dt = clone $current_eval_deposit_date_dt;
+            //         // $current_eval_tenor_date_dt->modify("+{$duration_months} months");
 
-                    $current_eval_grace_end_dt = clone $current_eval_tenor_date_dt;
-                    $current_eval_grace_end_dt->modify("+{$grace_period_days} days");
+            //         $current_eval_grace_end_dt = clone $current_eval_tenor_date_dt;
+            //         $current_eval_grace_end_dt->modify("+{$grace_period_days} days");
 
-                    $effective_tenor_to_display_dt = clone $current_eval_tenor_date_dt;
+            //         $effective_tenor_to_display_dt = clone $current_eval_tenor_date_dt;
 
-                    if ($current_date_dt < $current_eval_tenor_date_dt) {
-                        // KASUS 1: Penarikan SEBELUM tenor evaluasi saat ini berakhir -> KENA DENDA
-                        $final_calculated_penalty_rp = round(($penalty_rate / 100) * $simpanan->jumlah_simpanan);
-                        break;
-                    } else if ($current_date_dt >= $current_eval_tenor_date_dt && $current_date_dt <= $current_eval_grace_end_dt) {
-                        // KASUS 2: Penarikan PADA tenor atau DALAM masa tenggang -> TIDAK KENA DENDA
-                        $final_calculated_penalty_rp = 0;
-                        $display_penalty_rate_config = 0;
-                        break;
-                    } else {
-                        // KASUS 3: Deposito Dianggap ROLL OVER, lanjut ke periode berikutnya
-                        $current_eval_deposit_date_dt = clone $current_eval_grace_end_dt;
-                        $current_eval_deposit_date_dt->modify('+1 day');
-                    }
-                }
-            } else {
-                $final_calculated_penalty_rp = 0;
-                $display_penalty_rate_config = 0;
-            }
+            //         if ($current_date_dt < $current_eval_tenor_date_dt) {
+            //             // KASUS 1: Penarikan SEBELUM tenor evaluasi saat ini berakhir -> KENA DENDA
+            //             $final_calculated_penalty_rp = round(($penalty_rate / 100) * $simpanan->jumlah_simpanan);
+            //             break;
+            //         } else if ($current_date_dt >= $current_eval_tenor_date_dt && $current_date_dt <= $current_eval_grace_end_dt) {
+            //             // KASUS 2: Penarikan PADA tenor atau DALAM masa tenggang -> TIDAK KENA DENDA
+            //             $final_calculated_penalty_rp = 0;
+            //             $display_penalty_rate_config = 0;
+            //             break;
+            //         } else {
+            //             // KASUS 3: Deposito Dianggap ROLL OVER, lanjut ke periode berikutnya
+            //             $current_eval_deposit_date_dt = clone $current_eval_grace_end_dt;
+            //             $current_eval_deposit_date_dt->modify('+1 day');
+            //         }
+            //     }
+            // } else {
+            //     $final_calculated_penalty_rp = 0;
+            //     $display_penalty_rate_config = 0;
+            // }
 
             $msg = [
                 'saldo' => $simpanan->jumlah_simpanan,
-                'durasi' => $simpanan->durasi,
-                'tenor' => $effective_tenor_to_display_dt->format('Y-m-d'),
-                'jumlah_denda' => $display_penalty_rate_config,
-                'jenis_denda' => ($jenis_tabungan->nama === 'Deposito' && $display_penalty_rate_config > 0) ? $jenis_tabungan->jenis_denda : '',
+                // 'durasi' => $simpanan->durasi,
+                // 'tenor' => $effective_tenor_to_display_dt->format('Y-m-d'),
+                // 'jumlah_denda' => $display_penalty_rate_config,
+                // 'jenis_denda' => ($jenis_tabungan->nama === 'Deposito' && $display_penalty_rate_config > 0) ? $jenis_tabungan->jenis_denda : '',
                 'kategori' => $jenis_tabungan,
-                'calculated_penalty_rp' => $final_calculated_penalty_rp
+                // 'calculated_penalty_rp' => $final_calculated_penalty_rp
             ];
             echo json_encode($msg);
         } else {
