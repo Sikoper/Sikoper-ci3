@@ -274,10 +274,10 @@
         ],
     });
 
-    function deleteSetoran(id, jumlah) {
+    function deleteRecord(id, jumlah, keterangan) {
         Swal.fire({
             title: "Hapus data ini?",
-            html: `Yakin ingin menghapus setoran sejumlah:<br/> <strong><span id="jumlah_setoran">${jumlah}</span></strong>?`,
+            html: `Yakin ingin menghapus history sejumlah:<br/> <strong><span id="jumlah_setoran">${jumlah}</span></strong>?`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
@@ -296,9 +296,10 @@
             if (result.isConfirmed) {
                 $.ajax({
                     type: "POST",
-                    url: "<?= base_url('setoran/delete') ?>",
+                    url: "<?= base_url('tabungan/delete') ?>",
                     data: {
-                        id: id
+                        id: id,
+                        keterangan: keterangan
                     },
                     dataType: "json",
                     success: function(response) {

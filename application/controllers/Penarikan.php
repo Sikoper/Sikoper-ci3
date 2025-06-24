@@ -36,9 +36,9 @@ class Penarikan extends CI_Controller
                 'jenis_tabungan' => $row->jenis_tabungan,
                 'total_penarikan' => 'Rp ' . number_format($row->total_penarikan, 0, ',', '.'),
                 'aksi' => '
-    <a href="' . base_url('penarikan/edit/' . $row->id) . '" class="btn btn-warning btn-sm">
+    <button href="' . base_url('penarikan/edit/' . $row->id) . '" class="btn btn-warning btn-sm">
         <i class="fa fa-edit"></i>
-    </a>
+    </button>
     <button class="btn btn-danger btn-sm" onclick="deleteItem(' . $row->id . ', \'' . $row->nama_nasabah . '\')">
         <i class="fa fa-trash"></i>
     </button>'

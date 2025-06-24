@@ -101,7 +101,7 @@ class Bunga_model extends CI_Model
         $simpananList = $this->db->get()->result();
 
         foreach ($simpananList as $simpanan) {
-            $bungaRate = (float) $simpanan->bunga / 12;
+            $bungaRate = (float) $simpanan->bunga;
             $saldo = (float) $simpanan->jumlah_simpanan;
 
             if ($saldo <= 0) continue;

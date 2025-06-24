@@ -38,7 +38,7 @@ class Tabungan extends CI_Controller
                 $badgeClass = ($field->keterangan == 'Setor') ? 'bg-success' : 'bg-danger';
                 $row[] = "<span class=\"badge $badgeClass\">{$field->keterangan}</span>";
                 $row[] = $field->pegawai;
-                $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteSetoran('" . $field->detail_id . "', '" . $field->jumlah_uang . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+                $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecord('" . $field->detail_id . "', '" . $field->jumlah_uang . "','" . $field->keterangan . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
                 $data[] = $row;
             }
 
@@ -52,6 +52,35 @@ class Tabungan extends CI_Controller
             echo json_encode($output);
         } else {
             exit('Maaf data tidak bisa ditampilkan');
+        }
+    }
+
+    public function delete()
+    {
+        if ($this->input->is_ajax_request()) {
+            $id = $this->input->post('id');
+            $keterangan = $this->input->post('keterangan');
+
+            if ($keterangan === 'Setor') {
+                $detail = $this->db->get_where('tbdetail_simpanan', ['id' => $id])->row();
+                $simpanan_id = $detail->simpanan_id;
+                $this->db->delete('tbdetail_simpanan', ['id' => $id]);
+                $this->db->set('jumlah_simpanan', 'jumlah_simpanan - ' . $detail->jumlah_setoran, false)
+                    ->where('id', $simpanan_id)
+                    ->update('tbsimpanan');
+            } elseif ($keterangan === 'Tarik') {
+                $detail = $this->db->get_where('tbdetail_penarikan', ['id' => $id])->row();
+                $simpanan_id = $detail->simpanan_id;
+                $this->db->delete('tbdetail_penarikan', ['id' => $id]);
+                $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $detail->jumlah_penarikan, false)
+                    ->where('id', $simpanan_id)
+                    ->update('tbsimpanan');
+            } else {
+                echo json_encode(['error' => 'Jenis transaksi tidak dikenal.']);
+                return;
+            }
+
+            echo json_encode(['success' => 'Data berhasil dihapus.']);
         }
     }
 }
