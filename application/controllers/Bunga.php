@@ -37,45 +37,40 @@ class Bunga extends CI_Controller
         $this->parser->parse('templates/main', $parser);
     }
 
-    public function add_bunga()
-    {
-        if (date('d') != '28') return;
+    // public function add_bunga()
+    // {
+    //     if (date('d') != '28') return;
 
-        $today = date('Y-m-d');
-        $exists = $this->db->get_where('systems_log', ['tanggal' => $today])->num_rows();
-        if ($exists > 0) return;
+    //     $today = date('Y-m-d');
+    //     $exists = $this->db->get_where('systems_log', ['tanggal' => $today])->num_rows();
+    //     if ($exists > 0) return;
 
-        $this->Bunga_model->bunga_proses();
+    //     $this->Bunga_model->bunga_proses();
 
-        $this->db->insert('systems_log', ['tanggal' => $today]);
+    //     $this->db->insert('systems_log', ['tanggal' => $today]);
 
-        echo json_encode(['success' => 'Bunga bulanan berhasil diberikan']);
-    }
+    //     echo json_encode(['success' => 'Bunga bulanan berhasil diberikan']);
+    // }
 
     public function fetchData()
     {
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_?');
-        }
-
-        if ($this->input->is_ajax_request() == true) {
+        if ($this->input->is_ajax_request()) {
             $list = $this->Bunga_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
-
-
 
             foreach ($list as $field) {
                 $no++;
                 $row = array();
 
                 $row[] = "<div class=\"text-center\">$no</div>";
+                $row[] = $field->nama_lengkap;
                 $row[] = $field->no_rekening;
-                $row[] = $field->nasabah;
                 $row[] = $field->tanggal_transaksi;
                 $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
+                $row[] = $field->tipe;
                 $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+
                 $data[] = $row;
             }
 
@@ -162,33 +157,30 @@ class Bunga extends CI_Controller
 
     public function run_bunga()
     {
-        $jenis_tabungan = $this->Kategori_model->get_data();
-        $today = date('d');
+        $processed = $this->Bunga_model->checkAndRunBunga();
 
-        $matchingTanggal = false;
-        foreach ($jenis_tabungan as $jenis) {
-            if ($today == $jenis->tanggal_bunga) {
-                $matchingTanggal = true;
-                break;
-            }
+        if ($processed) {
+            $msg = ['success' => 'Bunga tabungan berhasil dihitung'];
+        } else {
+            $msg = ['error' => 'Bunga tabungan sudah diperbarui bulan ini.'];
         }
 
-        if ($matchingTanggal) {
-            $processed = $this->Bunga_model->checkAndRunBunga();
+        header('Content-Type: application/json');
+        echo json_encode($msg);
+    }
+
+    public function run_bunga_deposito()
+    {
+        if ($this->Bunga_model->is_bunga_deposito_done_today()) {
+            $msg = ['error' => 'Semua bunga deposito sudah diproses hari ini.'];
+        } else {
+            $processed = $this->Bunga_model->bunga_proses_deposito();
 
             if ($processed) {
-                $msg = [
-                    'success' => 'Pembungaan berhasil dihitung'
-                ];
+                $msg = ['success' => 'Bunga deposito berhasil dihitung dan disimpan.'];
             } else {
-                $msg = [
-                    'error' => 'Bunga sudah diperbarui hari ini'
-                ];
+                $msg = ['error' => 'Tidak ada bunga deposito yang valid untuk diproses hari ini.'];
             }
-        } else {
-            $msg = [
-                'error' => 'Tidak ada jenis tabungan dengan tanggal bunga hari ini (' . $today . ')'
-            ];
         }
 
         header('Content-Type: application/json');
