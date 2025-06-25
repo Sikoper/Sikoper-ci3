@@ -1,9 +1,13 @@
 <div class="card">
     <div class="card-header">
         <h4 class="card-title">
-            <button class="btn btn-primary" id="btnPembungaan">
+            <button class="btn btn-primary" id="btnPembungaanTabungan">
                 <i class="fa fa-credit-card"></i>
-                Pembungaan
+                Hitung Bunga Tabungan
+            </button>
+            <button class="btn btn-success" id="btnPembungaanDeposito">
+                <i class="fa fa-credit-card"></i>
+                Hitung Bunga Deposito
             </button>
         </h4>
     </div>
@@ -14,10 +18,11 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>No. Rekening</th>
                             <th>Nasabah</th>
+                            <th>No. Rekening</th>
                             <th>Tanggal bunga</th>
                             <th>Jumlah bunga</th>
+                            <th>Keterangan</th>
                             <th>#</th>
                         </tr>
                     </thead>
@@ -64,6 +69,9 @@
                 "type": "string"
             },
             {
+                "type": "string"
+            },
+            {
                 "orderable": false
             }
         ],
@@ -74,7 +82,7 @@
                 "width": "5%"
             },
             {
-                "targets": 5,
+                "targets": 6,
                 "orderable": false,
                 "width": "15%"
             }
@@ -121,7 +129,7 @@
     }
 
     $(document).ready(function() {
-        $('#btnPembungaan').click(function(e) {
+        $('#btnPembungaanTabungan').click(function(e) {
             e.preventDefault();
             $.ajax({
                 type: "POST",
@@ -152,6 +160,39 @@
                 },
                 error: function(xhr, thrownError) {
                     alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                }
+            });
+        });
+
+        $('#btnPembungaanDeposito').click(function() {
+            $.ajax({
+                type: "POST",
+                url: "<?= site_url('bunga/run_bunga_deposito') ?>",
+                dataType: "json",
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: "Success!",
+                            text: response.success,
+                            icon: "success"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.reload();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "Error!",
+                            text: response.error,
+                            icon: "error"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                            }
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert("Error: " + xhr.responseText);
                 }
             });
         });

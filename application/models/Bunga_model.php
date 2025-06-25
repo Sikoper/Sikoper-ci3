@@ -3,92 +3,127 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Bunga_model extends CI_Model
 {
-    var $table = 'tbtransaksi';
-    var $column_order = array(null, 'no_rekening', 'nasabah', 'tanggal_transaksi', 'jumlah_transaksi',  null);
-    var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbtransaksi.tanggal_transaksi');
-    var $order = array('created_at' => 'ASC');
+    var $column_order = array(null, 'tanggal_transaksi', 'nama_lengkap', 'no_rekening', 'jumlah_transaksi', 'tipe', null);
+    var $column_search = array('tanggal_transaksi', 'nama_lengkap', 'no_rekening', 'tipe');
+    var $order = array('tanggal_transaksi' => 'DESC');
 
-    private function _get_datatables_query($simpanan_id = null)
+    private function _get_base_query()
     {
-        $this->db->select('tbtransaksi.*, tbnasabah.nama_lengkap as nasabah, tbsimpanan.no_rekening as no_rekening');
-        $this->db->from($this->table);
-        $this->db->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id');
-        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
-        if ($simpanan_id) {
-            $this->db->where('simpanan_id', $simpanan_id);
-        }
+        return "
+        SELECT * FROM (
+            SELECT 
+                t1.id,
+                t1.tanggal_transaksi,
+                t1.jumlah_transaksi,
+                'Simpanan' AS tipe,
+                n.nama_lengkap,
+                s.no_rekening
+            FROM tbtransaksi t1
+            JOIN tbsimpanan s ON s.id = t1.simpanan_id
+            JOIN tbnasabah n ON n.id = s.nasabah_id
+            UNION ALL
+            SELECT 
+                t2.id,
+                t2.tanggal_transaksi,
+                t2.jumlah_transaksi,
+                'Deposito' AS tipe,
+                n.nama_lengkap,
+                d.no_rekening
+            FROM tbtransaksi_deposito t2
+            JOIN tbdeposito d ON d.id = t2.deposito_id
+            JOIN tbnasabah n ON n.id = d.nasabah_id
+        ) AS bunga";
+    }
 
-        $i = 0;
+    private function _get_datatables_query()
+    {
+        $sql = $this->_get_base_query();
 
-        foreach ($this->column_search as $item) {
-            if ($_POST['search']['value']) {
-
-                if ($i === 0) {
-                    $this->db->group_start();
-                    $this->db->like($item, $_POST['search']['value']);
-                } else {
-                    $this->db->or_like($item, $_POST['search']['value']);
-                }
-
-                if (count($this->column_search) - 1 == $i)
-                    $this->db->group_end();
+        $where_conditions = array();
+        if (!empty($_POST['search']['value'])) {
+            $search_value = $this->db->escape_like_str($_POST['search']['value']);
+            foreach ($this->column_search as $item) {
+                $where_conditions[] = "$item LIKE '%$search_value%'";
             }
-            $i++;
+            if (!empty($where_conditions)) {
+                $sql .= " WHERE (" . implode(' OR ', $where_conditions) . ")";
+            }
         }
 
         if (isset($_POST['order'])) {
-            $this->db->order_by($this->column_order[$_POST['order']['0']['column']], $_POST['order']['0']['dir']);
-        } else if (isset($this->order)) {
+            $column_index = $_POST['order']['0']['column'];
+            $column_name = $this->column_order[$column_index];
+            $direction = $_POST['order']['0']['dir'];
+            if ($column_name) {
+                $sql .= " ORDER BY $column_name $direction";
+            }
+        } else {
             $order = $this->order;
-            $this->db->order_by(key($order), $order[key($order)]);
+            $sql .= " ORDER BY " . key($order) . " " . $order[key($order)];
         }
+
+        return $sql;
     }
 
-    function get_datatables($simpanan_id = null)
+    function get_datatables()
     {
-        $this->_get_datatables_query($simpanan_id);
-        if ($_POST['length'] != -1)
-            $this->db->limit($_POST['length'], $_POST['start']);
-        return $this->db->get()->result();
-    }
+        $sql = $this->_get_datatables_query();
 
-    public function count_filtered($simpanan_id = null)
-    {
-        $this->_get_datatables_query($simpanan_id);
-        return $this->db->get()->num_rows();
-    }
-
-    public function count_all($simpanan_id = null)
-    {
-        $this->db->from('tbtransaksi');
-        if ($simpanan_id) {
-            $this->db->where('simpanan_id', $simpanan_id);
+        // Add LIMIT
+        if (isset($_POST['length']) && $_POST['length'] != -1) {
+            $limit = (int)$_POST['length'];
+            $offset = (int)$_POST['start'];
+            $sql .= " LIMIT $offset, $limit";
         }
-        return $this->db->count_all_results();
+
+        $query = $this->db->query($sql);
+        return $query->result();
     }
 
-    public function count_all_data()
+    function count_filtered()
     {
-        return $this->db->count_all('tbsimpanan');
+        $sql = $this->_get_datatables_query();
+        $count_sql = "SELECT COUNT(*) as filtered FROM ($sql) as count_table";
+        $query = $this->db->query($count_sql);
+        return $query->row()->filtered;
+    }
+
+    function count_all()
+    {
+        $sql = "
+        SELECT COUNT(*) AS total FROM (
+            SELECT id FROM tbtransaksi
+            UNION ALL
+            SELECT id FROM tbtransaksi_deposito
+        ) AS trans";
+        $query = $this->db->query($sql);
+        return $query->row()->total;
     }
 
     public function checkAndRunBunga()
     {
-        $today = date('Y-m-d');
-        $exists = $this->db->get_where('systems_log', ['tanggal' => $today])->num_rows();
+        $month = date('m');
+        $year = date('Y');
+
+        $exists = $this->db
+            ->where('MONTH(tanggal)', $month)
+            ->where('YEAR(tanggal)', $year)
+            ->get('systems_log')
+            ->num_rows();
+
         if ($exists > 0) {
             return false;
         }
+
         $this->bunga_proses();
 
-        $this->db->insert('systems_log', ['tanggal' => $today]);
+        $this->db->insert('systems_log', ['tanggal' => date('Y-m-d')]);
 
         return true;
     }
 
     public function bunga_proses()
     {
-
         $today = date('Y-m-d');
         $lastMonth = date('Y-m-d', strtotime('-1 month'));
 
@@ -129,6 +164,84 @@ class Bunga_model extends CI_Model
             $this->db->where('id', $simpanan->id);
             $this->db->update('tbsimpanan');
         }
+    }
+
+    public function bunga_proses_deposito()
+    {
+        $today = date('Y-m-d');
+        $processedAny = false;
+
+        $this->db->select('tbdeposito.id, tbdeposito.nasabah_id, tbdeposito.jumlah_deposito, tbdeposito.tanggal_deposito, tbjenistabungan.bunga');
+        $this->db->from('tbdeposito');
+        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
+        $this->db->where('tbdeposito.status', 'aktif');
+        $depositoList = $this->db->get()->result();
+
+        foreach ($depositoList as $deposito) {
+            $bungaRate = (float) $deposito->bunga;
+            $saldo = (float) $deposito->jumlah_deposito;
+            $tanggalDeposito = $deposito->tanggal_deposito;
+
+            if ($saldo <= 0) continue;
+
+            $daysDiff = (strtotime($today) - strtotime($tanggalDeposito)) / (60 * 60 * 24);
+            if ($daysDiff < 30) continue;
+
+            if (date('d') != date('d', strtotime($tanggalDeposito))) {
+                continue;
+            }
+
+            $bungaExists = $this->db->where('deposito_id', $deposito->id)
+                ->where('MONTH(tanggal_bunga)', date('m'))
+                ->where('YEAR(tanggal_bunga)', date('Y'))
+                ->get('tbdeposito_bunga_log')->num_rows();
+
+            if ($bungaExists > 0) continue;
+
+            $bungaAmount = ($bungaRate / 100) * $saldo;
+
+            $this->db->insert('tbtransaksi_deposito', [
+                'deposito_id' => $deposito->id,
+                'tanggal_transaksi' => $today,
+                'jumlah_transaksi' => $bungaAmount,
+            ]);
+
+            $this->db->insert('tbdeposito_bunga_log', [
+                'deposito_id' => $deposito->id,
+                'tanggal_bunga' => $today
+            ]);
+
+            $processedAny = true;
+        }
+
+        return $processedAny;
+    }
+
+    public function is_bunga_deposito_done_today()
+    {
+        $today = date('Y-m-d');
+        $tanggalHariIni = date('d');
+
+        $this->db->select('tbdeposito.id');
+        $this->db->from('tbdeposito');
+        $this->db->where('tbdeposito.status', 'aktif');
+        $this->db->where('DAY(tbdeposito.tanggal_deposito)', $tanggalHariIni);
+        $this->db->where('DATEDIFF(?, tbdeposito.tanggal_deposito) >=', 30);
+        $eligibleDeposito = $this->db->get_compiled_select();
+
+        $sql = "
+        SELECT COUNT(*) AS belum_proses FROM (
+            {$eligibleDeposito}
+        ) AS eligible
+        WHERE NOT EXISTS (
+            SELECT 1 FROM tbdeposito_bunga_log
+            WHERE tbdeposito_bunga_log.deposito_id = eligible.id
+            AND tanggal_bunga = ?
+        )
+    ";
+
+        $query = $this->db->query($sql, [$today, $today]);
+        return $query->row()->belum_proses == 0;
     }
 
     public function get_data_by_id($id)

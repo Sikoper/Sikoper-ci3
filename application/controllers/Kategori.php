@@ -291,6 +291,7 @@ class Kategori extends CI_Controller
                         'errorBiayaRegistrasi' => form_error('biaya_registrasi'),
                         'errorSimpananAwal' => form_error('simpanan_awal'),
                         'errorPengendapan' => form_error('pengendapan'),
+                        'errorTanggalPembungaan' => form_error('tanggal_pembungaan'),
                         'errorKeterangan' => form_error('keterangan'),
                     ]
                 ];

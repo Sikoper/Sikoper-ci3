@@ -174,7 +174,7 @@
 
             let num = parseInt(value, 10);
 
-            if (num >= 1 && num <= 28) {
+            if (num >= 1 && num <= 30) {
                 $(this).val(num);
             } else {
                 value = value.slice(0, -1);
