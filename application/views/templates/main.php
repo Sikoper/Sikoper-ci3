@@ -55,12 +55,12 @@
                         </li>
 
                         <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga']) ? 'active' : '' ?>">
+                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga', 'pencairan']) ? 'active' : '' ?>">
                                 <a href="#" class='sidebar-link'>
                                     <i class="bi bi-cash-stack"></i>
                                     <span>Transaksi</span>
                                 </a>
-                                <ul class="submenu <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga']) ? 'active' : '' ?>">
+                                <ul class="submenu <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga', 'pencairan']) ? 'active' : '' ?>">
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'setoran' ? 'active' : '' ?>">
                                         <a href="<?= base_url('setoran') ?>">Setoran Tunai</a>
                                     </li>
@@ -68,7 +68,7 @@
                                         <a href="<?= base_url('penarikan') ?>">Penarikan Tunai</a>
                                     </li>
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'pencairan' ? 'active' : '' ?>">
-                                        <a href="<?= base_url('pencairan') ?>">Pencarian Deposito</a>
+                                        <a href="<?= base_url('pencairan') ?>">Pencairan Deposito</a>
                                     </li>
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'bunga' ? 'active' : '' ?>">
                                         <a href="<?= base_url('bunga') ?>">Proses Bunga</a>
@@ -77,7 +77,7 @@
                             </li>
                         <?php endif; ?>
                         <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['simpanan', 'deposito','jenis_tabungan', 'nasabah', 'pegawai']) ? 'active' : '' ?>">
+                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['simpanan', 'deposito', 'jenis_tabungan', 'nasabah', 'pegawai']) ? 'active' : '' ?>">
                                 <a href="#" class='sidebar-link'>
                                     <i class="bi bi-server"></i>
                                     <span>Data Master</span>

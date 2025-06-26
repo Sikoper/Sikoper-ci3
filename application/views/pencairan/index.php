@@ -7,12 +7,13 @@
                     <?= form_open('', ['id' => 'form_simpan']) ?>
 
                     <div class="form-group mb-3" style="height: 80px;">
-                        <label for="tanggal_penarikan">Tanggal</label>
+                        <label for="tanggal_penarikan">Tanggal Penarikan</label>
                         <div class="input-group">
-                            <input type="date" name="tanggal_penarikan" id="tanggal_penarikan" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
+                            <input type="text" class="form-control" style="background-color: #e9ecef;" value="<?= date('d/m/Y') ?>" readonly>
+
+                            <input type="hidden" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
                         </div>
-                        <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
+                        <div id="errorTanggal" class="invalid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
@@ -113,11 +114,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="total_yang_ditarik_display">Total Akan Ditarik</label>
+                        <label for="total_yang_ditarik_display">Total Pengurangan Saldo</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="total_yang_ditarik_display" class="form-control text-end" readonly
-                                style="font-weight: bold; background-color: #e9ecef; opacity: 1;" />
+                            <input type="text" id="total_yang_ditarik_display" class="form-control text-end" readonly style="font-weight: bold; background-color: #e9ecef; opacity: 1;" />
                         </div>
                     </div>
 
@@ -187,28 +187,25 @@
         totalDitarikAN.set(0);
 
         function updateTotalYangAkanDitarik() {
-            let jumlahPenarikanVal = 0;
-            const jumlahPenarikanStr = $('#jumlah_penarikan').autoNumeric('get');
-            if (jumlahPenarikanStr && typeof jumlahPenarikanStr === 'string') {
-                jumlahPenarikanVal = parseFloat(jumlahPenarikanStr.replace(/\./g, '').replace(',', '.')) || 0;
-            }
-            
-            const jumlahDendaVal = dendaRpAN.getNumber() || 0;
-            const totalAkanDitarik = jumlahPenarikanVal;
-            const totalDebetDariSaldo = jumlahPenarikanVal + jumlahDendaVal;
-            
-            totalDitarikAN.set(totalAkanDitarik);
+    let jumlahPenarikanVal = 0;
+    const jumlahPenarikanStr = $('#jumlah_penarikan').autoNumeric('get');
+    if (jumlahPenarikanStr && typeof jumlahPenarikanStr === 'string') {
+        jumlahPenarikanVal = parseFloat(jumlahPenarikanStr.replace(/\./g, '').replace(',', '.')) || 0;
+    }
 
-            const saldoSaatIniVal = saldoAN.getNumber() || 0;
-            const sisaSaldo = saldoSaatIniVal - totalDebetDariSaldo;
-            perkiraanSisaSaldoAN.set(sisaSaldo);
+    const jumlahDendaVal = dendaRpAN.getNumber() || 0;
+    const totalDebetDariSaldo = jumlahPenarikanVal + jumlahDendaVal;
+    totalDitarikAN.set(totalDebetDariSaldo);
+    const saldoSaatIniVal = saldoAN.getNumber() || 0;
+    const sisaSaldo = saldoSaatIniVal - totalDebetDariSaldo;
+    perkiraanSisaSaldoAN.set(sisaSaldo);
 
-            if (sisaSaldo < 0) {
-                $('#perkiraan_sisa_saldo_display').css('color', 'red');
-            } else {
-                $('#perkiraan_sisa_saldo_display').css('color', '');
-            }
-        }
+    if (sisaSaldo < 0) {
+        $('#perkiraan_sisa_saldo_display').css('color', 'red');
+    } else {
+        $('#perkiraan_sisa_saldo_display').css('color', '');
+    }
+}
 
         $('#jumlah_penarikan').on('input keyup change', function() {
             updateTotalYangAkanDitarik();
@@ -216,8 +213,8 @@
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
-            const namaNasabahText = $('#nasabah option:selected').text() || 'Nasabah belum dipilih';
-            const noRekeningText = $('#rekening option:selected').text() || 'Rekening belum dipilih';
+            const namaNasabahText = $('#nasabah option:selected').text().trim() || 'Nasabah belum dipilih';
+            const noRekeningText = $('#rekening option:selected').text().trim() || 'Rekening belum dipilih';
             const saldoSaatIniNum = saldoAN.getNumber() || 0;
             const jumlahPenarikanNum = parseFloat($('#jumlah_penarikan').autoNumeric('get').replace(/\./g, '').replace(',', '.')) || 0;
             const jumlahDendaNum = dendaRpAN.getNumber() || 0;
@@ -310,6 +307,13 @@
                                 } else {
                                     $('#errorJumlah').fadeOut();
                                     $('#jumlah_penarikan').removeClass('is-invalid').addClass('is-valid');
+                                }
+                                if (dataError.errorTanggal) {
+                                    $('#errorTanggal').html(dataError.errorTanggal).show();
+                                    $('#tanggal_penarikan').addClass('is-invalid');
+                                } else {
+                                    $('#errorTanggal').fadeOut();
+                                    $('#tanggal_penarikan').removeClass('is-invalid').addClass('is-valid');
                                 }
                                 if (dataError.errorPegawai) {
                                     $('#errorPegawai').html(dataError.errorPegawai).show();
