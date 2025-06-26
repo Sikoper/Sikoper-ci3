@@ -8,6 +8,7 @@ class Bunga extends CI_Controller
         parent::__construct();
         $this->load->model('Simpanan_model');
         $this->load->model('Bunga_model');
+        $this->load->model('Nasabah_Bunga_model');
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
 
@@ -87,43 +88,63 @@ class Bunga extends CI_Controller
         }
     }
 
-    public function fetchNasabahBunga()
+    public function fetchNasabahTabunganBunga()
     {
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_?');
-        }
-
-        if ($this->input->is_ajax_request() == true) {
-            $simpanan_id = $this->input->post('simpanan_id');
-            $list = $this->Bunga_model->get_datatables($simpanan_id);
+        if ($this->input->is_ajax_request()) {
+            $no_rekening = $this->input->post('no_rekening');
+            $list = $this->Nasabah_Bunga_model->get_datatables($no_rekening);
             $data = array();
             $no = $_POST['start'];
 
             foreach ($list as $field) {
                 $no++;
                 $row = array();
-
                 $row[] = "<div class=\"text-center\">$no</div>";
                 $row[] = $field->tanggal_transaksi;
                 $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+                $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecord('" . $field->source_id . "', '" . $field->jumlah_transaksi . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+
                 $data[] = $row;
             }
 
             $output = array(
                 "draw" => $_POST['draw'],
-                "recordsTotal" => $this->Bunga_model->count_all(),
-                "recordsFiltered" => $this->Bunga_model->count_filtered(),
+                "recordsTotal" => $this->Nasabah_Bunga_model->count_all($no_rekening),
+                "recordsFiltered" => $this->Nasabah_Bunga_model->count_filtered($no_rekening),
                 "data" => $data,
             );
 
             echo json_encode($output);
-        } else {
-            exit('Maaf data tidak bisa ditampilkan');
+        // } else {
+        //     exit('Maaf data tidak bisa ditampilkan');
+        // }
         }
     }
+    // public function fetchNasabahBunga()
+    // {
+    //     $result = $this->Bunga_model->get_datatables();
+    //     $data = [];
+    //     $no = $_POST['start'];
+    //     foreach ($result as $row) {
+    //         $no++;
+    //         $data[] = [
+    //             'tanggal_transaksi' => date('d-m-Y', strtotime($row->tanggal_transaksi)),
+    //             'no_rekening' => $row->no_rekening,
+    //             'jumlah_transaksi' => 'Rp ' . number_format($row->jumlah_transaksi, 0, ',', '.'),
+    //             'tipe' => $row->tipe,
+    //             'bunga_khusus' => $row->bunga_khusus . '%'
+    //         ];
+    //     }
+
+    //     $output = [
+    //         "draw" => $_POST['draw'],
+    //         "recordsTotal" => $this->Bunga_model->count_all(),
+    //         "recordsFiltered" => $this->Bunga_model->count_filtered(),
+    //         "data" => $data,
+    //     ];
+
+    //     echo json_encode($output);
+    // }
 
     public function delete()
     {

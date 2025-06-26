@@ -5,7 +5,7 @@ class Simpanan_model extends CI_Model
 {
     var $table = 'tbsimpanan';
     var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_simpanan',  null);
-    var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
+    var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbjenistabungan.nama');
     var $order = array('no_rekening' => 'ASC');
 
     private function _get_datatables_query()
