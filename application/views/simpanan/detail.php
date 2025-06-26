@@ -114,7 +114,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                    <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+                    <button class="btn btn-danger" onclick="window.location=''"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
                 </div>
                 <div class="card-body">
                     <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
@@ -232,7 +232,7 @@
         ],
     });
 
-    var simpananId = '<?= $simpanan->id ?>';
+    var noRekening = '<?= $simpanan->no_rekening ?>';
 
     table = $('#tabel_bunga').DataTable({
         responsive: true,
@@ -243,10 +243,10 @@
         autoWidth: false,
 
         "ajax": {
-            "url": "<?= site_url('bunga/fetchNasabahBunga') ?>",
+            "url": "<?= site_url('bunga/fetchNasabahTabunganBunga') ?>",
             "type": "POST",
             data: function(d) {
-                d.simpanan_id = simpananId;
+                d.no_rekening = noRekening;
             }
         },
 
