@@ -67,6 +67,9 @@
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'penarikan' ? 'active' : '' ?>">
                                         <a href="<?= base_url('penarikan') ?>">Penarikan Tunai</a>
                                     </li>
+                                    <li class="submenu-item <?= $this->uri->segment(1) == 'pencairan' ? 'active' : '' ?>">
+                                        <a href="<?= base_url('pencairan') ?>">Pencarian Deposito</a>
+                                    </li>
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'bunga' ? 'active' : '' ?>">
                                         <a href="<?= base_url('bunga') ?>">Proses Bunga</a>
                                     </li>
