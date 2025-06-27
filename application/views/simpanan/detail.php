@@ -29,7 +29,7 @@
                         <td>: <?= $jenis->nama ?? '-' ?></td>
                     </tr>
                     <tr>
-                        <th>Total Simpanan</th>
+                        <th>Saldo</th>
                         <td>: Rp <?= number_format($simpanan->jumlah_simpanan, 2, ',', '.') ?></td>
                     </tr>
                     <tr>

@@ -7,6 +7,7 @@ class Simpanan extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Simpanan_model');
+        $this->load->model('Tabungan_model');
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
@@ -482,7 +483,7 @@ class Simpanan extends CI_Controller
                 $this->Simpanan_model->sync_total_simpanan($id);
                 $this->db->trans_complete();
 
-                
+
                 if ($updated) {
                     $msg = ['success' => 'Data tabungan berhasil dirubah.'];
                     push_event('simpanan-channel', 'simpanan-event', ['message' => 'Simpanan berhasil diubah!']);
@@ -681,8 +682,6 @@ class Simpanan extends CI_Controller
 
         $parser = [
             'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
-            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
-            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
             'isi'   => $this->load->view('simpanan/laporan', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -690,80 +689,56 @@ class Simpanan extends CI_Controller
 
     public function print_laporan()
     {
+        // 1. Get parameters from URL
         $id = $this->input->get('id');
         $tanggal_mulai = $this->input->get('tanggal_mulai');
         $tanggal_akhir = $this->input->get('tanggal_akhir');
         $jenis_laporan = $this->input->get('jenis_laporan');
 
-        // If jenis_laporan is empty or not provided, default it to '3' (Setoran dan Penarikan)
+        // Default jenis_laporan ke '3' (Semua Transaksi) jika kosong
         if (empty($jenis_laporan)) {
             $jenis_laporan = '3';
         }
 
-        // Fetch simpanan and nasabah data
-        $simpanan = $this->Simpanan_model->get_data_by_id($id);
-        // Ensure $simpanan is not null before accessing its properties
-        if (!$simpanan) {
-            echo "Error: Simpanan data not found.";
+        // 2. Fetch main account and customer data
+        $tabungan = $this->Tabungan_model->get_data_by_id($id);
+        if (!$tabungan) {
+            show_error("Error: Data tabungan tidak ditemukan.", 404);
             return;
         }
-        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
-        // Ensure $nasabah is not null
+
+        // You can fetch the full nasabah object if needed,
+        // but this works if get_data_by_id already joins the nasabah table.
+        $nasabah = $this->Nasabah_model->get_data_by_id($tabungan->nasabah_id);
         if (!$nasabah) {
-            echo "Error: Nasabah data not found.";
+            show_error("Error: Data nasabah tidak ditemukan.", 404);
             return;
         }
 
-        $setoran = [];
-        $penarikan = [];
+        // 3. Call the model function. It correctly handles null dates for the query.
+        $rekening_data = $this->Tabungan_model->get_transaksi_rekening_koran($tabungan->id, $tanggal_mulai, $tanggal_akhir, $jenis_laporan);
 
-        // Determine which data to fetch based on date range and report type
-        if (!empty($tanggal_mulai) && !empty($tanggal_akhir)) {
-            if ($jenis_laporan == 1) { // Setoran only
-                $setoran = $this->Setoran_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
-            } elseif ($jenis_laporan == 2) { // Penarikan only
-                $penarikan = $this->Penarikan_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
-            } elseif ($jenis_laporan == 3) { // Both
-                $setoran = $this->Setoran_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
-                $penarikan = $this->Penarikan_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
-            }
-        } else {
-            // If no date range, fetch all data for the selected type
-            if ($jenis_laporan == 1) {
-                $setoran = $this->Setoran_model->get_all_by_simpanan($simpanan->id);
-            } elseif ($jenis_laporan == 2) {
-                $penarikan = $this->Penarikan_model->get_all_by_simpanan($simpanan->id);
-            } elseif ($jenis_laporan == 3) { // Default case
-                $setoran = $this->Setoran_model->get_all_by_simpanan($simpanan->id);
-                $penarikan = $this->Penarikan_model->get_all_by_simpanan($simpanan->id);
-            }
-        }
-
+        // 4. Prepare the complete data array for the view
+        // FIX: Pass the original date variables directly. The view will handle the display logic.
         $data = [
-            'simpanan' => $simpanan,
-            'nasabah' => $nasabah,
-            'setoran' => $setoran,
-            'penarikan' => $penarikan,
+            'tabungan'      => $tabungan,
+            'nasabah'       => $nasabah,
+            'rekening'      => $rekening_data, // Pass the entire result array
             'tanggal_mulai' => $tanggal_mulai,
             'tanggal_akhir' => $tanggal_akhir,
-            'jenis_laporan' => $jenis_laporan,
         ];
 
-        // Load the HTML content from the view
+        // 5. Load view and generate PDF
         $html = $this->load->view('simpanan/cetak_laporan', $data, true);
 
-        // Load the dompdf library
         $this->load->library('dompdf_lib');
         $this->dompdf_lib->loadHtml($html);
-
-        // Set paper size to A4 and orientation to portrait
-        $this->dompdf_lib->setPaper('A4', 'portrait'); // Changed from 'landscape' to 'portrait'
-
-        // Render the PDF
+        $this->dompdf_lib->setPaper('A4', 'portrait');
         $this->dompdf_lib->render();
 
-        // Generate filename and stream the PDF
-        $filename = "laporan_" . $nasabah->nama_lengkap . "_" . $simpanan->no_rekening . ".pdf";
-        $this->dompdf_lib->stream($filename, false);
+        $filename = "Rekening_Koran_" . str_replace(' ', '_', $nasabah->nama_lengkap) . "_" . $tabungan->no_rekening . ".pdf";
+
+        // The default behavior is to prompt for download.
+        $this->dompdf_lib->stream($filename);
     }
 }

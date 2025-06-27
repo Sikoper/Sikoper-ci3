@@ -22,6 +22,7 @@
                             <th>No. Rekening</th>
                             <th>Tanggal bunga</th>
                             <th>Jumlah bunga</th>
+                            <th>Jumlah Bunga</th>
                             <th>Keterangan</th>
                             <th>#</th>
                         </tr>
@@ -54,6 +55,9 @@
         },
 
         "columns": [{
+                "type": "string"
+            },
+            {
                 "type": "string"
             },
             {

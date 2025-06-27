@@ -17,7 +17,8 @@ class Bunga_model extends CI_Model
                 t1.jumlah_transaksi,
                 'Simpanan' AS tipe,
                 n.nama_lengkap,
-                s.no_rekening
+                s.no_rekening,
+                t1.rate_bunga
             FROM tbtransaksi t1
             JOIN tbsimpanan s ON s.id = t1.simpanan_id
             JOIN tbnasabah n ON n.id = s.nasabah_id
@@ -28,7 +29,8 @@ class Bunga_model extends CI_Model
                 t2.jumlah_transaksi,
                 'Deposito' AS tipe,
                 n.nama_lengkap,
-                d.no_rekening
+                d.no_rekening,
+                t2.rate_bunga
             FROM tbtransaksi_deposito t2
             JOIN tbdeposito d ON d.id = t2.deposito_id
             JOIN tbnasabah n ON n.id = d.nasabah_id
@@ -141,8 +143,12 @@ class Bunga_model extends CI_Model
 
             if ($saldo <= 0) continue;
 
-            $bungaAmount = ($bungaRate / 100) * $saldo;
+            $bungaAmountRaw = ($bungaRate / 100) * $saldo;
 
+            // Round up to nearest 100
+            $bungaAmount = ceil($bungaAmountRaw / 100) * 100;
+
+            // Check if bunga already processed this month
             $alreadyGiven = $this->db
                 ->where('simpanan_id', $simpanan->id)
                 ->where('MONTH(tanggal_transaksi)', date('m'))
@@ -154,6 +160,7 @@ class Bunga_model extends CI_Model
                 continue;
             }
 
+            // Insert bunga transaction
             $this->db->insert('tbtransaksi', [
                 'simpanan_id'       => $simpanan->id,
                 'tanggal_transaksi' => $today,
@@ -161,11 +168,13 @@ class Bunga_model extends CI_Model
                 'rate_bunga'        => $bungaRate
             ]);
 
+            // Update saldo
             $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaAmount, false);
             $this->db->where('id', $simpanan->id);
             $this->db->update('tbsimpanan');
         }
     }
+
 
     public function bunga_proses_deposito()
     {
@@ -199,7 +208,9 @@ class Bunga_model extends CI_Model
 
             if ($bungaExists > 0) continue;
 
-            $bungaAmount = ($bungaRate / 100) * $saldo;
+            // Hitung bunga dan bulatkan ke kelipatan 100 terdekat
+            $bungaAmountRaw = ($bungaRate / 100) * $saldo;
+            $bungaAmount = round($bungaAmountRaw / 100) * 100;
 
             $this->db->insert('tbtransaksi_deposito', [
                 'deposito_id' => $deposito->id,
@@ -254,6 +265,7 @@ class Bunga_model extends CI_Model
             t1.simpanan_id,
             NULL AS deposito_id,
             t1.jumlah_transaksi,
+            t1.rate_bunga,
             'Simpanan' AS tipe
         FROM tbtransaksi t1
         WHERE t1.id = ?
@@ -265,6 +277,7 @@ class Bunga_model extends CI_Model
             NULL AS simpanan_id,
             t2.deposito_id,
             t2.jumlah_transaksi,
+            t2.rate_bunga,
             'Deposito' AS tipe
         FROM tbtransaksi_deposito t2
         WHERE t2.id = ?
@@ -281,5 +294,10 @@ class Bunga_model extends CI_Model
             return $this->db->delete('tbtransaksi_deposito', ['id' => $id]);
         }
         return false;
+    }
+
+    function round_to_nearest_hundred($value)
+    {
+        return round($value / 100) * 100;
     }
 }

@@ -70,6 +70,7 @@ class Bunga extends CI_Controller
                 $row[] = $field->no_rekening;
                 $row[] = $field->tanggal_transaksi;
                 $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
+                $row[] = rtrim(rtrim($field->rate_bunga, '0'), '.') . " %";
                 $row[] = $field->tipe;
                 $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
 

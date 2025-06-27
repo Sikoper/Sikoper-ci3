@@ -2,132 +2,107 @@
 <html>
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Laporan Rekening Koran</title>
     <style>
         body {
             font-family: sans-serif;
             font-size: 12px;
         }
 
+        h2,
+        h4,
+        p {
+            margin: 0 0 10px 0;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
-            margin-bottom: 20px;
         }
 
         th,
         td {
-            border: 1px solid #000;
-            padding: 4px;
+            border: 1px solid #dee2e6;
+            padding: 6px;
             text-align: left;
         }
 
         th {
-            background-color: #f0f0f0;
+            background-color: #f8f9fa;
         }
 
-        h2 {
-            margin: 0 0 15px 0; /* Added margin-bottom to h2 */
-            padding: 0;
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
         }
-        h4 {
-            margin: 0 0 10px 0; /* Default margin-bottom for h4 */
-            padding: 0;
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 6px;
+            color: white;
         }
-        p {
-            margin: 0 0 15px 0; /* Added margin-bottom to paragraphs */
+
+        .badge-setor {
+            background-color: #28a745;
+            /* green */
         }
-        /* Specific overrides for h4 */
-        h4:has(+ table) {
-            margin-bottom: 10px; /* Margin before tables */
+
+        .badge-tarik {
+            background-color: #dc3545;
+            /* red */
         }
-        h4:not(:has(+ table)) {
-            margin-bottom: 15px; /* Margin after totals */
+
+        .text-right {
+            text-align: right;
         }
     </style>
 </head>
 
 <body>
-    <h2>Laporan Simpanan</h2>
-    <h4><?= $nasabah->nama_lengkap ?> (<?= $simpanan->no_rekening ?>)</h4>
-    <?php if (!empty($tanggal_mulai) && !empty($tanggal_akhir)): ?>
+    <h2>Laporan Rekening Tabungan</h2>
+    <h4>atas nama <?= $nasabah->nama_lengkap ?> dengan nomor rekening (<?= $tabungan->no_rekening ?>)</h4>
+    <?php if (!empty($tanggal_mulai) && !empty($tanggal_akhir)) : ?>
         <p>Periode: <?= date('d-m-Y', strtotime($tanggal_mulai)) ?> s/d <?= date('d-m-Y', strtotime($tanggal_akhir)) ?></p>
     <?php endif; ?>
 
-    <?php
-    // Initialize totals to 0
-    $total_setor = 0;
-    $total_tarik = 0;
-    ?>
-
-    <?php if ($jenis_laporan == 1 || $jenis_laporan == 3): ?>
-        <h4>Data Setoran</h4>
-        <table>
-            <thead>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Tanggal</th>
+                <th>Jumlah Uang</th>
+                <th>Keterangan</th>
+                <th>Pegawai</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php $no = 1; ?>
+            <?php if (!empty($transaksi)) : ?>
+                <?php foreach ($transaksi as $t) : ?>
+                    <tr>
+                        <td><?= $no++ ?></td>
+                        <td><?= date('Y-m-d H:i:s', strtotime($t->tanggal)) ?></td>
+                        <td class="text-right">Rp <?= number_format($t->jumlah, 2, ',', '.') ?></td>
+                        <td>
+                            <span class="badge <?= $t->keterangan === 'Setor' ? 'badge-setor' : 'badge-tarik' ?>">
+                                <?= $t->keterangan ?>
+                            </span>
+                        </td>
+                        <td><?= $t->pegawai ?? '-' ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else : ?>
                 <tr>
-                    <th>No</th>
-                    <th>Tanggal</th>
-                    <th>Jumlah</th>
+                    <td colspan="5">Tidak ada data transaksi.</td>
                 </tr>
-            </thead>
-            <tbody>
-                <?php
-                $i = 1;
-                // Ensure $setoran is an array before iterating
-                if (is_array($setoran) || is_object($setoran)) {
-                    foreach ($setoran as $s): ?>
-                        <tr>
-                            <td><?= $i++ ?></td>
-                            <td><?= date('d-m-Y', strtotime($s->tanggal_setoran)) ?></td>
-                            <td>Rp <?= number_format($s->jumlah_setoran, 0, ',', '.') ?></td>
-                        </tr>
-                    <?php $total_setor += $s->jumlah_setoran;
-                    endforeach;
-                } else {
-                    echo '<tr><td colspan="3">Tidak ada data setoran.</td></tr>';
-                }
-                ?>
-            </tbody>
-        </table>
-        <h4>Total Setoran: Rp <?= number_format($total_setor, 0, ',', '.') ?></h4>
-    <?php endif; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
 
-    <?php if ($jenis_laporan == 2 || $jenis_laporan == 3): ?>
-        <h4>Data Penarikan</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Tanggal</th>
-                    <th>Jumlah</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                $i = 1;
-                // Ensure $penarikan is an array before iterating
-                if (is_array($penarikan) || is_object($penarikan)) {
-                    foreach ($penarikan as $p): ?>
-                        <tr>
-                            <td><?= $i++ ?></td>
-                            <td><?= date('d-m-Y', strtotime($p->tanggal_penarikan)) ?></td>
-                            <td>Rp <?= number_format($p->jumlah_penarikan, 0, ',', '.') ?></td>
-                        </tr>
-                    <?php $total_tarik += $p->jumlah_penarikan;
-                    endforeach;
-                } else {
-                    echo '<tr><td colspan="3">Tidak ada data penarikan.</td></tr>';
-                }
-                ?>
-            </tbody>
-        </table>
-        <h4>Total Penarikan: Rp <?= number_format($total_tarik, 0, ',', '.') ?></h4>
-    <?php endif; ?>
-
-    <?php if ($jenis_laporan == 3): ?>
-        <h4>Saldo Akhir: Rp <?= number_format($total_setor - $total_tarik, 0, ',', '.') ?></h4>
-    <?php endif; ?>
 </body>
 
 </html>
