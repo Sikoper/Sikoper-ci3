@@ -37,27 +37,34 @@ class Bunga_model extends CI_Model
         ) AS bunga";
     }
 
-    private function _get_datatables_query()
+    private function _get_datatables_query($start_date = null, $end_date = null)
     {
         $sql = $this->_get_base_query();
+        $conditions = [];
 
-        $where_conditions = array();
+        if ($start_date && $end_date) {
+            $conditions[] = "tanggal_transaksi BETWEEN '$start_date' AND '$end_date'";
+        }
+
         if (!empty($_POST['search']['value'])) {
-            $search_value = $this->db->escape_like_str($_POST['search']['value']);
+            $search = $this->db->escape_like_str($_POST['search']['value']);
+            $search_conditions = [];
             foreach ($this->column_search as $item) {
-                $where_conditions[] = "$item LIKE '%$search_value%'";
+                $search_conditions[] = "$item LIKE '%$search%'";
             }
-            if (!empty($where_conditions)) {
-                $sql .= " WHERE (" . implode(' OR ', $where_conditions) . ")";
-            }
+            $conditions[] = '(' . implode(' OR ', $search_conditions) . ')';
+        }
+
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(' AND ', $conditions);
         }
 
         if (isset($_POST['order'])) {
-            $column_index = $_POST['order']['0']['column'];
-            $column_name = $this->column_order[$column_index];
-            $direction = $_POST['order']['0']['dir'];
-            if ($column_name) {
-                $sql .= " ORDER BY $column_name $direction";
+            $col_idx = $_POST['order']['0']['column'];
+            $col_name = $this->column_order[$col_idx];
+            $dir = $_POST['order']['0']['dir'];
+            if ($col_name) {
+                $sql .= " ORDER BY $col_name $dir";
             }
         } else {
             $order = $this->order;
@@ -67,27 +74,24 @@ class Bunga_model extends CI_Model
         return $sql;
     }
 
-    function get_datatables()
+    function get_datatables($start_date = null, $end_date = null)
     {
-        $sql = $this->_get_datatables_query();
+        $sql = $this->_get_datatables_query($start_date, $end_date);
 
-        // Add LIMIT
         if (isset($_POST['length']) && $_POST['length'] != -1) {
             $limit = (int)$_POST['length'];
             $offset = (int)$_POST['start'];
             $sql .= " LIMIT $offset, $limit";
         }
 
-        $query = $this->db->query($sql);
-        return $query->result();
+        return $this->db->query($sql)->result();
     }
 
-    function count_filtered()
+    function count_filtered($start_date = null, $end_date = null)
     {
-        $sql = $this->_get_datatables_query();
+        $sql = $this->_get_datatables_query($start_date, $end_date);
         $count_sql = "SELECT COUNT(*) as filtered FROM ($sql) as count_table";
-        $query = $this->db->query($count_sql);
-        return $query->row()->filtered;
+        return $this->db->query($count_sql)->row()->filtered;
     }
 
     function count_all()
