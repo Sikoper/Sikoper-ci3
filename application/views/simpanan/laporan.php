@@ -6,7 +6,8 @@
             {
                 return strtr(base64_encode($string), '+/=', '-_.');
             }
-            $backUrl = $this->input->get('code') == 1
+            // Asumsi variabel $deposito ada dari controller
+            $backUrl = isset($simpanan) && $this->input->get('code') == 1
                 ? site_url('simpanan/detail/' . safe_base64_encode($simpanan->no_rekening))
                 : site_url('simpanan');
             ?>
@@ -17,13 +18,14 @@
     </div>
     <?= form_open('', ['id' => 'form_laporan']) ?>
     <div class="card-body">
-        <input type="hidden" name="id" id="id" value="<?= $simpanan->id ?>">
+        <input type="hidden" name="id" id="id" value="<?= isset($simpanan) ? $simpanan->id : '' ?>">
         <div class="row mb-3">
             <div class="col-md-4">
                 <div class="form-group mb-3" style="height: 80px;">
                     <label for="tanggal_mulai">Tanggal mulai transaksi</label>
                     <div class="input-group">
-                        <input type="date" id="tanggal_mulai" name="tanggal_mulai" class="form-control">
+                        <!-- FIX: Added default value for the start of the current month -->
+                        <input type="date" id="tanggal_mulai" name="tanggal_mulai" class="form-control" value="<?= date('Y-m-01') ?>">
                     </div>
                 </div>
             </div>
@@ -31,7 +33,8 @@
                 <div class="form-group mb-3" style="height: 80px;">
                     <label for="tanggal_akhir">Tanggal akhir transaksi</label>
                     <div class="input-group">
-                        <input type="date" id="tanggal_akhir" name="tanggal_akhir" class="form-control">
+                        <!-- FIX: Added default value for the end of the current month -->
+                        <input type="date" id="tanggal_akhir" name="tanggal_akhir" class="form-control" value="<?= date('Y-m-t') ?>">
                     </div>
                 </div>
             </div>
@@ -42,7 +45,7 @@
                         <option value=""> -- Pilih laporan yang ingin di print -- </option>
                         <option value="1"> Setoran </option>
                         <option value="2"> Penarikan </option>
-                        <option value="3"> Setoran dan Penarikan </option>
+                        <option value="3" selected> Setoran dan Penarikan </option>
                     </select>
                 </div>
             </div>

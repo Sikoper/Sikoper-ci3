@@ -7,6 +7,7 @@ class Deposito extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Deposito_model');
+        $this->load->model('Tabungan_model');
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
@@ -626,7 +627,7 @@ class Deposito extends CI_Controller
             'tanggal_deposito' => $simpanan->tanggal_deposito
         ];
 
-        $html = $this->load->view('simpanan/cetak_nasabah', $data, true);
+        $html = $this->load->view('deposito/cetak_nasabah', $data, true);
 
         $this->load->library('dompdf_lib');
         $this->dompdf_lib->loadHtml($html);
@@ -646,17 +647,15 @@ class Deposito extends CI_Controller
 
         $id = $this->input->get('id');
         $no_rek = safe_base64_decode($id);
-        $simpanan = $this->Simpanan_model->get_data_by_norek($no_rek);
+        $deposito = $this->Deposito_model->get_data_by_norek($no_rek);
 
         $data = [
-            'simpanan' => $simpanan
+            'deposito' => $deposito
         ];
 
         $parser = [
-            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
-            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
-            'judul' => "<i class='fa fa-money-check'></i> Laporan simpanan",
-            'isi'   => $this->load->view('simpanan/laporan', $data, TRUE)
+            'judul' => "<i class='fa fa-money-check'></i> Laporan Deposito",
+            'isi'   => $this->load->view('deposito/laporan', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -668,75 +667,42 @@ class Deposito extends CI_Controller
         $tanggal_akhir = $this->input->get('tanggal_akhir');
         $jenis_laporan = $this->input->get('jenis_laporan');
 
-        // If jenis_laporan is empty or not provided, default it to '3' (Setoran dan Penarikan)
+        // Default laporan ke '3' (Setor dan Tarik)
         if (empty($jenis_laporan)) {
             $jenis_laporan = '3';
         }
 
-        // Fetch simpanan and nasabah data
-        $simpanan = $this->Simpanan_model->get_data_by_id($id);
-        // Ensure $simpanan is not null before accessing its properties
-        if (!$simpanan) {
-            echo "Error: Simpanan data not found.";
-            return;
-        }
-        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
-        // Ensure $nasabah is not null
-        if (!$nasabah) {
-            echo "Error: Nasabah data not found.";
+        // Ambil data tabungan dan nasabah
+        $tabungan = $this->Tabungan_model->get_data_by_id($id);
+        if (!$tabungan) {
+            echo "Error: Data tabungan tidak ditemukan.";
             return;
         }
 
-        $setoran = [];
-        $penarikan = [];
+        $nasabah = (object) ['nama_lengkap' => $tabungan->nama_lengkap];
 
-        // Determine which data to fetch based on date range and report type
-        if (!empty($tanggal_mulai) && !empty($tanggal_akhir)) {
-            if ($jenis_laporan == 1) { // Setoran only
-                $setoran = $this->Setoran_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
-            } elseif ($jenis_laporan == 2) { // Penarikan only
-                $penarikan = $this->Penarikan_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
-            } elseif ($jenis_laporan == 3) { // Both
-                $setoran = $this->Setoran_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
-                $penarikan = $this->Penarikan_model->get_by_date_range($simpanan->id, $tanggal_mulai, $tanggal_akhir);
-            }
-        } else {
-            // If no date range, fetch all data for the selected type
-            if ($jenis_laporan == 1) {
-                $setoran = $this->Setoran_model->get_all_by_simpanan($simpanan->id);
-            } elseif ($jenis_laporan == 2) {
-                $penarikan = $this->Penarikan_model->get_all_by_simpanan($simpanan->id);
-            } elseif ($jenis_laporan == 3) { // Default case
-                $setoran = $this->Setoran_model->get_all_by_simpanan($simpanan->id);
-                $penarikan = $this->Penarikan_model->get_all_by_simpanan($simpanan->id);
-            }
-        }
+        // Ambil data transaksi (gabungan setor dan tarik)
+        $transaksi = $this->Tabungan_model->get_transaksi_by_simpanan($tabungan->id, $tanggal_mulai, $tanggal_akhir, $jenis_laporan);
 
         $data = [
-            'simpanan' => $simpanan,
+            'tabungan' => $tabungan,
             'nasabah' => $nasabah,
-            'setoran' => $setoran,
-            'penarikan' => $penarikan,
+            'transaksi' => $transaksi,
             'tanggal_mulai' => $tanggal_mulai,
             'tanggal_akhir' => $tanggal_akhir,
             'jenis_laporan' => $jenis_laporan,
         ];
 
-        // Load the HTML content from the view
-        $html = $this->load->view('simpanan/cetak_laporan', $data, true);
+        // Load view
+        $html = $this->load->view('deposito/cetak_laporan', $data, true);
 
-        // Load the dompdf library
+        // PDF dompdf
         $this->load->library('dompdf_lib');
         $this->dompdf_lib->loadHtml($html);
-
-        // Set paper size to A4 and orientation to portrait
-        $this->dompdf_lib->setPaper('A4', 'portrait'); // Changed from 'landscape' to 'portrait'
-
-        // Render the PDF
+        $this->dompdf_lib->setPaper('A4', 'portrait');
         $this->dompdf_lib->render();
 
-        // Generate filename and stream the PDF
-        $filename = "laporan_" . $nasabah->nama_lengkap . "_" . $simpanan->no_rekening . ".pdf";
+        $filename = "laporan_" . $nasabah->nama_lengkap . "_" . $tabungan->no_rekening . ".pdf";
         $this->dompdf_lib->stream($filename, false);
     }
 }

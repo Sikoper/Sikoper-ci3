@@ -7,8 +7,8 @@
                 return strtr(base64_encode($string), '+/=', '-_.');
             }
             $backUrl = $this->input->get('code') == 1
-                ? site_url('simpanan/detail/' . safe_base64_encode($simpanan->no_rekening))
-                : site_url('simpanan');
+                ? site_url('deposito/detail/' . safe_base64_encode($deposito->no_rekening))
+                : site_url('deposito');
             ?>
             <a href="<?= $backUrl ?>" class="btn btn-warning">
                 <i class="fa fa-backward"></i> Kembali
@@ -17,7 +17,7 @@
     </div>
     <?= form_open('', ['id' => 'form_laporan']) ?>
     <div class="card-body">
-        <input type="hidden" name="id" id="id" value="<?= $simpanan->id ?>">
+        <input type="text" name="id" id="id" value="<?= $deposito->id ?>">
         <div class="row mb-3">
             <div class="col-md-4">
                 <div class="form-group mb-3" style="height: 80px;">
@@ -64,7 +64,7 @@
             // Confirm dialog
             Swal.fire({
                 title: "Cetak data?",
-                text: `Yakin ingin cetak data dari <?= $simpanan->no_rekening ?>`,
+                text: `Yakin ingin cetak data dari <?= $deposito->no_rekening ?>`,
                 icon: "question",
                 showCancelButton: true,
                 confirmButtonColor: "#3085d6",
@@ -77,7 +77,7 @@
                     const formData = $(this).serialize();
 
                     // Build the URL to open in a new tab with query params
-                    const url = "<?= base_url('simpanan/print_laporan') ?>" + "?" + formData;
+                    const url = "<?= base_url('deposito/print_laporan') ?>" + "?" + formData;
 
                     // Open in new tab
                     window.open(url, '_blank');

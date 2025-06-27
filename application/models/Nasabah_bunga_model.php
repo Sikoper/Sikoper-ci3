@@ -11,13 +11,21 @@ class Nasabah_Bunga_model extends CI_Model
      * The main query builder for the datatable.
      * Now accepts a $no_rekening to filter by a specific savings or deposit account ID.
      */
-    private function _get_base_query($no_rekening = null)
+    private function _get_base_query($no_rekening = null, $tipe = null)
     {
-        $whereClause = '';
+        $conditions = [];
+
         if ($no_rekening !== null) {
-            $no_rekening = $this->db->escape($no_rekening); // Escape input
-            $whereClause = "WHERE bunga.no_rekening = $no_rekening";
+            $no_rekening = $this->db->escape($no_rekening);
+            $conditions[] = "bunga.no_rekening = $no_rekening";
         }
+
+        if ($tipe !== null) {
+            $tipe = $this->db->escape($tipe); // Escape 'Simpanan' or 'Deposito'
+            $conditions[] = "bunga.tipe = $tipe";
+        }
+
+        $whereClause = count($conditions) > 0 ? "WHERE " . implode(' AND ', $conditions) : "";
 
         return "
         SELECT * FROM (
@@ -51,9 +59,9 @@ class Nasabah_Bunga_model extends CI_Model
     ";
     }
 
-    private function _get_filtered_query($no_rekening = null)
+    private function _get_filtered_query($no_rekening = null, $tipe = null)
     {
-        $sql = $this->_get_base_query($no_rekening);
+        $sql = $this->_get_base_query($no_rekening, $tipe);
 
         $search_value = $_POST['search']['value'] ?? '';
         if (!empty($search_value)) {
@@ -65,7 +73,6 @@ class Nasabah_Bunga_model extends CI_Model
             $sql .= " AND (" . implode(' OR ', $conditions) . ")";
         }
 
-        // Order
         if (isset($_POST['order'])) {
             $column_index = $_POST['order'][0]['column'];
             $column_name = $this->column_order[$column_index];
@@ -80,9 +87,10 @@ class Nasabah_Bunga_model extends CI_Model
         return $sql;
     }
 
-    public function get_datatables($no_rekening = null)
+
+    public function get_datatables($no_rekening = null, $tipe = null)
     {
-        $sql = $this->_get_filtered_query($no_rekening);
+        $sql = $this->_get_filtered_query($no_rekening, $tipe);
 
         if ($_POST['length'] != -1) {
             $sql .= " LIMIT " . (int)$_POST['start'] . ", " . (int)$_POST['length'];
@@ -91,21 +99,35 @@ class Nasabah_Bunga_model extends CI_Model
         return $this->db->query($sql)->result();
     }
 
-    public function count_filtered($no_rekening = null)
+    public function count_filtered($no_rekening = null, $tipe = null)
     {
-        $sql = $this->_get_filtered_query($no_rekening);
+        $sql = $this->_get_filtered_query($no_rekening, $tipe);
         $count_sql = "SELECT COUNT(*) AS filtered FROM ($sql) AS count_table";
         return $this->db->query($count_sql)->row()->filtered;
     }
 
-    public function count_all()
+    public function count_all($tipe = null)
     {
+        $condition = '';
+        if ($tipe === 'Simpanan') {
+            $condition = "WHERE tipe = 'Simpanan'";
+        } elseif ($tipe === 'Deposito') {
+            $condition = "WHERE tipe = 'Deposito'";
+        }
+
         $sql = "
         SELECT COUNT(*) AS total FROM (
-            SELECT id FROM tbtransaksi
+            SELECT 
+                id, 'Simpanan' AS tipe 
+            FROM tbtransaksi
             UNION ALL
-            SELECT id FROM tbtransaksi_deposito
-        ) AS alltrans";
+            SELECT 
+                id, 'Deposito' AS tipe 
+            FROM tbtransaksi_deposito
+        ) AS alltrans
+        $condition
+    ";
+
         return $this->db->query($sql)->row()->total;
     }
 }
