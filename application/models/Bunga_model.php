@@ -157,7 +157,8 @@ class Bunga_model extends CI_Model
             $this->db->insert('tbtransaksi', [
                 'simpanan_id'       => $simpanan->id,
                 'tanggal_transaksi' => $today,
-                'jumlah_transaksi'  => $bungaAmount
+                'jumlah_transaksi'  => $bungaAmount,
+                'rate_bunga'        => $bungaRate
             ]);
 
             $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaAmount, false);
@@ -204,6 +205,7 @@ class Bunga_model extends CI_Model
                 'deposito_id' => $deposito->id,
                 'tanggal_transaksi' => $today,
                 'jumlah_transaksi' => $bungaAmount,
+                'rate_bunga'        => $bungaRate
             ]);
 
             $this->db->insert('tbdeposito_bunga_log', [
@@ -246,10 +248,38 @@ class Bunga_model extends CI_Model
 
     public function get_data_by_id($id)
     {
-        return $this->db->get_where('tbtransaksi', ['id' => $id])->row();
+        $sql = "
+        SELECT 
+            t1.id,
+            t1.simpanan_id,
+            NULL AS deposito_id,
+            t1.jumlah_transaksi,
+            'Simpanan' AS tipe
+        FROM tbtransaksi t1
+        WHERE t1.id = ?
+
+        UNION ALL
+
+        SELECT 
+            t2.id,
+            NULL AS simpanan_id,
+            t2.deposito_id,
+            t2.jumlah_transaksi,
+            'Deposito' AS tipe
+        FROM tbtransaksi_deposito t2
+        WHERE t2.id = ?
+        LIMIT 1
+    ";
+
+        return $this->db->query($sql, [$id, $id])->row();
     }
-    public function delete_data($id)
+    public function delete_data($id, $tipe = 'Simpanan')
     {
-        return $this->db->delete('tbtransaksi', ['id' => $id]);
+        if ($tipe === 'Simpanan') {
+            return $this->db->delete('tbtransaksi', ['id' => $id]);
+        } elseif ($tipe === 'Deposito') {
+            return $this->db->delete('tbtransaksi_deposito', ['id' => $id]);
+        }
+        return false;
     }
 }

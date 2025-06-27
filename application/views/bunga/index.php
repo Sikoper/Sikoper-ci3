@@ -89,7 +89,7 @@
         ],
     });
 
-    function deleteItem(id, nama) {
+    function deleteItem(id, nama, tipe) {
         Swal.fire({
             title: "Hapus data ini?",
             html: `Yakin ingin menghapus bunga dari no. rekening: <strong>${nama}</strong>?`,
@@ -104,7 +104,8 @@
                     type: "POST",
                     url: "<?= base_url('bunga/delete') ?>",
                     data: {
-                        id: id
+                        id: id,
+                        tipe: tipe
                     },
                     dataType: "json",
                     success: function(response) {
@@ -152,9 +153,7 @@
                             text: response.error,
                             icon: "error"
                         }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.reload();
-                            }
+                            if (result.isConfirmed) {}
                         });
                     }
                 },
@@ -180,14 +179,21 @@
                                 window.location.reload();
                             }
                         });
-                    } else {
+                    } else if (response.error) {
                         Swal.fire({
                             title: "Error!",
                             text: response.error,
                             icon: "error"
                         }).then((result) => {
-                            if (result.isConfirmed) {
-                            }
+                            if (result.isConfirmed) {}
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "Tidak ada!",
+                            text: response.empty,
+                            icon: "warning"
+                        }).then((result) => {
+                            if (result.isConfirmed) {}
                         });
                     }
                 },

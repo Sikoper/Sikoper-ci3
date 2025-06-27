@@ -140,7 +140,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
-    var depositoId = '<?= $deposito->id ?>';
+    var noRekening = '<?= $deposito->no_rekening ?>';
 
     table = $('#tabel_bunga').DataTable({
         responsive: true,
@@ -151,10 +151,10 @@
         autoWidth: false,
 
         "ajax": {
-            "url": "<?= site_url('bunga/fetchNasabahBunga') ?>",
+            "url": "<?= site_url('bunga/fetchNasabahDepositoBunga') ?>",
             "type": "POST",
             data: function(d) {
-                d.deposito_id = depositoId;
+                d.no_rekening = noRekening;
             }
         },
 
@@ -265,6 +265,46 @@
                     },
                     error: function(xhr, thrownError) {
                         Swal.fire("Error AJAX!", "Terjadi kesalahan: " + xhr.status + " \n" + xhr.responseText + " \n" + thrownError, "error");
+                    }
+                });
+            }
+        });
+    }
+
+    function deleteRecordBunga(id, nama, tipe) {
+        Swal.fire({
+            title: "Hapus data ini?",
+            html: `Yakin ingin menghapus bunga dari no. rekening: <strong>${nama}</strong>?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('bunga/delete') ?>",
+                    data: {
+                        id: id,
+                        tipe: tipe
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: "Success!",
+                                text: response.success,
+                                icon: "success"
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.reload();
+                                }
+                            });
+                        }
+                    },
+                    error: function(xhr, thrownError) {
+                        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });
             }

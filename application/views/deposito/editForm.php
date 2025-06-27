@@ -11,7 +11,7 @@
                 <div class="col-md-3"></div>
                 <div class="col-md-6">
                     <?= form_open('', ['id' => 'form_simpan']) ?>
-                    <input type="text" name="id" id="id" value="<?= $deposito->id ?>">
+                    <input type="hidden" name="id" id="id" value="<?= $deposito->id ?>">
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_deposito">Tanggal</label>
                         <div class="input-group">
