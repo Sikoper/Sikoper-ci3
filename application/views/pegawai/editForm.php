@@ -83,9 +83,17 @@
                     <div class="form-group mb-5" style="height: 80px;">
                         <label for="jabatan">Jabatan</label>
                         <select id="jabatan" name="jabatan" class="form-select">
-                            <option value="Direktur" <?= ($pegawai->jabatan == 'Direktur') ? 'selected' : ''; ?>>Direktur</option>
-                            <option value="Teller" <?= ($pegawai->jabatan == 'Teller') ? 'selected' : ''; ?>>Teller</option>
-                            <option value="Lapangan" <?= ($pegawai->jabatan == 'Lapangan') ? 'selected' : ''; ?>>Lapangan</option>
+                            <option value=""> -- Pilih Jabatan -- </option>
+                            <option value="PENANGGUNG JAWAB" <?= ($pegawai->jabatan == 'PENANGGUNG JAWAB') ? 'selected' : ''; ?>>PENANGGUNG JAWAB</option>
+                            <option value="BADAN PEMERIKSA" <?= ($pegawai->jabatan == 'BADAN PEMERIKSA') ? 'selected' : ''; ?>>BADAN PEMERIKSA</option>
+                            <option value="KEPALA BAGIAN TATA USAHA" <?= ($pegawai->jabatan == 'KEPALA BAGIAN TATA USAHA') ? 'selected' : ''; ?>>KEPALA BAGIAN TATA USAHA</option>
+                            <option value="PEMBUKUAN 1" <?= ($pegawai->jabatan == 'PEMBUKUAN 1') ? 'selected' : ''; ?>>PEMBUKUAN 1</option>
+                            <option value="CUSTOMER SERVICE" <?= ($pegawai->jabatan == 'CUSTOMER SERVICE') ? 'selected' : ''; ?>>CUSTOMER SERVICE</option>
+                            <option value="PEMASARAN KREDIT" <?= ($pegawai->jabatan == 'PEMASARAN KREDIT') ? 'selected' : ''; ?>>PEMASARAN KREDIT</option>
+                            <option value="KEPALA BAGIAN KEUANGAN" <?= ($pegawai->jabatan == 'KEPALA BAGIAN KEUANGAN') ? 'selected' : ''; ?>>KEPALA BAGIAN KEUANGAN</option>
+                            <option value="PEMBUKAAN TABUNGAN" <?= ($pegawai->jabatan == 'PEMBUKAAN TABUNGAN') ? 'selected' : ''; ?>>PEMBUKAAN TABUNGAN</option>
+                            <option value="PEMUNGUTAN TABUNGAN" <?= ($pegawai->jabatan == 'PEMUNGUTAN TABUNGAN') ? 'selected' : ''; ?>>PEMUNGUTAN TABUNGAN</option>
+                            <option value="PEMBANTU UMUM" <?= ($pegawai->jabatan == 'PEMBANTU UMUM') ? 'selected' : ''; ?>>PEMBANTU UMUM</option>
                         </select>
                         <div id="errorJabatan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -105,38 +113,29 @@
     $(document).ready(function() {
         $('#nik').on('input', function() {
             let value = $(this).val();
-
             value = value.replace(/\D/g, '');
-
             if (value.length > 16) {
                 value = value.slice(0, 16);
             }
-
             $(this).val(value);
         });
 
         $('#telp').on('input', function() {
             let value = $(this).val();
-
             value = value.replace(/\D/g, '');
-
             if (value.length > 0 && value.charAt(0) !== '0') {
                 value = value.replace(/^[^0]+/, '');
             }
-
             if (value.length > 14) {
                 value = value.slice(0, 14);
             }
-
             $(this).val(value);
         });
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
-
             let form = $('#form_simpan')[0];
             let data = new FormData(form);
-
             $.ajax({
                 type: "POST",
                 url: "<?= base_url('pegawai/updateData') ?>",
@@ -151,18 +150,11 @@
                 },
                 complete: function() {
                     $('#tombol_simpan').prop('disabled', false)
-                    $('#tombol_simpan').html('Save')
+                    $('#tombol_simpan').html('Simpan')
                 },
                 success: function(response) {
                     if (response.error) {
                         let dataError = response.error;
-                        if (dataError.errorKtp) {
-                            $('#errorKtp').html(dataError.errorKtp).show();
-                            $('#ktp').addClass('is-invalid');
-                        } else {
-                            $('#errorKtp').fadeOut();
-                            $('#ktp').removeClass('is-invalid').addClass('is-valid');
-                        }
                         if (dataError.errorNik) {
                             $('#errorNik').html(dataError.errorNik).show();
                             $('#nik').addClass('is-invalid');
@@ -226,15 +218,22 @@
                             $('#errorAgama').fadeOut();
                             $('#agama').removeClass('is-invalid').addClass('is-valid');
                         }
-                    } else {
+
+                    } else if (response.success) {
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('pegawai') ?>';
+                                window.location = '<?= $backUrl ?>';
                             }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "Error!",
+                            text: "Terjadi kesalahan saat update data.",
+                            icon: "error"
                         });
                     }
                 },
