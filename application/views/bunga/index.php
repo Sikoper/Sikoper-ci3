@@ -10,6 +10,23 @@
                 Hitung Bunga Deposito
             </button>
         </h4>
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label>Dari Tanggal</label>
+                <input type="date" id="start_date" class="form-control" value="<?= date('Y-m-01') ?>">
+            </div>
+            <div class="col-md-3">
+                <label>Sampai Tanggal</label>
+                <input type="date" id="end_date" class="form-control" value="<?= date('Y-m-t') ?>">
+            </div>
+            <div class="col-md-3">
+                <label>&nbsp;</label>
+                <button id="filterBtn" class="btn btn-info form-control">Filter</button>
+            </div>
+            <div class="col-md-3 text-end">
+                <h5>Total Bunga: <span id="total_bunga_display">Rp 0</span></h5>
+            </div>
+        </div>
     </div>
     <div class="card-body">
         <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
@@ -41,56 +58,85 @@
     </div>
 </div>
 <script>
-    table = $('#tabel_bunga').DataTable({
-        responsive: true,
-        "destroy": true,
-        "processing": true,
-        "serverSide": true,
-        "order": [],
-        autoWidth: false,
+    function setDefaultDateRange() {
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-        "ajax": {
-            "url": "<?= site_url('bunga/fetchData') ?>",
-            "type": "POST"
-        },
+        // Format to yyyy-mm-dd
+        const formatDate = (date) => {
+            let m = String(date.getMonth() + 1).padStart(2, '0');
+            let d = String(date.getDate()).padStart(2, '0');
+            return `${date.getFullYear()}-${m}-${d}`;
+        };
 
-        "columns": [{
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "orderable": false
-            }
-        ],
+        $('#start_date').val(formatDate(startOfMonth));
+        $('#end_date').val(formatDate(today));
+    }
 
-        "columnDefs": [{
-                "targets": 0,
-                "orderable": false,
-                "width": "5%"
+    $(document).ready(function() {
+        table = $('#tabel_bunga').DataTable({
+            responsive: true,
+            "destroy": true,
+            "processing": true,
+            "serverSide": true,
+            "order": [],
+            autoWidth: false,
+
+            "ajax": {
+                "url": "<?= site_url('bunga/fetchData') ?>",
+                "type": "POST",
+                "data": function(d) {
+                    d.start_date = $('#start_date').val();
+                    d.end_date = $('#end_date').val();
+                },
+                "dataSrc": function(json) {
+                    $('#total_bunga_display').text('Rp ' + json.total_bunga);
+                    return json.data;
+                }
             },
-            {
-                "targets": 6,
-                "orderable": false,
-                "width": "15%"
-            }
-        ],
+
+            "columns": [{
+                    "type": "string"
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "orderable": false
+                }
+            ],
+
+            "columnDefs": [{
+                    "targets": 0,
+                    "orderable": false,
+                    "width": "5%"
+                },
+                {
+                    "targets": 6,
+                    "orderable": false,
+                    "width": "15%"
+                }
+            ],
+        });
+
+        $('#filterBtn').on('click', function() {
+            table.ajax.reload();
+        });
     });
 
     function deleteItem(id, nama, tipe) {

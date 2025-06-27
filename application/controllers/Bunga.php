@@ -56,38 +56,38 @@ class Bunga extends CI_Controller
 
     public function fetchData()
     {
-        if ($this->input->is_ajax_request()) {
-            $list = $this->Bunga_model->get_datatables();
-            $data = array();
-            $no = $_POST['start'];
+        $start = $this->input->post('start_date');
+        $end = $this->input->post('end_date');
 
-            foreach ($list as $field) {
-                $no++;
-                $row = array();
+        $list = $this->Bunga_model->get_datatables($start, $end);
+        $data = array();
+        $no = $_POST['start'];
+        $total_bunga = 0;
 
-                $row[] = "<div class=\"text-center\">$no</div>";
-                $row[] = $field->nama_lengkap;
-                $row[] = $field->no_rekening;
-                $row[] = $field->tanggal_transaksi;
-                $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
-                $row[] = rtrim(rtrim($field->rate_bunga, '0'), '.') . " %";
-                $row[] = $field->tipe;
-                $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+        foreach ($list as $field) {
+            $no++;
+            $row = array();
+            $row[] = $no;
+            $row[] = $field->nama_lengkap;
+            $row[] = $field->no_rekening;
+            $row[] = date('d-m-Y', strtotime($field->tanggal_transaksi));
+            $row[] = number_format($field->jumlah_transaksi, 0, ',', '.');
+            $row[] = $field->rate_bunga . " %";
+            $row[] = $field->tipe;
+            $row[] = "<button class='btn btn-sm btn-danger' onclick=\"deleteItem('$field->id', '$field->no_rekening', '$field->tipe')\">Hapus</button>";
 
-                $data[] = $row;
-            }
-
-            $output = array(
-                "draw" => $_POST['draw'],
-                "recordsTotal" => $this->Bunga_model->count_all(),
-                "recordsFiltered" => $this->Bunga_model->count_filtered(),
-                "data" => $data,
-            );
-
-            echo json_encode($output);
-        } else {
-            exit('Maaf data tidak bisa ditampilkan');
+            $total_bunga += $field->jumlah_transaksi;
+            $data[] = $row;
         }
+
+        $output = array(
+            "draw" => $_POST['draw'],
+            "recordsTotal" => $this->Bunga_model->count_all(),
+            "recordsFiltered" => $this->Bunga_model->count_filtered($start, $end),
+            "data" => $data,
+            "total_bunga" => number_format($total_bunga, 0, ',', '.')
+        );
+        echo json_encode($output);
     }
 
     public function fetchNasabahTabunganBunga()
@@ -157,38 +157,38 @@ class Bunga extends CI_Controller
     public function delete()
     {
         // if ($this->input->is_ajax_request()) {
-            $id = $this->input->post('id');
-            $tipe = $this->input->post('tipe');
+        $id = $this->input->post('id');
+        $tipe = $this->input->post('tipe');
 
-            $transaksi = $this->Bunga_model->get_data_by_id($id);
+        $transaksi = $this->Bunga_model->get_data_by_id($id);
 
-            if ($tipe === 'Simpanan') {
-                $simpanan = $this->Simpanan_model->get_data_by_id($transaksi->simpanan_id);
-                $selisih = $simpanan->jumlah_simpanan - $transaksi->jumlah_transaksi;
+        if ($tipe === 'Simpanan') {
+            $simpanan = $this->Simpanan_model->get_data_by_id($transaksi->simpanan_id);
+            $selisih = $simpanan->jumlah_simpanan - $transaksi->jumlah_transaksi;
 
-                $delete = $this->Bunga_model->delete_data($id, 'Simpanan');
-                if ($delete) {
-                    $this->Simpanan_model->edit_data($transaksi->simpanan_id, ['jumlah_simpanan' => $selisih]);
-                    $msg = ['success' => 'Bunga tabungan berhasil dihapus.'];
-                } else {
-                    $msg = ['error' => 'Gagal menghapus bunga tabungan.'];
-                }
-            } elseif ($tipe === 'Deposito') {
-                $deposito = $this->Deposito_model->get_data_by_id($transaksi->deposito_id);
-                $selisih = $deposito->jumlah_deposito - $transaksi->jumlah_transaksi;
-
-                $delete = $this->Bunga_model->delete_data($id, 'Deposito');
-                if ($delete) {
-                    $this->Deposito_model->edit_data($transaksi->deposito_id, ['jumlah_deposito' => $selisih]);
-                    $msg = ['success' => 'Bunga deposito berhasil dihapus.'];
-                } else {
-                    $msg = ['error' => 'Gagal menghapus bunga deposito.'];
-                }
+            $delete = $this->Bunga_model->delete_data($id, 'Simpanan');
+            if ($delete) {
+                $this->Simpanan_model->edit_data($transaksi->simpanan_id, ['jumlah_simpanan' => $selisih]);
+                $msg = ['success' => 'Bunga tabungan berhasil dihapus.'];
             } else {
-                $msg = ['error' => 'Tipe transaksi tidak valid.'];
+                $msg = ['error' => 'Gagal menghapus bunga tabungan.'];
             }
+        } elseif ($tipe === 'Deposito') {
+            $deposito = $this->Deposito_model->get_data_by_id($transaksi->deposito_id);
+            $selisih = $deposito->jumlah_deposito - $transaksi->jumlah_transaksi;
 
-            echo json_encode($msg);
+            $delete = $this->Bunga_model->delete_data($id, 'Deposito');
+            if ($delete) {
+                $this->Deposito_model->edit_data($transaksi->deposito_id, ['jumlah_deposito' => $selisih]);
+                $msg = ['success' => 'Bunga deposito berhasil dihapus.'];
+            } else {
+                $msg = ['error' => 'Gagal menghapus bunga deposito.'];
+            }
+        } else {
+            $msg = ['error' => 'Tipe transaksi tidak valid.'];
+        }
+
+        echo json_encode($msg);
         // }
     }
 
