@@ -85,9 +85,16 @@
                         <label for="jabatan">Jabatan</label>
                         <select id="jabatan" name="jabatan" class="form-select">
                             <option value=""> -- Pilih Jabatan -- </option>
-                            <option value="Direktur">Direktur</option>
-                            <option value="Teller">Teller</option>
-                            <option value="Lapangan">Lapangan</option>
+                            <option value="PENANGGUNG JAWAB">PENANGGUNG JAWAB</option>
+                            <option value="BADAN PEMERIKSA">BADAN PEMERIKSA</option>
+                            <option value="KEPALA BAGIAN TATA USAHA">KEPALA BAGIAN TATA USAHA</option>
+                            <option value="PEMBUKUAN 1">PEMBUKUAN 1</option>
+                            <option value="CUSTOMER SERVICE">CUSTOMER SERVICE</option>
+                            <option value="PEMASARAN KREDIT">PEMASARAN KREDIT</option>
+                            <option value="KEPALA BAGIAN KEUANGAN">KEPALA BAGIAN KEUANGAN</option>
+                            <option value="PEMBUKAAN TABUNGAN">PEMBUKAAN TABUNGAN</option>
+                            <option value="PEMUNGUTAN TABUNGAN">PEMUNGUTAN TABUNGAN</option>
+                            <option value="PEMBANTU UMUM">PEMBANTU UMUM</option>
                         </select>
                         <div id="errorJabatan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
