@@ -7,12 +7,12 @@
                     <?= form_open('', ['id' => 'form_simpan']) ?>
 
                     <div class="form-group mb-3" style="height: 80px;">
-                        <label for="tanggal_penarikan">Tanggal</label>
+                        <label for="tanggal_penarikan">Tanggal Penarikan</label>
                         <div class="input-group">
-                            <input type="date" name="tanggal_penarikan" id="tanggal_penarikan" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
+                            <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
+                            <input type="hidden" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
                         </div>
-                        <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
+                        <div id="errorTanggal" class="invalid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">

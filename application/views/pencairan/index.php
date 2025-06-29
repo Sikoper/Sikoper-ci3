@@ -9,8 +9,7 @@
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_penarikan">Tanggal Penarikan</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" style="background-color: #e9ecef;" value="<?= date('d/m/Y') ?>" readonly>
-
+                            <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
                             <input type="hidden" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
                         </div>
                         <div id="errorTanggal" class="invalid-feedback" style="display: none;"></div>
