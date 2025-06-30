@@ -88,8 +88,8 @@
                                             <a href="<?= base_url('simpanan') ?>">Data Tabungan</a>
                                         </li>
                                     <?php endif; ?>
-                                    <?php if ($level == 'Admin' || 'Pegawai' || $level == 'Direktur'): ?>
-                                        <li class="submenu-item <?= $this->uri->segment(1) == 'deposito' && $this->uri->segment(2) == '' ? 'active' : '' ?>">
+                                    <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
+                                        <li class="submenu-item <?= $this->uri->segment(1) == 'deposito' ? 'active' : '' ?>">
                                             <a href="<?= base_url('deposito') ?>">Data Deposito</a>
                                         </li>
                                     <?php endif; ?>

@@ -163,6 +163,7 @@
                                     <th>No</th>
                                     <th>Tanggal bunga</th>
                                     <th>Jumlah bunga</th>
+                                    <th>Presentase bunga</th>
                                     <th>#</th>
                                 </tr>
                             </thead>
@@ -183,6 +184,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
+    const userLevel = '<?= $this->session->userdata('level') ?>';
     table = $('#detail_tabungan').DataTable({
         responsive: true,
         "destroy": true,
@@ -218,7 +220,10 @@
                 "orderable": false
             }
         ],
-
+        language: {
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoFiltered: ""
+        },
         "columnDefs": [{
                 "targets": 0,
                 "orderable": false,
@@ -226,6 +231,7 @@
             },
             {
                 "targets": 5,
+                "visible": userLevel === 'Admin',
                 "orderable": false,
                 "width": "10%"
             }
@@ -257,17 +263,27 @@
                 "type": "string"
             },
             {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
                 "orderable": false
             }
         ],
-
+        language: {
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoFiltered: "" // ← hide this part
+        },
         "columnDefs": [{
                 "targets": 0,
                 "orderable": false,
                 "width": "5%"
             },
             {
-                "targets": 3,
+                "targets": 4,
+                "visible": userLevel === 'Admin',
                 "orderable": false,
                 "width": "15%"
             }

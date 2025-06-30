@@ -45,8 +45,7 @@ class Simpanan extends CI_Controller
             $list = $this->Simpanan_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
-
-
+            $level = $this->session->userdata('level');
 
             foreach ($list as $field) {
                 $no++;
@@ -57,10 +56,15 @@ class Simpanan extends CI_Controller
                 $row[] = $field->no_rekening;
                 $row[] = $field->telp_nasabah;
                 $row[] = number_format($field->jumlah_simpanan, 0, ',', '.');
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='simpanan/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
-                            <button class=\"btn btn-secondary\"onclick=\"window.location='simpanan/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
+                if ($level == 'Admin') {
+                    $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='simpanan/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
+                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw'></i></button>
+                            <button class=\"btn btn-secondary\" onclick=\"window.location='simpanan/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
                             <button class=\"btn btn-primary\" onclick=\"printNasabah('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
+                } else {
+                    $row[] = "<button class=\"btn btn-secondary\" onclick=\"window.location='simpanan/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
+                            <button class=\"btn btn-primary\" onclick=\"printNasabah('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
+                }
                 $data[] = $row;
             }
 
