@@ -3,8 +3,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Nasabah_Bunga_model extends CI_Model
 {
-    var $column_order = array(null, 'tanggal_transaksi', 'jumlah_transaksi', 'tipe', 'nama_lengkap', 'no_rekening', null);
-    var $column_search = array('tanggal_transaksi', 'jumlah_transaksi', 'tipe', 'nama_lengkap', 'no_rekening');
+    var $column_order = array(null, 'tanggal_transaksi', 'jumlah_transaksi', 'rate_bunga', null);
+    var $column_search = array('tanggal_transaksi', 'rate_bunga');
     var $order = array('tanggal_transaksi' => 'DESC');
 
     /**
@@ -36,6 +36,7 @@ class Nasabah_Bunga_model extends CI_Model
                 'Simpanan' AS tipe,
                 n.nama_lengkap,
                 s.no_rekening,
+                t1.rate_bunga AS rate_bunga,
                 t1.id AS source_id
             FROM tbtransaksi t1
             JOIN tbsimpanan s ON s.id = t1.simpanan_id
@@ -50,6 +51,7 @@ class Nasabah_Bunga_model extends CI_Model
                 'Deposito' AS tipe,
                 n.nama_lengkap,
                 d.no_rekening,
+                t2.rate_bunga AS rate_bunga,
                 t2.id AS source_id
             FROM tbtransaksi_deposito t2
             JOIN tbdeposito d ON d.id = t2.deposito_id

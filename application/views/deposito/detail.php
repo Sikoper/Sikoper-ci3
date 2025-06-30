@@ -89,6 +89,7 @@
                                     <th>No</th>
                                     <th>Tanggal bunga</th>
                                     <th>Jumlah bunga</th>
+                                    <th>Presentase bunga</th>
                                     <th>#</th>
                                 </tr>
                             </thead>
@@ -147,7 +148,7 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     var noRekening = '<?= $deposito->no_rekening ?>';
-
+    const userLevel = '<?= $this->session->userdata('level') ?>';
     table = $('#tabel_bunga').DataTable({
         responsive: true,
         "destroy": true,
@@ -164,8 +165,19 @@
             }
         },
 
+        language: {
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoFiltered: ""
+        },
+
         "columns": [{
                 "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string",
             },
             {
                 "type": "string"
@@ -181,7 +193,8 @@
                 "width": "5%"
             },
             {
-                "targets": 3,
+                "targets": 4,
+                "visible": userLevel === 'Admin',
                 "orderable": false,
                 "width": "15%"
             }
@@ -218,6 +231,10 @@
                 return json.data;
             }
         },
+        language: {
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoFiltered: ""
+        },
         "columns": [{
                 "data": 0, // Corresponds to the first element in the server's data array (No.)
                 "className": "text-center",
@@ -241,6 +258,7 @@
             {
                 "data": 5, // Corresponds to the sixth element (Actions)
                 "orderable": false,
+                "visible": userLevel === 'Admin',
                 "className": "text-center",
                 "width": "10%"
             }

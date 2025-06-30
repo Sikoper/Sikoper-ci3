@@ -45,8 +45,7 @@ class Deposito extends CI_Controller
             $list = $this->Deposito_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
-
-
+            $level = $this->session->userdata('level');
 
             foreach ($list as $field) {
                 $no++;
@@ -57,10 +56,15 @@ class Deposito extends CI_Controller
                 $row[] = $field->no_rekening;
                 $row[] = $field->telp_nasabah;
                 $row[] = number_format($field->jumlah_deposito, 0, ',', '.');
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='deposito/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
-                            <button class=\"btn btn-secondary\"onclick=\"window.location='deposito/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
+                if ($level == 'Admin') {
+                    $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='deposito/edit/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-edit fa-fw'></i></button>
+                            <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->no_rekening . "')\"><i class=\"fa fa-trash fa-fw'></i></button>
+                            <button class=\"btn btn-secondary\" onclick=\"window.location='deposito/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
                             <button class=\"btn btn-primary\" onclick=\"printNasabah('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
+                } else {
+                    $row[] = "<button class=\"btn btn-secondary\" onclick=\"window.location='deposito/detail/" . safe_base64_encode($field->no_rekening) . "'\"><i class='fa fa-info fa-fw'></i></button>
+                            <button class=\"btn btn-primary\" onclick=\"printNasabah('" . $field->id . "', '" . $field->nama_nasabah . "')\"><i class=\"fa fa-file\"></i></button>";
+                }
                 $data[] = $row;
             }
 
@@ -716,7 +720,7 @@ class Deposito extends CI_Controller
         $this->cetak_sertifikat($id, 'belakang');
     }
 
-private function cetak_sertifikat($id, $halaman)
+    private function cetak_sertifikat($id, $halaman)
     {
         try {
             // 1. Ambil data mentah dari model
@@ -732,7 +736,7 @@ private function cetak_sertifikat($id, $halaman)
             $bulan_romawi = $this->_bulan_romawi($tanggal_depo->format('n'));
             $tahun = $tanggal_depo->format('Y');
             $nomor_sertifikat_lengkap = $sertifikat_data->no_rekening . '/DEP/' . $bulan_romawi . '/' . $tahun;
-            
+
             // 3. SIAPKAN SEMUA VARIABEL YANG DIBUTUHKAN OLEH VIEW SECARA EKSPLISIT
             $data = [
                 'halaman_dicetak'       => $halaman,
@@ -768,7 +772,6 @@ private function cetak_sertifikat($id, $halaman)
 
             $filename = "Sertifikat {$halaman} - " . $data['nama_nasabah'] . ".pdf";
             $this->dompdf_lib->stream($filename, ['Attachment' => false]);
-
         } catch (Throwable $e) {
             echo '<h1>Terjadi Error Saat Membuat PDF</h1>';
             echo '<p>Silakan copy-paste seluruh pesan di bawah ini.</p>';
@@ -779,12 +782,14 @@ private function cetak_sertifikat($id, $halaman)
     }
 
     // TAMBAHKAN FUNGSI BARU INI di dalam controller Deposito.php Anda
-    private function _bulan_romawi($bulan) {
+    private function _bulan_romawi($bulan)
+    {
         $romawi = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
         return $romawi[$bulan - 1];
     }
 
-    private function terbilang($angka) {
+    private function terbilang($angka)
+    {
         $angka = abs($angka);
         $baca = array('', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas');
         $terbilang = '';
@@ -814,5 +819,4 @@ private function cetak_sertifikat($id, $halaman)
 
         return trim($terbilang);
     }
-
 }

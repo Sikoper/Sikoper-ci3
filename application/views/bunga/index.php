@@ -1,14 +1,16 @@
 <div class="card">
     <div class="card-header">
         <h4 class="card-title">
-            <button class="btn btn-primary" id="btnPembungaanTabungan">
-                <i class="fa fa-credit-card"></i>
-                Hitung Bunga Tabungan
-            </button>
-            <button class="btn btn-success" id="btnPembungaanDeposito">
-                <i class="fa fa-credit-card"></i>
-                Hitung Bunga Deposito
-            </button>
+            <?php if ($level == 'Admin'): ?>
+                <button class="btn btn-primary" id="btnPembungaanTabungan">
+                    <i class="fa fa-credit-card"></i>
+                    Hitung Bunga Tabungan
+                </button>
+                <button class="btn btn-success" id="btnPembungaanDeposito">
+                    <i class="fa fa-credit-card"></i>
+                    Hitung Bunga Deposito
+                </button>
+            <?php endif; ?>
         </h4>
         <div class="row mb-3">
             <div class="col-md-3">
@@ -39,9 +41,11 @@
                             <th>No. Rekening</th>
                             <th>Tanggal bunga</th>
                             <th>Jumlah bunga</th>
-                            <th>Jumlah Bunga</th>
+                            <th>Presentase Bunga</th>
                             <th>Keterangan</th>
-                            <th>#</th>
+                            <?php if ($level == 'Admin'): ?>
+                                <th>#</th>
+                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
@@ -74,64 +78,83 @@
     }
 
     $(document).ready(function() {
+        const userLevel = '<?= $this->session->userdata('level') ?>';
+
+        const columns = [{
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            }
+        ];
+
+        // Add admin-only column
+        if (userLevel === 'admin') {
+            columns.push({
+                "orderable": false
+            });
+        }
+
+        const columnDefs = [{
+                "targets": 0,
+                "orderable": false,
+                "width": "5%"
+            },
+            {
+                "targets": 6,
+                "orderable": false,
+                "width": "15%"
+            }
+        ];
+
+        // Add a columnDef for the last column if admin
+        if (userLevel === 'admin') {
+            columnDefs.push({
+                "targets": 7,
+                "orderable": false,
+                "width": "10%",
+                "className": "text-center"
+            });
+        }
+
         table = $('#tabel_bunga').DataTable({
             responsive: true,
-            "destroy": true,
-            "processing": true,
-            "serverSide": true,
-            "order": [],
+            destroy: true,
+            processing: true,
+            serverSide: true,
+            order: [],
             autoWidth: false,
 
-            "ajax": {
-                "url": "<?= site_url('bunga/fetchData') ?>",
-                "type": "POST",
-                "data": function(d) {
+            ajax: {
+                url: "<?= site_url('bunga/fetchData') ?>",
+                type: "POST",
+                data: function(d) {
                     d.start_date = $('#start_date').val();
                     d.end_date = $('#end_date').val();
                 },
-                "dataSrc": function(json) {
+                dataSrc: function(json) {
                     $('#total_bunga_display').text('Rp ' + json.total_bunga);
                     return json.data;
                 }
             },
 
-            "columns": [{
-                    "type": "string"
-                },
-                {
-                    "type": "string"
-                },
-                {
-                    "type": "string"
-                },
-                {
-                    "type": "string"
-                },
-                {
-                    "type": "string"
-                },
-                {
-                    "type": "string"
-                },
-                {
-                    "type": "string"
-                },
-                {
-                    "orderable": false
-                }
-            ],
-
-            "columnDefs": [{
-                    "targets": 0,
-                    "orderable": false,
-                    "width": "5%"
-                },
-                {
-                    "targets": 6,
-                    "orderable": false,
-                    "width": "15%"
-                }
-            ],
+            columns: columns,
+            columnDefs: columnDefs
         });
 
         $('#filterBtn').on('click', function() {
