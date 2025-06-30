@@ -93,12 +93,6 @@
                                             <a href="<?= base_url('deposito') ?>">Data Deposito</a>
                                         </li>
                                     <?php endif; ?>
-
-                                    <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                                        <li class="submenu-item <?= $this->uri->segment(1) == 'deposito' && $this->uri->segment(2) == 'nasabah' ? 'active' : '' ?>">
-                                            <a href="<?= base_url('deposito/nasabah') ?>">Nasabah Deposito</a>
-                                        </li>
-                                    <?php endif; ?>
                                     <?php if ($level == 'Admin' || $level == 'Direktur'): ?>
                                         <li class="submenu-item <?= $this->uri->segment(1) == 'jenis_tabungan' ? 'active' : '' ?>">
                                             <a href="<?= base_url('jenis_tabungan') ?>">Jenis Tabungan</a>
