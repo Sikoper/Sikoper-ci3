@@ -95,14 +95,6 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Perkiraan Sisa Saldo Setelah Transaksi</label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="text" id="perkiraan_sisa_saldo_display" class="form-control text-end" readonly style="display: none;" />
-                        </div>
-                    </div>
-
                     <?php if ($level == 'Admin'): ?>
                         <div class="form-group mb-3" style="height: 80px;">
                             <label for="pegawai_id">Pegawai</label>
@@ -134,7 +126,6 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
-        // Inisialisasi AutoNumeric
         const autoNumericV4OptionsRp = {
             currencySymbol: '',
             decimalCharacter: ',',
@@ -146,7 +137,6 @@
         const dendaRpAN = new AutoNumeric('#denda', autoNumericV4OptionsRp);
         const totalDitarikAN = new AutoNumeric('#total_yang_ditarik_display', autoNumericV4OptionsRp);
 
-        // --- PERBAIKAN KRITIS UNTUK PENCARIAN NASABAH ---
         $('#nasabah').select2({
             placeholder: 'Cari nama nasabah...',
             ajax: {
@@ -220,8 +210,6 @@
                         dendaRpAN.set(response.calculated_penalty_rp);
                         $('#tenor').val(response.tenor);
                         $('#durasi').val(response.durasi + ' Bulan');
-
-                        // DITAMBAHKAN: Otomatis isi Total Penarikan Keseluruhan dengan nilai saldo
                         totalDitarikAN.set(response.saldo);
 
                         if (response.kategori && response.kategori.nama === 'Deposito') {
