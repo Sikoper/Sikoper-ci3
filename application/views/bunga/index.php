@@ -104,7 +104,7 @@
         ];
 
         // Add admin-only column
-        if (userLevel === 'admin') {
+        if (userLevel === 'Admin') {
             columns.push({
                 "orderable": false
             });

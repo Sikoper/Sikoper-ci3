@@ -169,6 +169,14 @@ class Pencairan_model extends CI_Model
         return $result;
     }
 
+    public function jumlah_penarikan_deposito()
+    {
+        $this->db->select('MONTH(tanggal_penarikan) as bulan, COUNT(id) as total_penarikan');
+        $this->db->from('tbpenarikan_deposito');
+        $this->db->group_by('bulan');
+        $this->db->order_by('bulan', 'ASC');
+        return $this->db->get()->result();
+    }
     public function count_new_data($today)
     {
         $this->db->from($this->_table_penarikan);

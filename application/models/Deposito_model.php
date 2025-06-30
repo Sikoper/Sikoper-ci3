@@ -14,7 +14,7 @@ class Deposito_model extends CI_Model
         $this->db->from($this->table);
         $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
         $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
-        
+
         $i = 0;
         foreach ($this->column_search as $item) {
             if ($_POST['search']['value']) {
@@ -53,6 +53,15 @@ class Deposito_model extends CI_Model
         return $query->num_rows();
     }
 
+    public function jumlah_setoran_deposito()
+    {
+        $this->db->select('MONTH(tanggal_deposito) AS bulan, COUNT(id) AS total_setoran');
+        $this->db->from('tbdeposito');
+        $this->db->group_by('bulan');
+        $this->db->order_by('bulan', 'ASC');
+        return $this->db->get()->result();
+    }
+
     public function count_all()
     {
         $this->db->from($this->table);
@@ -83,7 +92,7 @@ class Deposito_model extends CI_Model
     {
         return $this->db->get_where($this->table, ['no_rekening' => $no_rekening])->row();
     }
-    
+
     public function get_rekening_deposito_by_nasabah($nasabah_id)
     {
         $this->db->select('tbdeposito.id, CONCAT(tbdeposito.no_rekening, " - ", tbjenistabungan.nama) as text');
@@ -109,7 +118,7 @@ class Deposito_model extends CI_Model
         return $this->db->update('tbdeposito');
     }
 
-public function get_nasabah_deposito()
+    public function get_nasabah_deposito()
     {
         $this->db->select('
             tbnasabah.nama_lengkap, 
@@ -121,7 +130,7 @@ public function get_nasabah_deposito()
         $this->db->from('tbdeposito');
         $this->db->join('tbnasabah', 'tbdeposito.nasabah_id = tbnasabah.id');
         $this->db->order_by('tbnasabah.nama_lengkap', 'ASC');
-        
+
         $query = $this->db->get();
         return $query->result();
     }
@@ -143,14 +152,14 @@ public function get_nasabah_deposito()
         $this->db->from('tbdeposito');
         $this->db->join('tbnasabah', 'tbdeposito.nasabah_id = tbnasabah.id', 'left');
         $this->db->join('tbpegawai as pegawai', 'tbdeposito.pegawai_id = pegawai.id', 'left');
-        
+
         // Asumsi untuk mendapatkan nama Pimpinan/Kepala dan Bendahara dari tabel pegawai
         $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'Kepala'", 'left');
         $this->db->join('tbpegawai as bendahara', "bendahara.jabatan = 'Bendahara'", 'left');
 
         $this->db->where('tbdeposito.id', $id);
         $this->db->limit(1); // Pastikan hanya satu baris yang diambil
-        
+
         $query = $this->db->get();
         return $query->row();
     }

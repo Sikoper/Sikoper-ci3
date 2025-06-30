@@ -77,7 +77,7 @@ class Bunga extends CI_Controller
             $row[] = $field->tipe;
 
             if ($level == 'Admin') {
-                $row[] = "<button class='btn btn-sm btn-danger' onclick=\"deleteItem('$field->id', '$field->no_rekening', '$field->tipe')\">Hapus</button>";
+                $row[] = "<button class='btn btn-sm btn-danger' onclick=\"deleteItem('$field->id', '$field->no_rekening', '$field->tipe')\"><i class=\"fa fa-trash\"></i></button>";
             } else {
                 $row[] = "";
             }

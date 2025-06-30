@@ -158,6 +158,31 @@ class Penarikan_model extends CI_Model
         return $result;
     }
 
+    public function jumlah_penarikan_bulanan()
+    {
+        $sql = "
+        SELECT MONTH(tanggal_penarikan) AS bulan, COUNT(*) AS jumlah
+        FROM tbpenarikan
+        GROUP BY bulan
+
+        UNION ALL
+
+        SELECT MONTH(tanggal_penarikan) AS bulan, COUNT(*) AS jumlah
+        FROM tbpenarikan_deposito
+        GROUP BY bulan
+    ";
+
+        $query = $this->db->query("
+        SELECT bulan, SUM(jumlah) AS total
+        FROM ($sql) AS combined
+        GROUP BY bulan
+        ORDER BY bulan
+    ");
+
+        return $query->result();
+    }
+
+
     public function hapus_data_penarikan_by_id($id_penarikan)
     {
         $this->db->where('id', $id_penarikan);
