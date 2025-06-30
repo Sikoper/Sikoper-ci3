@@ -10,6 +10,7 @@ class Pencairan extends CI_Controller
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
+        $this->load->model('Pencairan_model');
 
         $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
         $level = $this->session->userdata('level');
@@ -217,7 +218,7 @@ class Pencairan extends CI_Controller
         } else {
             $this->db->trans_commit();
             $encoded_rek = $this->_safe_base64_encode($simpanan_data->no_rekening);
-            $redirect_url_final = site_url('penarikan/detail/' .$encoded_rek);
+            $redirect_url_final = site_url('penarikan/detail/' . $encoded_rek);
             $pesan_sukses = 'Pencairan deposito berhasil diproses dan saldo telah diperbarui.';
             $msg = [
                 'success' => $pesan_sukses,
@@ -231,5 +232,67 @@ class Pencairan extends CI_Controller
     private function _safe_base64_encode($string)
     {
         return strtr(base64_encode($string), '+/=', '-_?');
+    }
+
+    public function fetch_detail_penarikan_by_deposito()
+    {
+        if (!$this->input->is_ajax_request()) {
+            redirect('unauthorized_403');
+        }
+
+        $deposito_id = $this->input->post('deposito_id');
+
+        if (empty($deposito_id) || !ctype_digit((string)$deposito_id)) {
+            echo json_encode([
+                "draw"            => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
+                "recordsTotal"    => 0,
+                "recordsFiltered" => 0,
+                "data"            => [],
+                "error"           => "ID Deposito tidak valid."
+            ]);
+            return;
+        }
+
+        $this->load->model('Pencairan_model');
+
+        $list = $this->Pencairan_model->get_datatables_detail_penarikan($deposito_id);
+        $akumulasi = $this->Pencairan_model->get_akumulasi_penarikan_by_deposito($deposito_id);
+
+        $data = [];
+        $no = $this->input->post('start') ? intval($this->input->post('start')) : 0;
+
+        foreach ($list as $item) {
+            $no++;
+            $row = [];
+
+            $row[] = '<div class="text-center">' . $no . '</div>';
+            $row[] = date('d-m-Y H:i', strtotime($item->tanggal_penarikan));
+            $row[] = '<div class="text-end">Rp ' . number_format($item->jumlah_penarikan, 2, ',', '.') . '</div>';
+            $row[] = '<div class="text-end">Rp ' . number_format($item->jumlah_denda, 2, ',', '.') . '</div>';
+            $row[] = $item->nama_pegawai ? htmlspecialchars($item->nama_pegawai, ENT_QUOTES, 'UTF-8') : '-';
+
+            $row[] = '<div class="text-center">
+                    <button class="btn btn-danger btn-sm" title="Hapus Penarikan"
+                        onclick="deleteDetailPenarikan(' . $item->id . ', \'' . htmlspecialchars(number_format($item->jumlah_penarikan, 2, ',', '.'), ENT_QUOTES, 'UTF-8') . '\')">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                    </div>';
+
+            $data[] = $row;
+        }
+
+        $output = [
+            "draw"            => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
+            "recordsTotal"    => $this->Pencairan_model->count_all_detail_penarikan($deposito_id),
+            "recordsFiltered" => $this->Pencairan_model->count_filtered_detail_penarikan($deposito_id),
+            "data"            => $data,
+            "akumulasi"       => [
+                "jumlah_penarikan" => $akumulasi->total_akumulasi_penarikan,
+                "jumlah_denda"     => $akumulasi->total_akumulasi_denda
+            ]
+        ];
+
+        header('Content-Type: application/json');
+        echo json_encode($output);
     }
 }

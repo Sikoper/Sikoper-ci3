@@ -112,12 +112,12 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($deposito->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+                <button class="btn btn-danger" onclick="window.location='<?= base_url('pencairan/') . '?id=' . safe_base64_encode($deposito->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
             </div>
             <div class="card-body">
                 <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
                     <div class="dataTable-container">
-                        <table class="table table-bordered table-striped" id="tabel_detail_penarikan">
+                        <table class="table table-bordered table-striped" id="tabel_penarikan">
                             <thead class="table-light">
                                 <tr>
                                     <th>No</th>
@@ -188,46 +188,58 @@
         ],
     });
 
-    var tabel_detail_penarikan = $('#tabel_detail_penarikan').DataTable({
+    var depositoId = '<?= $deposito->id ?>';
+
+    // FIX: Renamed variable from 'tabel_peanrikan' to 'tabel_penarikan'
+    var tabel_penarikan = $('#tabel_penarikan').DataTable({ // FIX: Corrected selector
         "responsive": true,
         "destroy": true,
         "processing": true,
         "serverSide": true,
         "order": [
-            [1, "desc"]
+            [1, "desc"] // Sort by the second column (date) descending by default
         ],
         "autoWidth": false,
         "ajax": {
-            "url": "<?= site_url('penarikan/fetch_detail_penarikan_by_deposito') ?>",
+            "url": "<?= site_url('pencairan/fetch_detail_penarikan_by_deposito') ?>",
             "type": "POST",
             "data": function(d) {
+                // Send the specific deposito_id with each AJAX request
                 d.deposito_id = depositoId;
+            },
+            dataSrc: function(json) {
+                // Update akumulasi display
+                $('#akumulasi_penarikan').text('Rp ' + parseFloat(json.akumulasi.jumlah_penarikan).toLocaleString('id-ID', {
+                    minimumFractionDigits: 2
+                }));
+                $('#akumulasi_denda').text('Rp ' + parseFloat(json.akumulasi.jumlah_denda).toLocaleString('id-ID', {
+                    minimumFractionDigits: 2
+                }));
+                return json.data;
             }
         },
-        "columns": [
-
-            {
-                "data": 0,
+        "columns": [{
+                "data": 0, // Corresponds to the first element in the server's data array (No.)
                 "className": "text-center",
                 "width": "5%",
                 "orderable": false
             },
             {
-                "data": 1
+                "data": 1 // Corresponds to the second element (Tanggal)
             },
             {
-                "data": 2,
+                "data": 2, // Corresponds to the third element (Total Penarikan)
                 "className": "text-end"
             },
             {
-                "data": 3,
+                "data": 3, // Corresponds to the fourth element (Jumlah Denda)
                 "className": "text-end"
             },
             {
-                "data": 4
+                "data": 4 // Corresponds to the fifth element (Nama Pegawai)
             },
             {
-                "data": 5,
+                "data": 5, // Corresponds to the sixth element (Actions)
                 "orderable": false,
                 "className": "text-center",
                 "width": "10%"

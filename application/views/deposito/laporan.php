@@ -17,7 +17,7 @@
     </div>
     <?= form_open('', ['id' => 'form_laporan']) ?>
     <div class="card-body">
-        <input type="text" name="id" id="id" value="<?= $deposito->id ?>">
+        <input type="hidden" name="id" id="id" value="<?= $deposito->id ?>">
         <div class="row mb-3">
             <div class="col-md-4">
                 <div class="form-group mb-3" style="height: 80px;">
