@@ -42,8 +42,7 @@ class Nasabah extends CI_Controller
             $list = $this->Nasabah_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
-
-
+            $level = $this->session->userdata('level');
 
             foreach ($list as $field) {
                 $no++;
@@ -54,9 +53,13 @@ class Nasabah extends CI_Controller
                 $row[] = $field->nama_lengkap;
                 $row[] = $field->telp;
                 $row[] = $field->email;
-                $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-edit fa-fw'></i></button>
+                if ($level == 'Admin') {
+                    $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-edit fa-fw'></i></button>
                             <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_lengkap . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
-                            <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-info fa-fw'></i></button>";;
+                            <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-info fa-fw'></i></button>";
+                } else {
+                    $row[] = " <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-info fa-fw'></i></button>";
+                }
                 $data[] = $row;
             }
 

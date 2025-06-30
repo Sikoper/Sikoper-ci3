@@ -59,14 +59,15 @@ class Bunga extends CI_Controller
         $start = $this->input->post('start_date');
         $end = $this->input->post('end_date');
 
+        $level = $this->session->userdata('level');
+
         $list = $this->Bunga_model->get_datatables($start, $end);
-        $data = array();
+        $data = [];
         $no = $_POST['start'];
-        $total_bunga = 0;
 
         foreach ($list as $field) {
             $no++;
-            $row = array();
+            $row = [];
             $row[] = $no;
             $row[] = $field->nama_lengkap;
             $row[] = $field->no_rekening;
@@ -74,19 +75,26 @@ class Bunga extends CI_Controller
             $row[] = number_format($field->jumlah_transaksi, 0, ',', '.');
             $row[] = $field->rate_bunga . " %";
             $row[] = $field->tipe;
-            $row[] = "<button class='btn btn-sm btn-danger' onclick=\"deleteItem('$field->id', '$field->no_rekening', '$field->tipe')\">Hapus</button>";
 
-            $total_bunga += $field->jumlah_transaksi;
+            if ($level == 'Admin') {
+                $row[] = "<button class='btn btn-sm btn-danger' onclick=\"deleteItem('$field->id', '$field->no_rekening', '$field->tipe')\">Hapus</button>";
+            } else {
+                $row[] = "";
+            }
+
             $data[] = $row;
         }
 
-        $output = array(
+        // 🔥 Get full-month total bunga regardless of page
+        $total_bunga = $this->Bunga_model->get_total_bunga_filtered($start, $end);
+
+        $output = [
             "draw" => $_POST['draw'],
             "recordsTotal" => $this->Bunga_model->count_all(),
             "recordsFiltered" => $this->Bunga_model->count_filtered($start, $end),
             "data" => $data,
             "total_bunga" => number_format($total_bunga, 0, ',', '.')
-        );
+        ];
         echo json_encode($output);
     }
 
@@ -107,6 +115,7 @@ class Bunga extends CI_Controller
             $row[] = "<div class=\"text-center\">$no</div>";
             $row[] = $field->tanggal_transaksi;
             $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
+            $row[] = ((float)$field->rate_bunga) . " %";
             $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
 
             $data[] = $row;
@@ -139,6 +148,7 @@ class Bunga extends CI_Controller
             $row[] = "<div class=\"text-center\">$no</div>";
             $row[] = $field->tanggal_transaksi;
             $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
+            $row[] = ((float)$field->rate_bunga) . " %";
             $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
 
             $data[] = $row;

@@ -106,6 +106,14 @@ class Bunga_model extends CI_Model
         return $query->row()->total;
     }
 
+    public function get_total_bunga_filtered($start_date = null, $end_date = null)
+    {
+        $sql = $this->_get_datatables_query($start_date, $end_date);
+        $sum_sql = "SELECT SUM(jumlah_transaksi) AS total_bunga FROM ($sql) AS subquery";
+        $query = $this->db->query($sum_sql);
+        return $query->row()->total_bunga ?? 0;
+    }
+
     public function checkAndRunBunga()
     {
         $month = date('m');

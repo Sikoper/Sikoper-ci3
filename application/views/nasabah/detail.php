@@ -1,8 +1,8 @@
 <div class="card shadow-sm">
     <div class="card-header text-white">
         <button class="btn btn-warning" onclick="window.location='<?= base_url('nasabah') ?>'">
-                <i class="fa fa-backward"></i> Kembali
-            </button>
+            <i class="fa fa-backward"></i> Kembali
+        </button>
     </div>
     <div class="card-body">
         <table class="table table-bordered table-striped">
@@ -29,7 +29,7 @@
             <tr>
                 <th>Alamat</th>
                 <td><?= $nasabah->alamat ?>
-            </tr> 
+            </tr>
             <tr>
                 <th>Pekerjaan</th>
                 <td><?= $nasabah->pekerjaan ?></td>
@@ -57,14 +57,16 @@
             return strtr(base64_encode($string), '+/=', '-_.');
         }
         ?>
-            <div class="d-flex justify-content-end mt-4">
+        <div class="d-flex justify-content-end mt-4">
+            <?php if ($level == 'Admin'): ?>
                 <button type="button" onclick="window.location='<?= base_url('nasabah/edit/' . safe_base64_encode($nasabah->nik)) . '?code=1' ?>'" class="btn btn-success me-2">
                     <i class="fa fa-edit fa-fw"></i> Edit
                 </button>
                 <button class="btn btn-danger" onclick="deleteItem('<?= $nasabah->id ?>', '<?= addslashes($nasabah->nama_lengkap) ?>')">
                     <i class="fa fa-trash fa-fw"></i> Hapus
                 </button>
-            </div>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -95,7 +97,7 @@
                                 icon: "success"
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    window.location= '<?= base_url('nasabah') ?>';
+                                    window.location = '<?= base_url('nasabah') ?>';
                                 }
                             });
                         } else {
