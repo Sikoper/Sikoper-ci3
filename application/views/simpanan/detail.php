@@ -323,52 +323,52 @@
         });
     }
 
-    var tabel_detail_penarikan = $('#tabel_detail_penarikan').DataTable({
-        "responsive": true,
-        "destroy": true,
-        "processing": true,
-        "serverSide": true,
-        "order": [
-            [1, "desc"]
-        ],
-        "autoWidth": false,
-        "ajax": {
-            "url": "<?= site_url('penarikan/fetch_detail_penarikan_by_simpanan') ?>",
-            "type": "POST",
-            "data": function(d) {
-                d.simpanan_id = simpananId;
-            }
-        },
-        "columns": [
+    // var tabel_detail_penarikan = $('#tabel_detail_penarikan').DataTable({
+    //     "responsive": true,
+    //     "destroy": true,
+    //     "processing": true,
+    //     "serverSide": true,
+    //     "order": [
+    //         [1, "desc"]
+    //     ],
+    //     "autoWidth": false,
+    //     "ajax": {
+    //         "url": "",
+    //         "type": "POST",
+    //         "data": function(d) {
+    //             d.simpanan_id = simpananId;
+    //         }
+    //     },
+    //     "columns": [
 
-            {
-                "data": 0,
-                "className": "text-center",
-                "width": "5%",
-                "orderable": false
-            },
-            {
-                "data": 1
-            },
-            {
-                "data": 2,
-                "className": "text-end"
-            },
-            {
-                "data": 3,
-                "className": "text-end"
-            },
-            {
-                "data": 4
-            },
-            {
-                "data": 5,
-                "orderable": false,
-                "className": "text-center",
-                "width": "10%"
-            }
-        ],
-    });
+    //         {
+    //             "data": 0,
+    //             "className": "text-center",
+    //             "width": "5%",
+    //             "orderable": false
+    //         },
+    //         {
+    //             "data": 1
+    //         },
+    //         {
+    //             "data": 2,
+    //             "className": "text-end"
+    //         },
+    //         {
+    //             "data": 3,
+    //             "className": "text-end"
+    //         },
+    //         {
+    //             "data": 4
+    //         },
+    //         {
+    //             "data": 5,
+    //             "orderable": false,
+    //             "className": "text-center",
+    //             "width": "10%"
+    //         }
+    //     ],
+    // });
 
     function deleteDetailPenarikan(id, jumlah) {
         Swal.fire({
