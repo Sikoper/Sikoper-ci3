@@ -154,4 +154,11 @@ public function get_nasabah_deposito()
         $query = $this->db->get();
         return $query->row();
     }
+
+    public function ubah_status($deposito_id, $status_baru)
+    {
+        $this->db->where('id', $deposito_id);
+        $this->db->update('tbdeposito', ['status' => $status_baru]);
+        return $this->db->affected_rows();
+    }
 }

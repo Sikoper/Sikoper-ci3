@@ -146,7 +146,6 @@ class Pencairan extends CI_Controller
             echo json_encode(['error' => $errors]);
             return;
         }
-
         $simpanan_id = $this->input->post('simpanan_id');
         $simpanan_data = $this->Deposito_model->get_data_by_id($simpanan_id);
 
@@ -187,20 +186,15 @@ class Pencairan extends CI_Controller
                 }
             }
         }
-
         $saldo_saat_ini = (float) $simpanan_data->jumlah_deposito;
-        $pengendapan_minimal = (float) $jenis_tabungan_data->pengendapan;
         $total_pengurangan = $jumlah_penarikan_diminta + $penalty_rp_final;
 
-        if (($saldo_saat_ini - $total_pengurangan) < $pengendapan_minimal) {
-            $sisa_saldo_setelah_transaksi = $saldo_saat_ini - $total_pengurangan;
-            $pesan_error_saldo = 'Penarikan gagal. Saldo tidak mencukupi. Sisa saldo setelah transaksi (Rp ' . number_format($sisa_saldo_setelah_transaksi, 0, ',', '.') . ') kurang dari saldo minimal yang diendapkan (Rp ' . number_format($pengendapan_minimal, 0, ',', '.') . ').';
+        if (round($total_pengurangan, 2) > round($saldo_saat_ini, 2)) {
+            $pesan_error_saldo = 'Penarikan gagal. Jumlah penarikan dan denda (Rp ' . number_format($penalty_rp_final, 0, ',', '.') . ') melebihi saldo deposito yang tersedia (Rp ' . number_format($saldo_saat_ini, 0, ',', '.') . ').';
             echo json_encode(['error' => ['errorJumlah' => $pesan_error_saldo]]);
             return;
         }
-
         $this->db->trans_start();
-
         $data_log = [
             'deposito_id'       => $simpanan_id,
             'pegawai_id'        => ($this->session->userdata('level') == 'Admin') ? $this->input->post('pegawai_id') : $this->session->userdata('pegawai_id'),
@@ -208,9 +202,12 @@ class Pencairan extends CI_Controller
             'jumlah_penarikan'  => $jumlah_penarikan_diminta,
             'jumlah_denda'      => $penalty_rp_final
         ];
-
         $this->Deposito_model->simpan_log_penarikan($data_log);
+
         $this->Deposito_model->kurangi_saldo($simpanan_id, $total_pengurangan);
+        if (($saldo_saat_ini - $total_pengurangan) == 0) {
+            $this->Deposito_model->ubah_status($simpanan_id, 'nonaktif');
+        }
 
         if ($this->db->trans_status() === FALSE) {
             $this->db->trans_rollback();
@@ -219,7 +216,10 @@ class Pencairan extends CI_Controller
             $this->db->trans_commit();
             $encoded_rek = $this->_safe_base64_encode($simpanan_data->no_rekening);
             $redirect_url_final = site_url('penarikan/detail/' . $encoded_rek);
-            $pesan_sukses = 'Pencairan deposito berhasil diproses dan saldo telah diperbarui.';
+            $pesan_sukses = 'Pencairan deposito berhasil diproses. Saldo telah diperbarui.';
+            if (($saldo_saat_ini - $total_pengurangan) == 0) {
+                $pesan_sukses .= ' Status rekening kini nonaktif.';
+            }
             $msg = [
                 'success' => $pesan_sukses,
                 'redirect' => $redirect_url_final
