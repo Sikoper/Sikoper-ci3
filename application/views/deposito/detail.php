@@ -64,6 +64,12 @@
                     <button onclick="window.location='<?= base_url('deposito/laporan') . '?id=' . safe_base64_encode($deposito->no_rekening) . '&code=1' ?>'" class="btn btn-warning">
                         Cetak Laporan <i class="fa fa-file ms-2"></i>
                     </button>
+                    <a href="<?= base_url('deposito/print_sertifikat_depan/' . $deposito->id) ?>" target="_blank" class="btn btn-info">
+                        Cetak Sertifikat Depan <i class="fa fa-id-card ms-2"></i>
+                    </a>
+                    <a href="<?= base_url('deposito/print_sertifikat_belakang/' . $deposito->id) ?>" target="_blank" class="btn btn-secondary">
+                        Cetak Sertifikat Belakang <i class="fa fa-id-card ms-2"></i>
+                    </a>
                 </div>
             </div>
         </div>

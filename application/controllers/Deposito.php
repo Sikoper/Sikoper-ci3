@@ -705,4 +705,114 @@ class Deposito extends CI_Controller
         $filename = "laporan_" . $nasabah->nama_lengkap . "_" . $tabungan->no_rekening . ".pdf";
         $this->dompdf_lib->stream($filename, false);
     }
+
+    public function print_sertifikat_depan($id)
+    {
+        $this->cetak_sertifikat($id, 'depan');
+    }
+
+    public function print_sertifikat_belakang($id)
+    {
+        $this->cetak_sertifikat($id, 'belakang');
+    }
+
+private function cetak_sertifikat($id, $halaman)
+    {
+        try {
+            // 1. Ambil data mentah dari model
+            $sertifikat_data = $this->Deposito_model->get_detail_for_sertifikat($id);
+
+            if (!$sertifikat_data) {
+                show_error('Data sertifikat dengan ID ' . $id . ' tidak ditemukan.', 404);
+                return;
+            }
+
+            // 2. BUAT NOMOR SERTIFIKAT SESUAI FORMAT ANDA
+            $tanggal_depo = new DateTime($sertifikat_data->tanggal_deposito);
+            $bulan_romawi = $this->_bulan_romawi($tanggal_depo->format('n'));
+            $tahun = $tanggal_depo->format('Y');
+            $nomor_sertifikat_lengkap = $sertifikat_data->no_rekening . '/DEP/' . $bulan_romawi . '/' . $tahun;
+            
+            // 3. SIAPKAN SEMUA VARIABEL YANG DIBUTUHKAN OLEH VIEW SECARA EKSPLISIT
+            $data = [
+                'halaman_dicetak'       => $halaman,
+                'nomor_sertifikat'      => $nomor_sertifikat_lengkap, // Variabel baru
+                'nama_nasabah'          => $sertifikat_data->nama_nasabah,
+                'alamat_nasabah'        => $sertifikat_data->alamat_nasabah, // Kita gunakan satu variabel alamat
+                'jumlah_deposito'       => $sertifikat_data->jumlah_deposito,
+                'terbilang'             => ucwords($this->terbilang($sertifikat_data->jumlah_deposito)) . ' Rupiah',
+                'durasi'                => $sertifikat_data->durasi,
+                'tanggal_deposito'      => $sertifikat_data->tanggal_deposito,
+                'suku_bunga'            => '0,8', // Ganti jika dinamis
+                'nama_pimpinan'         => $sertifikat_data->nama_pimpinan,
+                'nama_bendahara'        => $sertifikat_data->nama_bendahara,
+                'nik_nasabah'           => $sertifikat_data->nik_nasabah,
+                'tempat_lahir'          => $sertifikat_data->tempat_lahir,
+                'tanggal_lahir'         => $sertifikat_data->tanggal_lahir,
+                'telp_nasabah'          => $sertifikat_data->telp_nasabah,
+            ];
+
+            // 4. Hitung tanggal jatuh tempo dengan aman
+            $tanggal_mulai = new DateTime($sertifikat_data->tanggal_deposito);
+            $tanggal_mulai->add(new DateInterval('P' . $sertifikat_data->durasi . 'M'));
+            $data['tanggal_jatuh_tempo'] = $tanggal_mulai->format('Y-m-d');
+
+            // 5. Load view template PDF dengan data yang sudah siap
+            $html = $this->load->view('deposito/cetak_sertifikat', $data, TRUE);
+
+            // 6. Generate PDF dengan Dompdf
+            $this->load->library('dompdf_lib');
+            $this->dompdf_lib->loadHtml($html);
+            $this->dompdf_lib->setPaper('A4', 'landscape');
+            $this->dompdf_lib->render();
+
+            $filename = "Sertifikat {$halaman} - " . $data['nama_nasabah'] . ".pdf";
+            $this->dompdf_lib->stream($filename, ['Attachment' => false]);
+
+        } catch (Throwable $e) {
+            echo '<h1>Terjadi Error Saat Membuat PDF</h1>';
+            echo '<p>Silakan copy-paste seluruh pesan di bawah ini.</p>';
+            echo '<pre>';
+            print_r($e);
+            echo '</pre>';
+        }
+    }
+
+    // TAMBAHKAN FUNGSI BARU INI di dalam controller Deposito.php Anda
+    private function _bulan_romawi($bulan) {
+        $romawi = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+        return $romawi[$bulan - 1];
+    }
+
+    private function terbilang($angka) {
+        $angka = abs($angka);
+        $baca = array('', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas');
+        $terbilang = '';
+
+        if ($angka < 12) {
+            $terbilang = ' ' . $baca[$angka];
+        } else if ($angka < 20) {
+            $terbilang = $this->terbilang($angka - 10) . ' belas';
+        } else if ($angka < 100) {
+            // Menggunakan intval() untuk memastikan hasil pembagian adalah integer
+            $terbilang = $this->terbilang(intval($angka / 10)) . ' puluh' . $this->terbilang($angka % 10);
+        } else if ($angka < 200) {
+            $terbilang = ' seratus' . $this->terbilang($angka - 100);
+        } else if ($angka < 1000) {
+            $terbilang = $this->terbilang(intval($angka / 100)) . ' ratus' . $this->terbilang($angka % 100);
+        } else if ($angka < 2000) {
+            $terbilang = ' seribu' . $this->terbilang($angka - 1000);
+        } else if ($angka < 1000000) {
+            $terbilang = $this->terbilang(intval($angka / 1000)) . ' ribu' . $this->terbilang($angka % 1000);
+        } else if ($angka < 1000000000) {
+            $terbilang = $this->terbilang(intval($angka / 1000000)) . ' juta' . $this->terbilang($angka % 1000000);
+        } else if ($angka < 1000000000000) {
+            $terbilang = $this->terbilang(intval($angka / 1000000000)) . ' milyar' . $this->terbilang($angka % 1000000000);
+        } else if ($angka < 1000000000000000) {
+            $terbilang = $this->terbilang(intval($angka / 1000000000000)) . ' triliun' . $this->terbilang($angka % 1000000000000);
+        }
+
+        return trim($terbilang);
+    }
+
 }

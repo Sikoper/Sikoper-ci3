@@ -108,4 +108,50 @@ class Deposito_model extends CI_Model
         $this->db->set('jumlah_deposito', 'jumlah_deposito - ' . (float)$jumlah, FALSE);
         return $this->db->update('tbdeposito');
     }
+
+public function get_nasabah_deposito()
+    {
+        $this->db->select('
+            tbnasabah.nama_lengkap, 
+            tbnasabah.nik,
+            tbdeposito.no_rekening, 
+            tbdeposito.jumlah_deposito, 
+            tbdeposito.tanggal_deposito
+        ');
+        $this->db->from('tbdeposito');
+        $this->db->join('tbnasabah', 'tbdeposito.nasabah_id = tbnasabah.id');
+        $this->db->order_by('tbnasabah.nama_lengkap', 'ASC');
+        
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function get_detail_for_sertifikat($id)
+    {
+        $this->db->select('
+            tbdeposito.*,
+            tbnasabah.nama_lengkap as nama_nasabah,
+            tbnasabah.nik as nik_nasabah,
+            tbnasabah.alamat as alamat_nasabah,
+            tbnasabah.telp as telp_nasabah,
+            tbnasabah.tempat_lahir,
+            tbnasabah.tanggal_lahir,
+            pegawai.nama_lengkap as nama_pegawai,
+            pimpinan.nama_lengkap as nama_pimpinan,
+            bendahara.nama_lengkap as nama_bendahara
+        ');
+        $this->db->from('tbdeposito');
+        $this->db->join('tbnasabah', 'tbdeposito.nasabah_id = tbnasabah.id', 'left');
+        $this->db->join('tbpegawai as pegawai', 'tbdeposito.pegawai_id = pegawai.id', 'left');
+        
+        // Asumsi untuk mendapatkan nama Pimpinan/Kepala dan Bendahara dari tabel pegawai
+        $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'Kepala'", 'left');
+        $this->db->join('tbpegawai as bendahara', "bendahara.jabatan = 'Bendahara'", 'left');
+
+        $this->db->where('tbdeposito.id', $id);
+        $this->db->limit(1); // Pastikan hanya satu baris yang diambil
+        
+        $query = $this->db->get();
+        return $query->row();
+    }
 }
