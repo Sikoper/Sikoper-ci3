@@ -1,5 +1,7 @@
 <div class="row">
     <?php
+    // DIKEMBALIKAN: Fungsi diletakkan kembali di view untuk perbaikan minimal
+    // Ini akan memperbaiki error "Call to undefined function"
     function safe_base64_encode($string)
     {
         return strtr(base64_encode($string), '+/=', '-_.');
@@ -34,9 +36,10 @@
                     </tr>
                     <tr>
                         <th>Total Penarikan Keseluruhan</th>
-                        <td id="totalPenarikanValue">: Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?>
+                        <td id="totalPenarikanValue">:
+                            <span id="akumulasi_penarikan">Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?></span>
                             <?php if ($total_akumulasi_denda > 0): ?>
-                                (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
+                                (Denda: <span id="akumulasi_denda">Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?></span>)
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -47,7 +50,7 @@
                     <?php if ($jenis->nama == 'Deposito'): ?>
                         <tr id="field-durasi-deposito">
                             <th>Durasi</th>
-                            <td>: <?= format_durasi($deposito->durasi) ?></td>
+                            <td>: <?= isset($deposito->durasi) ? format_durasi($deposito->durasi) : '-' ?></td>
                         </tr>
                         <?php if (!empty($deposito->nama_ahli_waris)): ?>
                             <tr id="field-ahli-waris">
@@ -59,17 +62,14 @@
                 </table>
                 <div class="d-flex justify-content-end gap-2">
                     <button onclick="printNasabah('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
-                        Cetak Nasabah <i class="fa fa-file ms-2"></i>
+                        Cetak Nasabah <i class="fa fa-user-circle ms-2"></i>
                     </button>
                     <button onclick="window.location='<?= base_url('deposito/laporan') . '?id=' . safe_base64_encode($deposito->no_rekening) . '&code=1' ?>'" class="btn btn-warning">
-                        Cetak Laporan <i class="fa fa-file ms-2"></i>
+                        Cetak Laporan <i class="fa fa-file-alt ms-2"></i>
                     </button>
-                    <a href="<?= base_url('deposito/print_sertifikat_depan/' . $deposito->id) ?>" target="_blank" class="btn btn-info">
-                        Cetak Sertifikat Depan <i class="fa fa-id-card ms-2"></i>
-                    </a>
-                    <a href="<?= base_url('deposito/print_sertifikat_belakang/' . $deposito->id) ?>" target="_blank" class="btn btn-secondary">
-                        Cetak Sertifikat Belakang <i class="fa fa-id-card ms-2"></i>
-                    </a>
+                    <button onclick="printSertifikat('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-info">
+                        Cetak Sertifikat <i class="fa fa-id-card ms-2"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -78,37 +78,25 @@
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fa fa-list"></i> Detail bunga</h5>
+                <h5 class="mb-0"><i class="fa fa-list"></i> Detail Bunga</h5>
             </div>
             <div class="card-body">
-                <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
-                    <div class="dataTable-container">
-                        <table class="table table-striped dataTable-table" id="tabel_bunga">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Tanggal bunga</th>
-                                    <th>Jumlah bunga</th>
-                                    <th>Presentase bunga</th>
-                                    <th>#</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="dataTable-bottom">
-                        <ul class="pagination pagination-primary float-end dataTable-pagination">
-
-                        </ul>
-                    </div>
-                </div>
+                <table class="table table-striped" id="tabel_bunga">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Tanggal Bunga</th>
+                            <th>Jumlah Bunga</th>
+                            <th>Presentase Bunga</th>
+                            <th>#</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- Detail Simpanan Table (Bottom) -->
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -116,192 +104,135 @@
                 <button class="btn btn-danger" onclick="window.location='<?= base_url('pencairan/') . '?id=' . safe_base64_encode($deposito->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
             </div>
             <div class="card-body">
-                <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
-                    <div class="dataTable-container">
-                        <table class="table table-bordered table-striped" id="tabel_penarikan">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>No</th>
-                                    <th>Tanggal</th>
-                                    <th>Jumlah Penarikan</th>
-                                    <th>Jumlah Denda</th>
-                                    <th>Pegawai</th>
-                                    <th>#</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="dataTable-bottom">
-                        <ul class="pagination pagination-primary float-end dataTable-pagination">
-
-                        </ul>
-                    </div>
-                </div>
+                <table class="table table-bordered table-striped" id="tabel_penarikan">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th>Tanggal</th>
+                            <th>Jumlah Penarikan</th>
+                            <th>Jumlah Denda</th>
+                            <th>Pegawai</th>
+                            <th>#</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     var noRekening = '<?= $deposito->no_rekening ?>';
     const userLevel = '<?= $this->session->userdata('level') ?>';
-    table = $('#tabel_bunga').DataTable({
-        responsive: true,
-        "destroy": true,
+    var depositoId = '<?= $deposito->id ?>';
+
+    // Inisialisasi Tabel Bunga
+    var tabel_bunga = $('#tabel_bunga').DataTable({
         "processing": true,
         "serverSide": true,
-        "order": [],
-        autoWidth: false,
-
         "ajax": {
             "url": "<?= site_url('bunga/fetchNasabahDepositoBunga') ?>",
             "type": "POST",
-            data: function(d) {
-                d.no_rekening = noRekening;
+            "data": {
+                "no_rekening": noRekening
             }
         },
-
-        language: {
-            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-            infoFiltered: ""
-        },
-
         "columns": [{
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string",
-            },
-            {
-                "type": "string"
-            },
-            {
+                "data": 0,
                 "orderable": false
-            }
-        ],
-
-        "columnDefs": [{
-                "targets": 0,
-                "orderable": false,
-                "width": "5%"
             },
             {
-                "targets": 4,
-                "visible": userLevel === 'Admin',
+                "data": 1
+            },
+            {
+                "data": 2
+            },
+            {
+                "data": 3
+            },
+            {
+                "data": 4,
                 "orderable": false,
-                "width": "15%"
+                "visible": userLevel === 'Admin'
             }
-        ],
+        ]
     });
 
-    var depositoId = '<?= $deposito->id ?>';
-
-    // FIX: Renamed variable from 'tabel_peanrikan' to 'tabel_penarikan'
-    var tabel_penarikan = $('#tabel_penarikan').DataTable({ // FIX: Corrected selector
-        "responsive": true,
-        "destroy": true,
+    // Inisialisasi Tabel Penarikan
+    var tabel_penarikan = $('#tabel_penarikan').DataTable({
         "processing": true,
         "serverSide": true,
         "order": [
-            [1, "desc"] // Sort by the second column (date) descending by default
+            [1, "desc"]
         ],
-        "autoWidth": false,
         "ajax": {
             "url": "<?= site_url('pencairan/fetch_detail_penarikan_by_deposito') ?>",
             "type": "POST",
-            "data": function(d) {
-                // Send the specific deposito_id with each AJAX request
-                d.deposito_id = depositoId;
+            "data": {
+                "deposito_id": depositoId
             },
-            dataSrc: function(json) {
-                // Update akumulasi display
-                $('#akumulasi_penarikan').text('Rp ' + parseFloat(json.akumulasi.jumlah_penarikan).toLocaleString('id-ID', {
-                    minimumFractionDigits: 2
-                }));
-                $('#akumulasi_denda').text('Rp ' + parseFloat(json.akumulasi.jumlah_denda).toLocaleString('id-ID', {
-                    minimumFractionDigits: 2
-                }));
+            "dataSrc": function(json) {
+                if (json.akumulasi) {
+                    $('#akumulasi_penarikan').text('Rp ' + parseFloat(json.akumulasi.jumlah_penarikan).toLocaleString('id-ID', {
+                        minimumFractionDigits: 2
+                    }));
+                    $('#akumulasi_denda').text('Rp ' + parseFloat(json.akumulasi.jumlah_denda).toLocaleString('id-ID', {
+                        minimumFractionDigits: 2
+                    }));
+                }
                 return json.data;
             }
         },
-        language: {
-            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-            infoFiltered: ""
-        },
         "columns": [{
-                "data": 0, // Corresponds to the first element in the server's data array (No.)
-                "className": "text-center",
-                "width": "5%",
+                "data": 0,
                 "orderable": false
             },
             {
-                "data": 1 // Corresponds to the second element (Tanggal)
+                "data": 1
             },
             {
-                "data": 2, // Corresponds to the third element (Total Penarikan)
+                "data": 2,
                 "className": "text-end"
             },
             {
-                "data": 3, // Corresponds to the fourth element (Jumlah Denda)
+                "data": 3,
                 "className": "text-end"
             },
             {
-                "data": 4 // Corresponds to the fifth element (Nama Pegawai)
+                "data": 4
             },
             {
-                "data": 5, // Corresponds to the sixth element (Actions)
+                "data": 5,
                 "orderable": false,
-                "visible": userLevel === 'Admin',
-                "className": "text-center",
-                "width": "10%"
+                "visible": userLevel === 'Admin'
             }
-        ],
+        ]
     });
 
     function deleteDetailPenarikan(id, jumlah) {
         Swal.fire({
-            title: "Hapus data penarikan ini?",
-            html: `Yakin ingin menghapus detail penarikan sejumlah:<br/> <strong>${jumlah}</strong>?`,
+            title: "Hapus Penarikan?",
+            html: `Yakin ingin menghapus data penarikan sejumlah <strong>${jumlah}</strong>?`,
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Ya, hapus!",
-            cancelButtonText: "Batal",
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Ya, Hapus!",
+            cancelButtonText: "Batal"
         }).then((result) => {
             if (result.isConfirmed) {
-                $.ajax({
-                    type: "POST",
-                    url: "<?= site_url('penarikan/hapus_detail_penarikan_ajax') ?>",
-                    data: {
-                        penarikan_id: id
-                    },
-                    dataType: "json",
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: "Berhasil!",
-                                text: response.success,
-                                icon: "success"
-                            }).then(() => {
-                                window.location.reload();
-                            });
-                        } else if (response.error) {
-                            Swal.fire("Gagal!", response.error, "error");
-                        } else {
-                            Swal.fire("Error!", "Terjadi kesalahan yang tidak diketahui.", "error");
-                        }
-                    },
-                    error: function(xhr, thrownError) {
-                        Swal.fire("Error AJAX!", "Terjadi kesalahan: " + xhr.status + " \n" + xhr.responseText + " \n" + thrownError, "error");
+                $.post("<?= site_url('penarikan/hapus_detail_penarikan_ajax') ?>", {
+                    penarikan_id: id
+                }, function(response) {
+                    if (response.success) {
+                        Swal.fire("Berhasil!", response.success, "success");
+                        tabel_penarikan.ajax.reload(null, false);
+                    } else {
+                        Swal.fire("Gagal!", response.error || "Terjadi kesalahan.", "error");
                     }
+                }, "json").fail(function() {
+                    Swal.fire("Error", "Tidak dapat terhubung ke server.", "error");
                 });
             }
         });
@@ -313,35 +244,23 @@
             html: `Yakin ingin menghapus bunga dari no. rekening: <strong>${nama}</strong>?`,
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes!",
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Ya, Hapus!",
+            cancelButtonText: "Batal",
         }).then((result) => {
             if (result.isConfirmed) {
-                $.ajax({
-                    type: "POST",
-                    url: "<?= base_url('bunga/delete') ?>",
-                    data: {
-                        id: id,
-                        tipe: tipe
-                    },
-                    dataType: "json",
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: "Success!",
-                                text: response.success,
-                                icon: "success"
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.reload();
-                                }
-                            });
-                        }
-                    },
-                    error: function(xhr, thrownError) {
-                        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                $.post("<?= base_url('bunga/delete') ?>", {
+                    id: id,
+                    tipe: tipe
+                }, function(response) {
+                    if (response.success) {
+                        Swal.fire("Berhasil!", response.success, "success");
+                        tabel_bunga.ajax.reload(null, false);
+                    } else {
+                        Swal.fire("Gagal!", response.error || "Terjadi kesalahan.", "error");
                     }
+                }, "json").fail(function() {
+                    Swal.fire("Error", "Tidak dapat terhubung ke server.", "error");
                 });
             }
         });
@@ -349,34 +268,32 @@
 
     function printNasabah(id, nama) {
         Swal.fire({
-            title: "Print data ini?",
-            html: `Yakin ingin print data dari <strong>${nama}</strong>?`,
+            title: "Cetak Data Nasabah?",
+            html: `Membuka tab baru untuk mencetak data <strong>${nama}</strong>.`,
             icon: "question",
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes!",
+            confirmButtonText: "Lanjutkan",
+            cancelButtonText: "Batal"
         }).then((result) => {
             if (result.isConfirmed) {
                 window.open("<?= base_url('deposito/print_nasabah?id=') ?>" + id, "_blank");
-                window.location.reload();
             }
         });
     }
 
-    function printLaporan(id, nama) {
+    function printSertifikat(id, nama) {
         Swal.fire({
-            title: "Print data ini?",
-            html: `Yakin ingin print data dari <strong>${nama}</strong>?`,
+            title: "Cetak Sertifikat?",
+            html: `Yakin ingin mencetak sertifikat untuk <strong>${nama}</strong>?`,
             icon: "question",
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes!",
+            confirmButtonColor: "#17a2b8", // Warna tombol info
+            confirmButtonText: "Ya, Cetak!",
+            cancelButtonText: "Batal"
         }).then((result) => {
             if (result.isConfirmed) {
-                window.open("<?= base_url('deposito/print_laporan?id=') ?>" + id, "_blank");
-                window.location.reload();
+                // Ini akan memanggil fungsi print_sertifikat($id) di controller Anda
+                window.open("<?= base_url('deposito/print_sertifikat/') ?>" + id, "_blank");
             }
         });
     }
