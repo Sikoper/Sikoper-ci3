@@ -73,12 +73,12 @@
                     </tr>
                 </table>
                 <div class="d-flex justify-content-end gap-2">
-                    <button onclick="printNasabah('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
+                    <!-- <button onclick="printNasabah('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
                         Cetak Nasabah <i class="fa fa-user-circle ms-2"></i>
                     </button>
                     <button onclick="window.location='<?= base_url('deposito/laporan') . '?id=' . safe_base64_encode($deposito->no_rekening) . '&code=1' ?>'" class="btn btn-warning">
                         Cetak Laporan <i class="fa fa-file-alt ms-2"></i>
-                    </button>
+                    </button> -->
                     <button onclick="printSertifikat('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-info">
                         Cetak Sertifikat <i class="fa fa-id-card ms-2"></i>
                     </button>

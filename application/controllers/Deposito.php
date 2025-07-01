@@ -66,7 +66,7 @@ class Deposito extends CI_Controller
                                 <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->no_rekening) . '\'">
                                     <i class="fa fa-info fa-fw"></i>
                                 </button>
-                                <button type="button" class="btn btn-primary" onclick="printNasabah(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
+                                <button type="button" class="btn btn-primary" onclick="printSertifikat(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
                                     <i class="fa fa-file"></i>
                                 </button>';
                 } else {
@@ -74,7 +74,7 @@ class Deposito extends CI_Controller
                             <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->no_rekening) . '\'">
                                 <i class="fa fa-info fa-fw"></i>
                             </button>
-                            <button type="button" class="btn btn-primary" onclick="printNasabah(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
+                            <button type="button" class="btn btn-primary" onclick="printSertifikat(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
                                 <i class="fa fa-file"></i>
                             </button>';
                 }
