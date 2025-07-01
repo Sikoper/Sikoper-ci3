@@ -23,7 +23,7 @@ class Tabungan extends CI_Controller
             return strtr(base64_encode($string), '+/=', '-_?');
         }
         $id = $this->input->post('id');
-        if ($this->input->is_ajax_request() == true) {
+        // if ($this->input->is_ajax_request() == true) {
             $list = $this->Tabungan_model->get_datatables($id);
             $data = array();
             $no = $_POST['start'];
@@ -50,9 +50,9 @@ class Tabungan extends CI_Controller
             );
 
             echo json_encode($output);
-        } else {
-            exit('Maaf data tidak bisa ditampilkan');
-        }
+        // } else {
+        //     exit('Maaf data tidak bisa ditampilkan');
+        // }
     }
 
     public function delete()
