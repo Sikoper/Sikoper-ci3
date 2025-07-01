@@ -59,6 +59,18 @@
                             </tr>
                         <?php endif ?>
                     <?php endif; ?>
+                    <tr>
+                        <th>Status</th>
+                        <td>:
+                            <?php if ($deposito->status === 'aktif'): ?>
+                                <span class="badge bg-success">Aktif</span>
+                            <?php elseif ($deposito->status === 'nonaktif'): ?>
+                                <span class="badge bg-danger">Nonaktif</span>
+                            <?php else: ?>
+                                <span class="badge bg-secondary"><?= htmlspecialchars($deposito->status) ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
                 </table>
                 <div class="d-flex justify-content-end gap-2">
                     <button onclick="printNasabah('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
@@ -81,7 +93,7 @@
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail Bunga</h5>
             </div>
             <div class="card-body">
-                <table class="table table-striped" id="tabel_bunga">
+                <table class="table table-bordered table-striped table-hover" id="tabel_bunga">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -130,32 +142,59 @@
 
     // Inisialisasi Tabel Bunga
     var tabel_bunga = $('#tabel_bunga').DataTable({
-        "processing": true,
-        "serverSide": true,
-        "ajax": {
-            "url": "<?= site_url('bunga/fetchNasabahDepositoBunga') ?>",
-            "type": "POST",
-            "data": {
-                "no_rekening": noRekening
+        processing: true,
+        serverSide: true,
+        responsive: true,
+        autoWidth: false, // Add this to prevent DataTables from overriding your widths
+        language: {
+            processing: "Memuat data...",
+            search: "Cari:",
+            lengthMenu: "Tampilkan _MENU_ data",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoEmpty: "Tidak ada data tersedia",
+            infoFiltered: "(difilter dari _MAX_ total data)",
+            paginate: {
+                next: "›",
+                previous: "‹"
+            },
+        },
+        ajax: {
+            url: "<?= site_url('bunga/fetchNasabahDepositoBunga') ?>",
+            type: "POST",
+            data: {
+                no_rekening: noRekening
             }
         },
-        "columns": [{
-                "data": 0,
-                "orderable": false
+        columns: [{
+                data: 0,
+                className: "text-center"
             },
             {
-                "data": 1
+                data: 1,
+                className: "text-center"
             },
             {
-                "data": 2
+                data: 2,
+                className: "text-end"
             },
             {
-                "data": 3
+                data: 3,
+                className: "text-end"
             },
             {
-                "data": 4,
-                "orderable": false,
-                "visible": userLevel === 'Admin'
+                data: 4,
+                className: "text-center",
+                visible: userLevel === 'Admin'
+            }
+        ],
+        columnDefs: [{
+                targets: 0,
+                orderable: false,
+                width: "5%",
+            },
+            {
+                targets: 4,
+                orderable: false,
             }
         ]
     });

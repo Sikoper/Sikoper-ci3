@@ -746,6 +746,9 @@ class Deposito extends CI_Controller
         $tahun = $tanggal_depo->format('Y');
         $nomor_sertifikat_lengkap = $sertifikat_data->no_rekening . '/DEP/' . $bulan_romawi . '/' . $tahun;
 
+        $durasi = $sertifikat_data->durasi;
+        $durasi_terbilang = $this->terbilang($durasi);
+
         $tanggal_mulai = new DateTime($sertifikat_data->tanggal_deposito);
         $tanggal_mulai->add(new DateInterval('P' . $sertifikat_data->durasi . 'M'));
         $tanggal_jatuh_tempo = $tanggal_mulai->format('Y-m-d');
@@ -756,10 +759,10 @@ class Deposito extends CI_Controller
             'alamat_nasabah'     => $sertifikat_data->alamat_nasabah ?? '',
             'jumlah_deposito'    => $sertifikat_data->jumlah_deposito ?? 0,
             'terbilang'          => ucwords($this->terbilang_rupiah($sertifikat_data->jumlah_deposito)),
-            'durasi'             => $sertifikat_data->durasi ?? 0,
+            'durasi'             => sprintf('%d (%s)', $durasi, $durasi_terbilang) ?? 0,
             'tanggal_deposito'   => $sertifikat_data->tanggal_deposito,
             'tanggal_jatuh_tempo' => $tanggal_jatuh_tempo,
-            'suku_bunga'         => $sertifikat_data->suku_bunga ?? 0,
+            'suku_bunga' => (float) ($sertifikat_data->suku_bunga ?? 0),
             'nama_pimpinan'      => $sertifikat_data->nama_pimpinan ?? 'N/A',
             'nama_bendahara'     => $sertifikat_data->nama_bendahara ?? 'N/A',
             'nik_nasabah'        => $sertifikat_data->nik_nasabah ?? '',
@@ -769,14 +772,18 @@ class Deposito extends CI_Controller
         ];
 
         $html = $this->load->view('deposito/cetak_sertifikat', $data, TRUE);
+
         $this->load->library('dompdf_lib');
         $this->dompdf_lib->loadHtml($html);
         $this->dompdf_lib->setPaper('A4', 'landscape');
         $this->dompdf_lib->render();
-        $filename = "Sertifikat - " . $data['nama_nasabah'] . ".pdf";
-        $this->dompdf_lib->stream($filename, ['Attachment' => false]);
-    }
 
+        $nomor_sertifikat_untuk_file = str_replace('/', '_', $data['nomor_sertifikat']);
+
+        $filename = "Sertifikat -" . $data['nama_nasabah'] . " - " . $nomor_sertifikat_untuk_file . ".pdf";
+
+        $this->dompdf_lib->stream($filename, false);
+    }
 
     // TAMBAHKAN FUNGSI BARU INI di dalam controller Deposito.php Anda
     private function _bulan_romawi($bulan)
@@ -788,33 +795,32 @@ class Deposito extends CI_Controller
     private function terbilang($angka)
     {
         $angka = intval(abs($angka));
-        $baca = array('', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas');
+        $baca = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
         $terbilang = '';
 
         if ($angka < 12) {
-            $terbilang = ' ' . $baca[$angka];
+            $terbilang = $baca[$angka];
         } else if ($angka < 20) {
-            $terbilang = $this->terbilang($angka - 10) . ' belas';
+            $terbilang = $baca[$angka - 10] . ' belas';
         } else if ($angka < 100) {
-            // Menggunakan intval() untuk memastikan hasil pembagian adalah integer
-            $terbilang = $this->terbilang(intval($angka / 10)) . ' puluh' . $this->terbilang($angka % 10);
+            $terbilang = $this->terbilang(intval($angka / 10)) . ' puluh ' . $this->terbilang($angka % 10);
         } else if ($angka < 200) {
-            $terbilang = ' seratus' . $this->terbilang($angka - 100);
+            $terbilang = 'seratus ' . $this->terbilang($angka - 100);
         } else if ($angka < 1000) {
-            $terbilang = $this->terbilang(intval($angka / 100)) . ' ratus' . $this->terbilang($angka % 100);
+            $terbilang = $this->terbilang(intval($angka / 100)) . ' ratus ' . $this->terbilang($angka % 100);
         } else if ($angka < 2000) {
-            $terbilang = ' seribu' . $this->terbilang($angka - 1000);
+            $terbilang = 'seribu ' . $this->terbilang($angka - 1000);
         } else if ($angka < 1000000) {
-            $terbilang = $this->terbilang(intval($angka / 1000)) . ' ribu' . $this->terbilang($angka % 1000);
+            $terbilang = $this->terbilang(intval($angka / 1000)) . ' ribu ' . $this->terbilang($angka % 1000);
         } else if ($angka < 1000000000) {
-            $terbilang = $this->terbilang(intval($angka / 1000000)) . ' juta' . $this->terbilang($angka % 1000000);
+            $terbilang = $this->terbilang(intval($angka / 1000000)) . ' juta ' . $this->terbilang($angka % 1000000);
         } else if ($angka < 1000000000000) {
-            $terbilang = $this->terbilang(intval($angka / 1000000000)) . ' milyar' . $this->terbilang($angka % 1000000000);
+            $terbilang = $this->terbilang(intval($angka / 1000000000)) . ' miliar ' . $this->terbilang($angka % 1000000000);
         } else if ($angka < 1000000000000000) {
-            $terbilang = $this->terbilang(intval($angka / 1000000000000)) . ' triliun' . $this->terbilang($angka % 1000000000000);
+            $terbilang = $this->terbilang(intval($angka / 1000000000000)) . ' triliun ' . $this->terbilang($angka % 1000000000000);
         }
 
-        return trim($terbilang);
+        return trim(preg_replace('/\s+/', ' ', $terbilang));
     }
 
     private function terbilang_rupiah($angka_float)
