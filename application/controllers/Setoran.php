@@ -51,13 +51,19 @@ class Setoran extends CI_Controller
             'isi'   => $this->load->view('setoran/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
-        //  $this->load->view('templates/main', $parser);
     }
 
     public function simpanData()
     {
         if ($this->input->is_ajax_request()) {
-            $tanggal_setoran = $this->input->post('tanggal_setoran');
+            // Set timezone ke Waktu Indonesia Tengah (WITA / UTC+8)
+            date_default_timezone_set('Asia/Makassar');
+
+            // Ambil tanggal dari form dan gabungkan dengan waktu saat ini
+            $tanggal_dari_form = $this->input->post('tanggal_setoran');
+            $waktu_sekarang = date('H:i:s'); // Mendapatkan waktu saat ini, misal: 09:42:00
+            $tanggal_setoran = $tanggal_dari_form . ' ' . $waktu_sekarang; // Menggabungkan menjadi format DATETIME
+
             $tabungan = $this->input->post('tabungan');
             $jumlah_setoran = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_setoran'));
             $pegawai_id = $this->input->post('pegawai_id');
@@ -95,32 +101,43 @@ class Setoran extends CI_Controller
                     ]
                 ];
             } else {
-
+                // Data yang akan dimasukkan ke database, sekarang dengan datetime lengkap
                 $data = [
                     'simpanan_id' => $tabungan,
-                    'tanggal_setoran' => $tanggal_setoran,
+                    'tanggal_setoran' => $tanggal_setoran, // Menggunakan variabel datetime yang sudah digabung
                     'jumlah_setoran' => $jumlah_setoran,
                     'pegawai_id' => $pegawai_id
                 ];
 
-                $data_simpanan = $this->Simpanan_model->get_data_by_id($tabungan);
-                function safe_base64_encode($string)
-                {
-                    return strtr(base64_encode($string), '+/=', '-_?');
+                // Perbaikan: Pastikan fungsi hanya dideklarasikan sekali
+                if (!function_exists('safe_base64_encode')) {
+                    function safe_base64_encode($string)
+                    {
+                        return strtr(base64_encode($string), '+/=', '-_?');
+                    }
                 }
 
-                $inserted = $this->Setoran_model->insert_data($data);
-                if ($inserted) {
-                    $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $this->db->escape($jumlah_setoran), false);
-                    $this->db->where('id', $tabungan);
-                    $this->db->update('tbsimpanan');
+                $this->db->trans_start(); // Mulai transaksi
 
+                // 1. Masukkan detail setoran
+                $this->Setoran_model->insert_data($data);
+
+                // 2. Update saldo di tabel utama
+                $sql = "UPDATE tbsimpanan SET jumlah_simpanan = jumlah_simpanan + ? WHERE id = ?";
+                $this->db->query($sql, array($jumlah_setoran, $tabungan));
+
+                $this->db->trans_complete(); // Selesaikan transaksi
+
+                if ($this->db->trans_status() === FALSE) {
+                    // Jika transaksi gagal, kirim pesan error
+                    $msg = ['error' => 'Gagal menyimpan data karena ada masalah pada database.'];
+                } else {
+                    // Jika transaksi berhasil
+                    $data_simpanan = $this->Simpanan_model->get_data_by_id($tabungan);
                     $msg = [
                         'success' => 'Data berhasil ditambahkan.',
                         'redirect' => base_url('simpanan/detail/') . safe_base64_encode($data_simpanan->no_rekening)
                     ];
-                } else {
-                    $msg = ['error' => 'Gagal menyimpan data.'];
                 }
             }
 

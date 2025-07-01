@@ -114,7 +114,8 @@ class Penarikan extends CI_Controller
 
     public function proses()
     {
-        $tanggal_penarikan_input = $this->input->post('tanggal_penarikan');
+        $waktu_sekarang = date('H:i:s');
+        $tanggal_penarikan_input = $this->input->post('tanggal_penarikan') . ' ' . $waktu_sekarang;
         $simpanan_id = $this->input->post('simpanan_id');
         $jumlah_penarikan_diminta = (float) str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_penarikan') ?? '');
         $pegawai_id = $this->input->post('pegawai_id');
