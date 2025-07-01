@@ -130,19 +130,19 @@
         });
     }
 
-    function printNasabah(id, nama) {
+    function printSertifikat(id, nama) {
         Swal.fire({
-            title: "Print data ini?",
-            html: `Yakin ingin print data dari <strong>${nama}</strong>?`,
+            title: "Cetak Sertifikat?",
+            html: `Yakin ingin mencetak sertifikat untuk <strong>${nama}</strong>?`,
             icon: "question",
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes!",
+            confirmButtonColor: "#17a2b8", // Warna tombol info
+            confirmButtonText: "Ya, Cetak!",
+            cancelButtonText: "Batal"
         }).then((result) => {
             if (result.isConfirmed) {
-                window.open("<?= base_url('deposito/print_nasabah?id=') ?>" + id, "_blank");
-                window.location.reload();
+                // Ini akan memanggil fungsi print_sertifikat($id) di controller Anda
+                window.open("<?= base_url('deposito/print_sertifikat/') ?>" + id, "_blank");
             }
         });
     }
