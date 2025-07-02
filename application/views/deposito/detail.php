@@ -1,7 +1,5 @@
 <div class="row">
     <?php
-    // DIKEMBALIKAN: Fungsi diletakkan kembali di view untuk perbaikan minimal
-    // Ini akan memperbaiki error "Call to undefined function"
     function safe_base64_encode($string)
     {
         return strtr(base64_encode($string), '+/=', '-_.');
@@ -73,12 +71,6 @@
                     </tr>
                 </table>
                 <div class="d-flex justify-content-end gap-2">
-                    <!-- <button onclick="printNasabah('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
-                        Cetak Nasabah <i class="fa fa-user-circle ms-2"></i>
-                    </button>
-                    <button onclick="window.location='<?= base_url('deposito/laporan') . '?id=' . safe_base64_encode($deposito->no_rekening) . '&code=1' ?>'" class="btn btn-warning">
-                        Cetak Laporan <i class="fa fa-file-alt ms-2"></i>
-                    </button> -->
                     <button onclick="printSertifikat('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-info">
                         Cetak Sertifikat <i class="fa fa-id-card ms-2"></i>
                     </button>
@@ -140,12 +132,11 @@
     const userLevel = '<?= $this->session->userdata('level') ?>';
     var depositoId = '<?= $deposito->id ?>';
 
-    // Inisialisasi Tabel Bunga
     var tabel_bunga = $('#tabel_bunga').DataTable({
         processing: true,
         serverSide: true,
         responsive: true,
-        autoWidth: false, // Add this to prevent DataTables from overriding your widths
+        autoWidth: false,
         language: {
             processing: "Memuat data...",
             search: "Cari:",
@@ -199,7 +190,6 @@
         ]
     });
 
-    // Inisialisasi Tabel Penarikan
     var tabel_penarikan = $('#tabel_penarikan').DataTable({
         "processing": true,
         "serverSide": true,
@@ -258,7 +248,10 @@
             showCancelButton: true,
             confirmButtonColor: "#d33",
             confirmButtonText: "Ya, Hapus!",
-            cancelButtonText: "Batal"
+            cancelButtonText: "Batal",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 $.post("<?= site_url('penarikan/hapus_detail_penarikan_ajax') ?>", {
@@ -286,6 +279,9 @@
             confirmButtonColor: "#d33",
             confirmButtonText: "Ya, Hapus!",
             cancelButtonText: "Batal",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 $.post("<?= base_url('bunga/delete') ?>", {
@@ -312,7 +308,10 @@
             icon: "question",
             showCancelButton: true,
             confirmButtonText: "Lanjutkan",
-            cancelButtonText: "Batal"
+            cancelButtonText: "Batal",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 window.open("<?= base_url('deposito/print_nasabah?id=') ?>" + id, "_blank");
@@ -326,12 +325,14 @@
             html: `Yakin ingin mencetak sertifikat untuk <strong>${nama}</strong>?`,
             icon: "question",
             showCancelButton: true,
-            confirmButtonColor: "#17a2b8", // Warna tombol info
+            confirmButtonColor: "#17a2b8",
             confirmButtonText: "Ya, Cetak!",
-            cancelButtonText: "Batal"
+            cancelButtonText: "Batal",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
-                // Ini akan memanggil fungsi print_sertifikat($id) di controller Anda
                 window.open("<?= base_url('deposito/print_sertifikat/') ?>" + id, "_blank");
             }
         });

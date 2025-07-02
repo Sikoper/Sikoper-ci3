@@ -66,7 +66,6 @@
         const today = new Date();
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-        // Format to yyyy-mm-dd
         const formatDate = (date) => {
             let m = String(date.getMonth() + 1).padStart(2, '0');
             let d = String(date.getDate()).padStart(2, '0');
@@ -102,8 +101,7 @@
                 "type": "string"
             }
         ];
-
-        // Add admin-only column
+        
         if (userLevel === 'Admin') {
             columns.push({
                 "orderable": false
@@ -122,7 +120,6 @@
             }
         ];
 
-        // Add a columnDef for the last column if admin
         if (userLevel === 'admin') {
             columnDefs.push({
                 "targets": 7,
@@ -171,6 +168,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({

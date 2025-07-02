@@ -31,7 +31,6 @@
             page-break-after: always;
         }
 
-        /* Header / KOP */
         .kop {
             text-align: center;
             line-height: 1.3;
@@ -53,7 +52,6 @@
             margin: 0;
         }
 
-        /* Nomor seri */
         .nomor-seri {
             position: absolute;
             top: 20px;
@@ -61,7 +59,6 @@
             font-size: 11pt;
         }
 
-        /* Main content table */
         .isi-utama {
             margin-top: 0.6cm;
         }
@@ -86,7 +83,6 @@
             line-height: 1.4;
         }
 
-        /* Tanda tangan section */
         .tanda-tangan-area {
             margin-top: 0px;
             font-size: 9pt;
@@ -105,7 +101,6 @@
             margin-top: 20px;
         }
 
-        /* Ketentuan */
         .ketentuan ol {
             padding-left: 18px;
             margin: 0;
@@ -117,7 +112,6 @@
             margin-bottom: 3px;
         }
 
-        /* Surat pernyataan */
         .surat-pernyataan-box {
             border: 1px solid #555;
             padding: 5px;
@@ -136,7 +130,6 @@
             margin-bottom: 5px;
         }
 
-        /* Tanda tangan nasabah */
         .tanda-tangan-nasabah {
             width: 250px;
             margin-left: auto;
@@ -155,7 +148,6 @@
             font-size: 6pt;
         }
 
-        /* Tabel bunga */
         .tabel-bunga {
             width: 100%;
             font-size: 8pt;

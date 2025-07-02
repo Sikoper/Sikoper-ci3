@@ -155,7 +155,7 @@
                             $badge_class = 'badge-tarik';
                         } elseif (strpos($t->keterangan, 'Bunga') !== false) {
                             $jenis = 'Bunga';
-                            $badge_class = 'badge-bunga'; // class CSS sudah Anda definisikan
+                            $badge_class = 'badge-bunga';
                         }
                         $jumlah = ($t->kredit > 0) ? $t->kredit : $t->debit;
                 ?>
