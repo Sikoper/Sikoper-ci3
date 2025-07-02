@@ -55,12 +55,12 @@
                         </li>
 
                         <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga', 'pencairan']) ? 'active' : '' ?>">
+                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga', 'pencairan', 'bunga_deposito']) ? 'active' : '' ?>">
                                 <a href="#" class='sidebar-link'>
                                     <i class="bi bi-cash-stack"></i>
                                     <span>Transaksi</span>
                                 </a>
-                                <ul class="submenu <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga', 'pencairan']) ? 'active' : '' ?>">
+                                <ul class="submenu <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga', 'pencairan', 'bunga_deposito']) ? 'active' : '' ?>">
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'setoran' ? 'active' : '' ?>">
                                         <a href="<?= base_url('setoran') ?>">Setoran Tunai</a>
                                     </li>
@@ -71,7 +71,10 @@
                                         <a href="<?= base_url('pencairan') ?>">Pencairan Deposito</a>
                                     </li>
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'bunga' ? 'active' : '' ?>">
-                                        <a href="<?= base_url('bunga') ?>">Proses Bunga</a>
+                                        <a href="<?= base_url('bunga') ?>">Bunga Tabungan</a>
+                                    </li>
+                                    <li class="submenu-item <?= $this->uri->segment(1) == 'bunga_deposito' ? 'active' : '' ?>">
+                                        <a href="<?= base_url('bunga_deposito') ?>">Bunga Deposito</a>
                                     </li>
                                 </ul>
                             </li>

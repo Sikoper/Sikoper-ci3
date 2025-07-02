@@ -152,7 +152,9 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail bunga</h5>
-
+                <div class="text-end mb-3">
+                    <strong>Total Bunga:</strong> <span id="total_bunga">Rp 0</span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
@@ -253,6 +255,10 @@
             "type": "POST",
             data: function(d) {
                 d.no_rekening = noRekening;
+            },
+            dataSrc: function(json) {
+                $('#total_bunga').text('Rp ' + json.total_bunga);
+                return json.data;
             }
         },
 

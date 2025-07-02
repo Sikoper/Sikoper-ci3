@@ -91,6 +91,9 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail Bunga</h5>
+                <div class="text-end mb-3">
+                    <strong>Total Bunga:</strong> <span id="total_bunga">Rp 0</span>
+                </div>
             </div>
             <div class="card-body">
                 <table class="table table-bordered table-striped table-hover" id="tabel_bunga">
@@ -145,7 +148,7 @@
         processing: true,
         serverSide: true,
         responsive: true,
-        autoWidth: false, // Add this to prevent DataTables from overriding your widths
+        autoWidth: false,
         language: {
             processing: "Memuat data...",
             search: "Cari:",
@@ -159,10 +162,14 @@
             },
         },
         ajax: {
-            url: "<?= site_url('bunga/fetchNasabahDepositoBunga') ?>",
+            url: "<?= site_url('bunga_deposito/fetchNasabahDepositoBunga') ?>",
             type: "POST",
             data: {
                 no_rekening: noRekening
+            },
+            dataSrc: function(json) {
+                $('#total_bunga').text('Rp ' + json.total_bunga);
+                return json.data;
             }
         },
         columns: [{

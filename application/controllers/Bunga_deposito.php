@@ -1,14 +1,14 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Bunga extends CI_Controller
+class Bunga_deposito extends CI_Controller
 {
     public function __construct()
     {
         parent::__construct();
         $this->load->model('Simpanan_model');
         $this->load->model('Deposito_model');
-        $this->load->model('Bunga_model');
+        $this->load->model('Bunga_deposito_model');
         $this->load->model('Nasabah_bunga_model');
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
@@ -33,20 +33,20 @@ class Bunga extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "Daftar Bunga Tabungan",
-            'isi'   => $this->load->view('bunga/index', $data, TRUE)
+            'judul' => "Daftar Bunga Deposito",
+            'isi'   => $this->load->view('bunga-deposito/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
 
-    public function fetchBungaTabungan()
+    public function fetchBungaDeposito()
     {
         $start = $this->input->post('start_date');
         $end = $this->input->post('end_date');
 
         $level = $this->session->userdata('level');
 
-        $list = $this->Bunga_model->get_datatables($start, $end);
+        $list = $this->Bunga_deposito_model->get_datatables($start, $end);
         $data = [];
         $no = isset($_POST['start']) ? $_POST['start'] : 0;
 
@@ -70,26 +70,26 @@ class Bunga extends CI_Controller
         }
 
         // 🔥 Get full-month total bunga regardless of page
-        $total_bunga = $this->Bunga_model->get_total_bunga_filtered($start, $end);
+        $total_bunga = $this->Bunga_deposito_model->get_total_bunga_filtered($start, $end);
 
         $output = [
             "draw" => isset($_POST['draw']) ? $_POST['draw'] : 1,
-            "recordsTotal" => $this->Bunga_model->count_all(),
-            "recordsFiltered" => $this->Bunga_model->count_filtered($start, $end),
+            "recordsTotal" => $this->Bunga_deposito_model->count_all(),
+            "recordsFiltered" => $this->Bunga_deposito_model->count_filtered($start, $end),
             "data" => $data,
             "total_bunga" => number_format($total_bunga, 0, ',', '.')
         ];
         echo json_encode($output);
     }
 
-    public function fetchNasabahTabunganBunga()
+    public function fetchNasabahDepositoBunga()
     {
-        // if (!$this->input->is_ajax_request()) {
-        //     exit('Maaf data tidak bisa ditampilkan');
-        // }
+        if (!$this->input->is_ajax_request()) {
+            exit('Maaf data tidak bisa ditampilkan');
+        }
 
         $no_rekening = $this->input->post('no_rekening');
-        $list = $this->Nasabah_bunga_model->get_datatables($no_rekening, 'Simpanan');
+        $list = $this->Nasabah_bunga_model->get_datatables($no_rekening, 'Deposito');
         $data = array();
         $no = $_POST['start'];
 
@@ -100,17 +100,17 @@ class Bunga extends CI_Controller
             $row[] = $field->tanggal_transaksi;
             $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
             $row[] = ((float)$field->rate_bunga) . " %";
-            $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+            $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
 
             $data[] = $row;
         }
 
-        $total_bunga = $this->Nasabah_bunga_model->get_total_bunga_by_rekening($no_rekening, 'Simpanan');
+        $total_bunga = $this->Nasabah_bunga_model->get_total_bunga_by_rekening($no_rekening, 'Deposito');
 
         $output = array(
             "draw" => $_POST['draw'],
-            "recordsTotal" => $this->Nasabah_bunga_model->count_all('Simpanan'),
-            "recordsFiltered" => $this->Nasabah_bunga_model->count_filtered($no_rekening, 'Simpanan'),
+            "recordsTotal" => $this->Nasabah_bunga_model->count_all('Deposito'),
+            "recordsFiltered" => $this->Nasabah_bunga_model->count_filtered($no_rekening, 'Deposito'),
             "data" => $data,
             "total_bunga" => number_format($total_bunga, 2, ',', '.')
         );
@@ -123,51 +123,56 @@ class Bunga extends CI_Controller
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
 
-            // Get the transaksi bunga simpanan
-            $transaksi = $this->Bunga_model->get_data_by_id($id);
+            // Get the bunga deposito transaction
+            $transaksi = $this->Bunga_deposito_model->get_data_by_id($id);
 
             if (!$transaksi) {
                 echo json_encode(['error' => 'Transaksi tidak ditemukan.']);
                 return;
             }
 
-            // Get related simpanan
-            $simpanan = $this->Simpanan_model->get_data_by_id($transaksi->simpanan_id);
+            // Get related deposito record
+            $deposito = $this->Deposito_model->get_data_by_id($transaksi->deposito_id);
 
-            if (!$simpanan) {
-                echo json_encode(['error' => 'Data simpanan tidak ditemukan.']);
+            if (!$deposito) {
+                echo json_encode(['error' => 'Data deposito tidak ditemukan.']);
                 return;
             }
 
-            // Recalculate total simpanan
-            $selisih = $simpanan->jumlah_simpanan - $transaksi->jumlah_transaksi;
+            // Recalculate saldo
+            $selisih = $deposito->jumlah_deposito - $transaksi->jumlah_transaksi;
 
-            // Delete transaksi
-            $delete = $this->Bunga_model->delete_data($id);
+            // Delete bunga deposito
+            $delete = $this->Bunga_deposito_model->delete_data($id);
             if ($delete) {
-                // Update jumlah simpanan
-                $this->Simpanan_model->edit_data($transaksi->simpanan_id, [
-                    'jumlah_simpanan' => $selisih
+                // Update saldo deposito
+                $this->Deposito_model->edit_data($transaksi->deposito_id, [
+                    'jumlah_deposito' => $selisih
                 ]);
-                echo json_encode(['success' => 'Bunga tabungan berhasil dihapus.']);
+
+                echo json_encode(['success' => 'Bunga deposito berhasil dihapus.']);
             } else {
-                echo json_encode(['error' => 'Gagal menghapus bunga tabungan.']);
+                echo json_encode(['error' => 'Gagal menghapus bunga deposito.']);
             }
         }
     }
 
-    public function run_bunga()
+    public function run_bunga_deposito()
     {
         if (!$this->input->is_ajax_request()) {
             redirect('unauthorized_403');
         }
 
-        $processed = $this->Bunga_model->checkAndRunBunga();
-
-        if ($processed) {
-            $msg = ['success' => 'Bunga tabungan berhasil dihitung'];
+        if ($this->Bunga_deposito_model->is_bunga_deposito_done_today()) {
+            $msg = ['error' => 'Semua bunga deposito sudah diproses hari ini.'];
         } else {
-            $msg = ['error' => 'Bunga tabungan sudah diperbarui bulan ini.'];
+            $processed = $this->Bunga_deposito_model->bunga_proses_deposito();
+
+            if ($processed) {
+                $msg = ['success' => 'Bunga deposito berhasil dihitung dan disimpan.'];
+            } else {
+                $msg = ['empty' => 'Tidak ada bunga deposito yang valid untuk diproses hari ini.'];
+            }
         }
 
         header('Content-Type: application/json');

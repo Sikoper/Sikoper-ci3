@@ -1,24 +1,24 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Bunga_model extends CI_Model
+class Bunga_deposito_model extends CI_Model
 {
-    var $table = 'tbtransaksi';
+    var $table = 'tbtransaksi_deposito';
     var $column_order = array(null, 'nama_lengkap', 'no_rekening', 'tanggal_transaksi', 'jumlah_transaksi', 'rate_bunga', null);
-    var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbtransaksi.tanggal_transaksi');
+    var $column_search = array('tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbtransaksi_deposito.tanggal_transaksi');
     var $order = array('created_at' => 'ASC');
 
     private function _get_datatables_query($start_date = null, $end_date = null)
     {
-        $this->db->select('tbtransaksi.*, tbnasabah.nama_lengkap, tbsimpanan.no_rekening');
+        $this->db->select('tbtransaksi_deposito.*, tbnasabah.nama_lengkap, tbdeposito.no_rekening');
         $this->db->from($this->table);
-        $this->db->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id');
-        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
+        $this->db->join('tbdeposito', 'tbdeposito.id = tbtransaksi_deposito.deposito_id');
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
 
         // filter tanggal
         if (!empty($start_date) && !empty($end_date)) {
-            $this->db->where('DATE(tbtransaksi.tanggal_transaksi) >=', $start_date);
-            $this->db->where('DATE(tbtransaksi.tanggal_transaksi) <=', $end_date);
+            $this->db->where('DATE(tbtransaksi_deposito.tanggal_transaksi) >=', $start_date);
+            $this->db->where('DATE(tbtransaksi_deposito.tanggal_transaksi) <=', $end_date);
         }
 
         // search
@@ -73,12 +73,12 @@ class Bunga_model extends CI_Model
     {
         $this->db->select_sum('jumlah_transaksi');
         $this->db->from($this->table);
-        $this->db->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id');
-        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
+        $this->db->join('tbdeposito', 'tbdeposito.id = tbtransaksi_deposito.deposito_id');
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
 
         if (!empty($start_date) && !empty($end_date)) {
-            $this->db->where('DATE(tbtransaksi.tanggal_transaksi) >=', $start_date);
-            $this->db->where('DATE(tbtransaksi.tanggal_transaksi) <=', $end_date);
+            $this->db->where('DATE(tbtransaksi_deposito.tanggal_transaksi) >=', $start_date);
+            $this->db->where('DATE(tbtransaksi_deposito.tanggal_transaksi) <=', $end_date);
         }
 
         $query = $this->db->get()->row();
@@ -112,11 +112,11 @@ class Bunga_model extends CI_Model
         $today = date('Y-m-d');
         $lastMonth = date('Y-m-d', strtotime('-1 month'));
 
-        $this->db->select('tbsimpanan.id, tbsimpanan.nasabah_id, tbsimpanan.jumlah_simpanan, tbsimpanan.tanggal_simpanan, tbjenistabungan.bunga as bunga');
-        $this->db->from('tbsimpanan');
-        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');
-        $this->db->where('tbsimpanan.tanggal_simpanan <=', $lastMonth);
-        $this->db->where('tbsimpanan.status', 'aktif');
+        $this->db->select('tbdeposito.id, tbdeposito.nasabah_id, tbdeposito.jumlah_simpanan, tbdeposito.tanggal_simpanan, tbjenistabungan.bunga as bunga');
+        $this->db->from('tbdeposito');
+        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
+        $this->db->where('tbdeposito.tanggal_simpanan <=', $lastMonth);
+        $this->db->where('tbdeposito.status', 'aktif');
         $this->db->where('tbjenistabungan.bunga >', '0');
         $simpananList = $this->db->get()->result();
 
@@ -133,10 +133,10 @@ class Bunga_model extends CI_Model
 
             // Check if bunga already processed this month
             $alreadyGiven = $this->db
-                ->where('simpanan_id', $simpanan->id)
+                ->where('deposito_id', $simpanan->id)
                 ->where('MONTH(tanggal_transaksi)', date('m'))
                 ->where('YEAR(tanggal_transaksi)', date('Y'))
-                ->get('tbtransaksi')
+                ->get('tbtransaksi_deposito')
                 ->num_rows();
 
             if ($alreadyGiven > 0) {
@@ -144,8 +144,8 @@ class Bunga_model extends CI_Model
             }
 
             // Insert bunga transaction
-            $this->db->insert('tbtransaksi', [
-                'simpanan_id'       => $simpanan->id,
+            $this->db->insert('tbtransaksi_deposito', [
+                'deposito_id'       => $simpanan->id,
                 'tanggal_transaksi' => $today,
                 'jumlah_transaksi'  => $bungaAmount,
                 'rate_bunga'        => $bungaRate
@@ -154,10 +154,9 @@ class Bunga_model extends CI_Model
             // Update saldo
             $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaAmount, false);
             $this->db->where('id', $simpanan->id);
-            $this->db->update('tbsimpanan');
+            $this->db->update('tbdeposito');
         }
     }
-
 
     public function bunga_proses_deposito()
     {
@@ -195,7 +194,7 @@ class Bunga_model extends CI_Model
             $bungaAmountRaw = ($bungaRate / 100) * $saldo;
             $bungaAmount = round($bungaAmountRaw / 100) * 100;
 
-            $this->db->insert('tbtransaksi_deposito', [
+            $this->db->insert('tbtransaksi_deposito_deposito', [
                 'deposito_id' => $deposito->id,
                 'tanggal_transaksi' => $today,
                 'jumlah_transaksi' => $bungaAmount,
@@ -243,15 +242,16 @@ class Bunga_model extends CI_Model
     public function get_data_by_id($id)
     {
         return $this->db
-            ->select('id, simpanan_id, jumlah_transaksi, rate_bunga')
-            ->from('tbtransaksi')
+            ->select('id, deposito_id, jumlah_transaksi, rate_bunga')
+            ->from('tbtransaksi_deposito')
             ->where('id', $id)
             ->get()
             ->row();
     }
+
     public function delete_data($id)
     {
-        return $this->db->delete('tbtransaksi', ['id' => $id]);
+        return $this->db->delete('tbtransaksi_deposito', ['id' => $id]);
     }
 
     function round_to_nearest_hundred($value)
