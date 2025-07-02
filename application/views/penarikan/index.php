@@ -54,46 +54,6 @@
                         <input type="hidden" name="simpanan_id" value="<?= $tabungan->id ?>">
                     <?php endif; ?>
 
-                    <!-- <div id="jenis_tabungan" style="display: none;">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="durasi">Durasi</label>
-                                    <input type="text" class="form-control" id="durasi" name="durasi" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="tenor">Tenor</label>
-                                    <input type="text" class="form-control" id="tenor" name="tenor" readonly>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="jenis_denda">Jenis denda</label>
-                                    <input type="text" class="form-control" id="jenis_denda" name="jenis_denda" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="jumlah_denda">Denda</label>
-                                    <input type="text" class="form-control" id="jumlah_denda" name="jumlah_denda" readonly>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="denda">Jumlah Denda</label>
-                            <div class="input-group">
-                                <span class="input-group-text">Rp</span>
-                                <input type="text" class="form-control" id="denda" name="denda" readonly>
-                            </div>
-                        </div>
-                    </div> -->
-
                     <div class="form-group">
                         <label for="saldo">Saldo</label>
                         <div class="input-group">
@@ -180,9 +140,6 @@
         const perkiraanSisaSaldoAN = new AutoNumeric('#perkiraan_sisa_saldo_display', autoNumericV4OptionsRp);
         perkiraanSisaSaldoAN.set(0);
 
-        // const dendaRpAN = new AutoNumeric('#denda', autoNumericV4OptionsRp);
-        // dendaRpAN.set(0);
-
         const totalDitarikAN = new AutoNumeric('#total_yang_ditarik_display', autoNumericV4OptionsRp);
         totalDitarikAN.set(0);
 
@@ -192,7 +149,6 @@
             if (jumlahPenarikanStr && typeof jumlahPenarikanStr === 'string') {
                 jumlahPenarikanVal = parseFloat(jumlahPenarikanStr.replace(/\./g, '').replace(',', '.')) || 0;
             }
-            // const jumlahDendaVal = dendaRpAN.getNumber() || 0;
             const totalAkanDitarik = jumlahPenarikanVal;
             totalDitarikAN.set(totalAkanDitarik);
 
@@ -217,7 +173,6 @@
             const noRekeningText = $('#rekening option:selected').text() || 'Rekening belum dipilih';
             const saldoSaatIniNum = saldoAN.getNumber() || 0;
             const jumlahPenarikanNum = parseFloat($('#jumlah_penarikan').autoNumeric('get').replace(/\./g, '').replace(',', '.')) || 0;
-            // const jumlahDendaNum = dendaRpAN.getNumber() || 0;
             const totalAkanDitarikNum = jumlahPenarikanNum;
             const perkiraanSisaSaldoNum = saldoSaatIniNum - totalAkanDitarikNum;
             const formatRp = (num) => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
@@ -439,10 +394,8 @@
                             alert(response.error);
                             saldoAN.set(0);
                             $('#tenor').val('');
-                            // $('#durasi').val('');
                             $('#jumlah_denda').val('');
                             $('#jenis_denda').val('');
-                            // dendaRpAN.set(0);
                             $('#jenis_tabungan').hide();
                             $('#jumlah_penarikan').autoNumeric('set', '');
                             updateTotalYangAkanDitarik();
@@ -451,10 +404,8 @@
 
                         saldoAN.set(response.saldo);
                         $('#tenor').val(response.tenor);
-                        // $('#durasi').val(response.durasi + ' Bulan');
                         $('#jumlah_denda').val(response.jumlah_denda);
                         $('#jenis_denda').val(response.jenis_denda);
-                        // dendaRpAN.set(response.calculated_penalty_rp);
 
                         if (response.kategori && response.kategori.nama === 'Deposito') {
                             $('#jenis_tabungan').show();
@@ -466,7 +417,10 @@
                                         `Perkiraan denda jika ditarik hari ini: <b>Rp ${new Intl.NumberFormat('id-ID').format(response.calculated_penalty_rp)}</b>.<br><br>` +
                                         `Pastikan nasabah telah memahami ketentuan ini sebelum melanjutkan proses penarikan.`,
                                     icon: 'warning',
-                                    confirmButtonText: 'Saya Mengerti'
+                                    confirmButtonText: 'Saya Mengerti',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    allowEnterKey: false,
                                 });
                             }
 
@@ -480,10 +434,8 @@
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                         saldoAN.set(0);
                         $('#tenor').val('');
-                        // $('#durasi').val('');
                         $('#jumlah_denda').val('');
                         $('#jenis_denda').val('');
-                        // dendaRpAN.set(0);
                         $('#jenis_tabungan').hide();
                         $('#jumlah_penarikan').autoNumeric('set', '');
                         updateTotalYangAkanDitarik();
@@ -492,10 +444,8 @@
             } else {
                 saldoAN.set(0);
                 $('#tenor').val('');
-                // $('#durasi').val('');
                 $('#jumlah_denda').val('');
                 $('#jenis_denda').val('');
-                // dendaRpAN.set(0);
                 $('#jenis_tabungan').hide();
                 $('#jumlah_penarikan').autoNumeric('set', '');
                 updateTotalYangAkanDitarik();

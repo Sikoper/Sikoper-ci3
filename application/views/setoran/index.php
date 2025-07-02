@@ -291,6 +291,9 @@
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            allowEnterKey: false,
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {

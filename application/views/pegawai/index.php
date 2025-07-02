@@ -2,9 +2,9 @@
     <div class="card-header">
         <h4 class="card-title">
             <?php if ($this->session->userdata('level') != 'Direktur') : ?>
-            <button class="btn btn-primary" onclick="window.location='<?= base_url('pegawai/add') ?>'">
-                <i class="fa fa-plus-circle"></i> Tambah Data
-            </button>
+                <button class="btn btn-primary" onclick="window.location='<?= base_url('pegawai/add') ?>'">
+                    <i class="fa fa-plus-circle"></i> Tambah Data
+                </button>
             <?php endif; ?>
         </h4>
     </div>
@@ -91,6 +91,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -105,6 +108,9 @@
                             Swal.fire({
                                 title: "Success!",
                                 text: response.success,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                allowEnterKey: false,
                                 icon: "success"
                             }).then((result) => {
                                 if (result.isConfirmed) {

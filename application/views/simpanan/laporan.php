@@ -24,7 +24,6 @@
                 <div class="form-group mb-3" style="height: 80px;">
                     <label for="tanggal_mulai">Tanggal mulai transaksi</label>
                     <div class="input-group">
-                        <!-- FIX: Added default value for the start of the current month -->
                         <input type="date" id="tanggal_mulai" name="tanggal_mulai" class="form-control" value="<?= date('Y-m-01') ?>">
                     </div>
                 </div>
@@ -33,7 +32,6 @@
                 <div class="form-group mb-3" style="height: 80px;">
                     <label for="tanggal_akhir">Tanggal akhir transaksi</label>
                     <div class="input-group">
-                        <!-- FIX: Added default value for the end of the current month -->
                         <input type="date" id="tanggal_akhir" name="tanggal_akhir" class="form-control" value="<?= date('Y-m-t') ?>">
                     </div>
                 </div>
@@ -63,8 +61,6 @@
     $(document).ready(function() {
         $('#form_laporan').submit(function(e) {
             e.preventDefault();
-
-            // Confirm dialog
             Swal.fire({
                 title: "Cetak data?",
                 text: `Yakin ingin cetak data dari <?= $simpanan->no_rekening ?>`,
@@ -74,15 +70,13 @@
                 cancelButtonColor: "#d33",
                 confirmButtonText: "Ya!",
                 cancelButtonText: "Tidak",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                allowEnterKey: false,
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Get form data as query params
                     const formData = $(this).serialize();
-
-                    // Build the URL to open in a new tab with query params
                     const url = "<?= base_url('simpanan/print_laporan') ?>" + "?" + formData;
-
-                    // Open in new tab
                     window.open(url, '_blank');
                 }
             });

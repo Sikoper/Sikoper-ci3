@@ -16,7 +16,7 @@
                         <label for="pegawai">Pilih Pegawai</label>
                         <div class="d-flex align-items-center">
                             <select id="pegawai" class="form-control select2" name="pegawai" style="width: auto; flex: 1;"></select>
-                            <button type="button" onclick="window.location='<?= base_url('pegawai/add' ) . '?code=1' ?>'" class="btn btn-primary ml-2">
+                            <button type="button" onclick="window.location='<?= base_url('pegawai/add') . '?code=1' ?>'" class="btn btn-primary ml-2">
                                 <i class="fa fa-circle-plus"></i>
                             </button>
                         </div>
@@ -131,6 +131,9 @@
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            allowEnterKey: false,
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {

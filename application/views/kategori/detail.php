@@ -87,6 +87,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -104,7 +107,7 @@
                                 icon: "success"
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    window.location='<?= base_url('jenis_tabungan') ?>';
+                                    window.location = '<?= base_url('jenis_tabungan') ?>';
                                 }
                             });
                         } else {

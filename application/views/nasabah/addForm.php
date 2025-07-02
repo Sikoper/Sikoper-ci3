@@ -286,6 +286,9 @@
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            allowEnterKey: false,
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
@@ -328,21 +331,21 @@
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
 
-    const selectPekerjaan = document.getElementById('pekerjaan');
-    const formPekerjaanLainnya = document.getElementById('form-pekerjaan-lainnya');
-    const inputPekerjaanLainnya = document.getElementById('pekerjaan_lainnya');
+        const selectPekerjaan = document.getElementById('pekerjaan');
+        const formPekerjaanLainnya = document.getElementById('form-pekerjaan-lainnya');
+        const inputPekerjaanLainnya = document.getElementById('pekerjaan_lainnya');
 
-    selectPekerjaan.addEventListener('change', function() {
-        if (this.value === 'Lainnya') {
-            formPekerjaanLainnya.style.display = 'block';
-            inputPekerjaanLainnya.focus();
-        } else {
-            formPekerjaanLainnya.style.display = 'none';
-            inputPekerjaanLainnya.value = '';
-        }
+        selectPekerjaan.addEventListener('change', function() {
+            if (this.value === 'Lainnya') {
+                formPekerjaanLainnya.style.display = 'block';
+                inputPekerjaanLainnya.focus();
+            } else {
+                formPekerjaanLainnya.style.display = 'none';
+                inputPekerjaanLainnya.value = '';
+            }
+        });
+
     });
-
-});
 </script>

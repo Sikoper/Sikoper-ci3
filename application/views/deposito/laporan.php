@@ -61,7 +61,6 @@
         $('#form_laporan').submit(function(e) {
             e.preventDefault();
 
-            // Confirm dialog
             Swal.fire({
                 title: "Cetak data?",
                 text: `Yakin ingin cetak data dari <?= $deposito->no_rekening ?>`,
@@ -71,15 +70,13 @@
                 cancelButtonColor: "#d33",
                 confirmButtonText: "Ya!",
                 cancelButtonText: "Tidak",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                allowEnterKey: false,
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Get form data as query params
                     const formData = $(this).serialize();
-
-                    // Build the URL to open in a new tab with query params
                     const url = "<?= base_url('deposito/print_laporan') ?>" + "?" + formData;
-
-                    // Open in new tab
                     window.open(url, '_blank');
                 }
             });
