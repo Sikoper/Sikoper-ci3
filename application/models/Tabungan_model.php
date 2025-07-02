@@ -18,8 +18,10 @@ class Tabungan_model extends CI_Model
                 tbs.pegawai_id,
                 ds.tanggal_setoran AS tanggal,
                 ds.jumlah_setoran AS jumlah_uang,
+                tp.nama_lengkap as pegawai,
                 'Setor' AS keterangan
             FROM tbdetail_simpanan ds
+            JOIN tbpegawai tp ON tp.id = ds.pegawai_id
             JOIN tbsimpanan tbs ON tbs.id = ds.simpanan_id
 
             UNION ALL
@@ -30,13 +32,14 @@ class Tabungan_model extends CI_Model
                 tbs.pegawai_id,
                 dp.tanggal_penarikan AS tanggal,
                 dp.jumlah_penarikan AS jumlah_uang,
+                tp.nama_lengkap as pegawai,
                 'Tarik' AS keterangan
             FROM tbdetail_penarikan dp
+            JOIN tbpegawai tp ON tp.id = dp.pegawai_id
             JOIN tbsimpanan tbs ON tbs.id = dp.simpanan_id
         ) AS trans
         ";
 
-        $this->db->select('trans.*, tbpegawai.nama_lengkap AS pegawai');
         $this->db->from($subquery);
         $this->db->join('tbpegawai', 'tbpegawai.id = trans.pegawai_id');
 
