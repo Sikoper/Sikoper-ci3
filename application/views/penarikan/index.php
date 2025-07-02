@@ -258,7 +258,10 @@
                 confirmButtonColor: '#3085d6',
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Ya, Lanjutkan Penarikan!',
-                cancelButtonText: 'Batal'
+                cancelButtonText: 'Batal',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                allowEnterKey: false
             }).then((result) => {
                 if (result.isConfirmed) {
                     let form = $('#form_simpan')[0];
@@ -319,7 +322,10 @@
                                 Swal.fire({
                                     icon: "success",
                                     title: "Berhasil!",
-                                    html: response.success
+                                    html: response.success,
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    allowEnterKey: false
                                 }).then((result) => {
                                     if (result.isConfirmed) {
                                         if (response.redirect) {
