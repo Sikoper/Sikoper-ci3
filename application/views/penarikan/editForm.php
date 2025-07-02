@@ -51,11 +51,11 @@
 <script>
     $(document).ready(function() {
         autoNumericField = new AutoNumeric('#total_penarikan', {
-        digitGroupSeparator: '.',
-        decimalCharacter: ',',
-        decimalPlaces: 0,
-        modifyValueOnWheel: false
-    });
+            digitGroupSeparator: '.',
+            decimalCharacter: ',',
+            decimalPlaces: 0,
+            modifyValueOnWheel: false
+        });
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
@@ -96,6 +96,9 @@
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            allowEnterKey: false,
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {

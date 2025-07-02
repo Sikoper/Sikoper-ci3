@@ -104,31 +104,6 @@
                         </div>
                     </div>
 
-                    <!-- <label for="jenis_denda" class="form-label">Denda apabila menarik lebih awal (khusus deposito)</label>
-                    <div class="row g-3 align-items-end mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group" style="height: 80px;">
-                                <label for="jenis_denda" class="form-label">Jenis Denda</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control text-end" name="jenis_denda" id="jenis_denda" readonly>
-                                </div>
-                                <div id="errorJenisDenda" class="invalid-feedback" style="display: none;"></div>
-                                <div class="valid-feedback" style="display: none;"></div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group" style="height: 80px;">
-                                <label for="jumlah_denda" class="form-label">Jumlah Denda</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control text-end" name="jumlah_denda" id="jumlah_denda" readonly>
-                                </div>
-                                <div id="errorJumlahDenda" class="invalid-feedback" style="display: none;"></div>
-                                <div class="valid-feedback" style="display: none;"></div>
-                            </div>
-                        </div>
-                    </div> -->
-
                     <?php if ($level == 'Admin'): ?>
                         <div class="form-group mb-3" style="height: 80px;">
                             <label for="pegawai_display">Pegawai</label>
@@ -278,22 +253,6 @@
 
             let jumlahDendaAN;
 
-            // if (jenis_denda === 'Rp') {
-            //     jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
-            //         digitGroupSeparator: '.',
-            //         decimalCharacter: ',',
-            //         decimalPlaces: 0
-            //     });
-            // } else if (jenis_denda === '%') {
-            //     jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
-            //         digitGroupSeparator: ',',
-            //         decimalCharacter: '.',
-            //         decimalPlaces: 2,
-            //         minimumValue: '0',
-            //         maximumValue: '100'
-            //     });
-            // }
-
             bungaAN.set(kategori.bunga ?? '');
             biayaAN.set(biaya ?? '');
             simpananAwalAN.set(simpanan_awal ?? '');
@@ -431,6 +390,9 @@
                         Swal.fire({
                             icon: "success",
                             title: "Success!",
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            allowEnterKey: false,
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {

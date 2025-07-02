@@ -89,6 +89,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -102,6 +105,9 @@
                         if (response.success) {
                             Swal.fire({
                                 title: "Success!",
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                allowEnterKey: false,
                                 text: response.success,
                                 icon: "success"
                             }).then((result) => {

@@ -69,7 +69,6 @@
         </div>
     </div>
 
-    <!-- Detail Simpanan Table (Bottom) -->
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -108,45 +107,6 @@
             </div>
         </div>
     </div>
-
-    <!-- <div class="col-md-6">
-        <div class="col-md-12">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                    <button class="btn btn-danger" onclick="window.location=''"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
-                </div>
-                <div class="card-body">
-                    <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
-                        <div class="dataTable-container">
-                            <table class="table table-bordered table-striped" id="tabel_detail_penarikan">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Tanggal</th>
-                                        <th>Jumlah Penarikan</th>
-                                        <th>Jumlah Denda</th>
-                                        <th>Pegawai</th>
-                                        <th>#</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="dataTable-bottom">
-                            <ul class="pagination pagination-primary float-end dataTable-pagination">
-
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> -->
-
 
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
@@ -280,7 +240,7 @@
         ],
         language: {
             info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-            infoFiltered: "" // ← hide this part
+            infoFiltered: ""
         },
         "columnDefs": [{
                 "targets": 0,
@@ -305,6 +265,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
             didOpen: () => {
                 new AutoNumeric('#jumlah_setoran', jumlah, {
                     decimalCharacter: ',',
@@ -329,6 +292,9 @@
                             Swal.fire({
                                 title: "Success!",
                                 text: response.success,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                allowEnterKey: false,
                                 icon: "success"
                             }).then((result) => {
                                 if (result.isConfirmed) {
@@ -345,53 +311,6 @@
         });
     }
 
-    // var tabel_detail_penarikan = $('#tabel_detail_penarikan').DataTable({
-    //     "responsive": true,
-    //     "destroy": true,
-    //     "processing": true,
-    //     "serverSide": true,
-    //     "order": [
-    //         [1, "desc"]
-    //     ],
-    //     "autoWidth": false,
-    //     "ajax": {
-    //         "url": "",
-    //         "type": "POST",
-    //         "data": function(d) {
-    //             d.simpanan_id = simpananId;
-    //         }
-    //     },
-    //     "columns": [
-
-    //         {
-    //             "data": 0,
-    //             "className": "text-center",
-    //             "width": "5%",
-    //             "orderable": false
-    //         },
-    //         {
-    //             "data": 1
-    //         },
-    //         {
-    //             "data": 2,
-    //             "className": "text-end"
-    //         },
-    //         {
-    //             "data": 3,
-    //             "className": "text-end"
-    //         },
-    //         {
-    //             "data": 4
-    //         },
-    //         {
-    //             "data": 5,
-    //             "orderable": false,
-    //             "className": "text-center",
-    //             "width": "10%"
-    //         }
-    //     ],
-    // });
-
     function deleteDetailPenarikan(id, jumlah) {
         Swal.fire({
             title: "Hapus data penarikan ini?",
@@ -402,6 +321,9 @@
             cancelButtonColor: "#d33",
             confirmButtonText: "Ya, hapus!",
             cancelButtonText: "Batal",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -416,7 +338,10 @@
                             Swal.fire({
                                 title: "Berhasil!",
                                 text: response.success,
-                                icon: "success"
+                                icon: "success",
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                allowEnterKey: false,
                             }).then(() => {
                                 window.location.reload();
                             });
@@ -443,6 +368,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -458,6 +386,9 @@
                             Swal.fire({
                                 title: "Success!",
                                 text: response.success,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                allowEnterKey: false,
                                 icon: "success"
                             }).then((result) => {
                                 if (result.isConfirmed) {
@@ -483,6 +414,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 window.open("<?= base_url('simpanan/print_nasabah?id=') ?>" + id, "_blank");
@@ -500,6 +434,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 window.open("<?= base_url('simpanan/print_laporan?id=') ?>" + id, "_blank");

@@ -48,12 +48,10 @@
 
         .badge-setor {
             background-color: #28a745;
-            /* green */
         }
 
         .badge-tarik {
             background-color: #dc3545;
-            /* red */
         }
 
         .text-right {

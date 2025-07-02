@@ -104,6 +104,9 @@
                         if (response.success) {
                             Swal.fire({
                                 title: "Success!",
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                allowEnterKey: false,
                                 text: response.success,
                                 icon: "success"
                             }).then((result) => {

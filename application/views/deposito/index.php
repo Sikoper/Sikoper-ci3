@@ -90,6 +90,9 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -136,12 +139,14 @@
             html: `Yakin ingin mencetak sertifikat untuk <strong>${nama}</strong>?`,
             icon: "question",
             showCancelButton: true,
-            confirmButtonColor: "#17a2b8", // Warna tombol info
+            confirmButtonColor: "#17a2b8",
             confirmButtonText: "Ya, Cetak!",
-            cancelButtonText: "Batal"
+            cancelButtonText: "Batal",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
-                // Ini akan memanggil fungsi print_sertifikat($id) di controller Anda
                 window.open("<?= base_url('deposito/print_sertifikat/') ?>" + id, "_blank");
             }
         });
