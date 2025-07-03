@@ -35,12 +35,10 @@ class Pencairan extends CI_Controller
 
         $data = [
             'tabungan' => $tabungan,
-            'selected_nasabah' => $tabungan->nasabah_id ?? null,
-            'selected_rekening' => $tabungan->id ?? null,
             'disabled' => !empty($tabungan),
             'jenis' => $this->Kategori_model->get_data(),
             'pegawai' => $this->Pegawai_model->get_data(),
-            'nasabah' => $this->Nasabah_model->get_data(),
+            'nasabah_rekening_combo' => $this->Deposito_model->get_rekening_nasabah_combo(),
             'level' => $this->session->userData('level')
         ];
 
@@ -82,7 +80,6 @@ class Pencairan extends CI_Controller
             $penalty_rate = (float) $jenis_tabungan->jumlah_denda;
             $final_calculated_penalty_rp = 0;
             $display_penalty_rate_config = $penalty_rate;
-
             $effective_tenor_to_display_dt = clone $original_deposit_date_dt;
 
             if ($jenis_tabungan->nama === 'Deposito') {
@@ -90,7 +87,6 @@ class Pencairan extends CI_Controller
                 while (true) {
                     $current_eval_tenor_date_dt = (clone $current_eval_deposit_date_dt)->modify("+{$duration_months} months");
                     $current_eval_grace_end_dt = (clone $current_eval_tenor_date_dt)->modify("+{$grace_period_days} days");
-
                     $effective_tenor_to_display_dt = clone $current_eval_tenor_date_dt;
 
                     if ($current_date_dt < $current_eval_tenor_date_dt) {
@@ -124,109 +120,107 @@ class Pencairan extends CI_Controller
         }
     }
 
-public function proses()
-{
-    // 1. VALIDASI INPUT FORM (Validasi jumlah_penarikan sudah dihapus)
-    $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', ['required' => 'Nasabah wajib dipilih.']);
-    $this->form_validation->set_rules('simpanan_id', 'Rekening Deposito', 'required', ['required' => 'Rekening Deposito wajib dipilih.']);
-    $this->form_validation->set_rules('tanggal_penarikan', 'Tanggal Penarikan', 'required', ['required' => 'Tanggal penarikan wajib diisi.']);
+    public function proses()
+    {
+        // 1. VALIDASI INPUT FORM (Validasi 'nasabah' dihapus, validasi 'simpanan_id' diubah ke 'deposito_id')
+        $this->form_validation->set_rules('deposito_id', 'Rekening Deposito', 'required', ['required' => 'Rekening Deposito wajib dipilih.']);
+        $this->form_validation->set_rules('tanggal_penarikan', 'Tanggal Penarikan', 'required', ['required' => 'Tanggal penarikan wajib diisi.']);
 
-    if ($this->session->userdata('level') == 'Admin') {
-        $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', ['required' => 'Pegawai wajib dipilih oleh Admin.']);
-    }
+        if ($this->session->userdata('level') == 'Admin') {
+            $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', ['required' => 'Pegawai wajib dipilih oleh Admin.']);
+        }
 
-    if ($this->form_validation->run() == FALSE) {
-        $errors = [
-            'errorNasabah'   => form_error('nasabah'),
-            'errorSimpanan'  => form_error('simpanan_id'),
-            'errorPegawai'   => form_error('pegawai_id') ?? '',
-            'errorTanggal'   => form_error('tanggal_penarikan')
-        ];
-        echo json_encode(['error' => $errors]);
-        return;
-    }
+        if ($this->form_validation->run() == FALSE) {
+            $errors = [
+                'errorSimpanan'  => form_error('deposito_id'), // Diubah ke deposito_id
+                'errorPegawai'   => form_error('pegawai_id') ?? '',
+                'errorTanggal'   => form_error('tanggal_penarikan')
+            ];
+            echo json_encode(['error' => $errors]);
+            return;
+        }
 
-    // 2. PENGAMBILAN DATA & PERHITUNGAN DENDA OLEH SERVER
-    $simpanan_id = $this->input->post('simpanan_id');
-    $simpanan_data = $this->Deposito_model->get_data_by_id($simpanan_id);
+        // 2. PENGAMBILAN DATA & PERHITUNGAN DENDA OLEH SERVER
+        $simpanan_id = $this->input->post('deposito_id'); // Diubah ke deposito_id
+        $simpanan_data = $this->Deposito_model->get_data_by_id($simpanan_id);
 
-    if (!$simpanan_data) {
-        echo json_encode(['error_save' => 'Data simpanan deposito tidak ditemukan. Mohon muat ulang halaman.']);
-        return;
-    }
+        if (!$simpanan_data) {
+            echo json_encode(['error_save' => 'Data simpanan deposito tidak ditemukan. Mohon muat ulang halaman.']);
+            return;
+        }
 
-    if ((float)$simpanan_data->jumlah_deposito <= 0) {
-        echo json_encode(['error_save' => 'Penarikan gagal. Saldo rekening sudah nol.']);
-        return;
-    }
+        if ((float)$simpanan_data->jumlah_deposito <= 0) {
+            echo json_encode(['error_save' => 'Penarikan gagal. Saldo rekening sudah nol.']);
+            return;
+        }
 
-    $jenis_tabungan_data = $this->Kategori_model->get_data_by_id($simpanan_data->jenistabungan_id);
-    if (!$jenis_tabungan_data) {
-        echo json_encode(['error_save' => 'Data kategori untuk deposito ini tidak ditemukan.']);
-        return;
-    }
+        $jenis_tabungan_data = $this->Kategori_model->get_data_by_id($simpanan_data->jenistabungan_id);
+        if (!$jenis_tabungan_data) {
+            echo json_encode(['error_save' => 'Data kategori untuk deposito ini tidak ditemukan.']);
+            return;
+        }
 
-    $penalty_rp_final = 0;
-    if ($jenis_tabungan_data->nama === 'Deposito') {
-        $original_deposit_date_dt = new DateTime($simpanan_data->tanggal_deposito);
-        $duration_months = (int) $simpanan_data->durasi;
-        $grace_period_days = 7;
-        $penalty_rate = (float) $jenis_tabungan_data->jumlah_denda;
-        $date_of_withdrawal_dt = new DateTime($this->input->post('tanggal_penarikan'));
+        $penalty_rp_final = 0;
+        if ($jenis_tabungan_data->nama === 'Deposito') {
+            $original_deposit_date_dt = new DateTime($simpanan_data->tanggal_deposito);
+            $duration_months = (int) $simpanan_data->durasi;
+            $grace_period_days = 7;
+            $penalty_rate = (float) $jenis_tabungan_data->jumlah_denda;
+            $date_of_withdrawal_dt = new DateTime($this->input->post('tanggal_penarikan'));
 
-        $current_eval_deposit_date_dt = clone $original_deposit_date_dt;
-        while (true) {
-            $current_eval_tenor_date_dt = (clone $current_eval_deposit_date_dt)->modify("+{$duration_months} months");
-            $current_eval_grace_end_dt = (clone $current_eval_tenor_date_dt)->modify("+{$grace_period_days} days");
+            $current_eval_deposit_date_dt = clone $original_deposit_date_dt;
+            while (true) {
+                $current_eval_tenor_date_dt = (clone $current_eval_deposit_date_dt)->modify("+{$duration_months} months");
+                $current_eval_grace_end_dt = (clone $current_eval_tenor_date_dt)->modify("+{$grace_period_days} days");
 
-            if ($date_of_withdrawal_dt < $current_eval_tenor_date_dt) {
-                $penalty_rp_final = round(($penalty_rate / 100) * $simpanan_data->jumlah_deposito);
-                break;
-            } elseif ($date_of_withdrawal_dt >= $current_eval_tenor_date_dt && $date_of_withdrawal_dt <= $current_eval_grace_end_dt) {
-                $penalty_rp_final = 0;
-                break;
-            } else {
-                $current_eval_deposit_date_dt = (clone $current_eval_grace_end_dt)->modify('+1 day');
+                if ($date_of_withdrawal_dt < $current_eval_tenor_date_dt) {
+                    $penalty_rp_final = round(($penalty_rate / 100) * $simpanan_data->jumlah_deposito);
+                    break;
+                } elseif ($date_of_withdrawal_dt >= $current_eval_tenor_date_dt && $date_of_withdrawal_dt <= $current_eval_grace_end_dt) {
+                    $penalty_rp_final = 0;
+                    break;
+                } else {
+                    $current_eval_deposit_date_dt = (clone $current_eval_grace_end_dt)->modify('+1 day');
+                }
             }
         }
-    }
 
-    // 3. LOGIKA PENARIKAN PENUH DI SISI SERVER
-    $saldo_saat_ini = (float) $simpanan_data->jumlah_deposito;
-    $jumlah_penarikan_diminta = $saldo_saat_ini - $penalty_rp_final;
-    $total_pengurangan = $jumlah_penarikan_diminta + $penalty_rp_final;
-    
-    // 4. PROSES TRANSAKSI DATABASE
-    $this->db->trans_start();
+        // 3. LOGIKA PENARIKAN PENUH DI SISI SERVER
+        $saldo_saat_ini = (float) $simpanan_data->jumlah_deposito;
+        $jumlah_penarikan_diminta = $saldo_saat_ini - $penalty_rp_final;
+        $total_pengurangan = $jumlah_penarikan_diminta + $penalty_rp_final;
 
-    $data_log = [
-        'deposito_id'       => $simpanan_id,
-        'pegawai_id'        => ($this->session->userdata('level') == 'Admin') ? $this->input->post('pegawai_id') : $this->session->userdata('pegawai_id'),
-        'tanggal_penarikan' => $this->input->post('tanggal_penarikan') . ' ' . date('H:i:s'),
-        'jumlah_penarikan'  => $jumlah_penarikan_diminta,
-        'jumlah_denda'      => $penalty_rp_final
-    ];
-    $this->Deposito_model->simpan_log_penarikan($data_log);
-    $this->Deposito_model->kurangi_saldo($simpanan_id, $total_pengurangan);
-    $this->Deposito_model->ubah_status($simpanan_id, 'nonaktif');
-    
-    if ($this->db->trans_status() === FALSE) {
-        $this->db->trans_rollback();
-        $msg = ['error_save' => 'Terjadi kesalahan teknis saat menyimpan transaksi. Transaksi dibatalkan.'];
-    } else {
-        $this->db->trans_commit();
-        $encoded_rek = $this->_safe_base64_encode($simpanan_data->no_rekening);
-        $redirect_url_final = site_url('deposito/detail/' . $encoded_rek); 
-        $pesan_sukses = 'Pencairan deposito berhasil. Saldo telah ditarik seluruhnya dan rekening kini nonaktif.';
-        
-        $msg = [
-            'success' => $pesan_sukses,
-            'redirect' => $redirect_url_final
+        // 4. PROSES TRANSAKSI DATABASE
+        $this->db->trans_start();
+
+        $data_log = [
+            'deposito_id'       => $simpanan_id,
+            'pegawai_id'        => ($this->session->userdata('level') == 'Admin') ? $this->input->post('pegawai_id') : $this->session->userdata('pegawai_id'),
+            'tanggal_penarikan' => $this->input->post('tanggal_penarikan') . ' ' . date('H:i:s'),
+            'jumlah_penarikan'  => $jumlah_penarikan_diminta,
+            'jumlah_denda'      => $penalty_rp_final
         ];
-    }
+        $this->Deposito_model->simpan_log_penarikan($data_log);
+        $this->Deposito_model->kurangi_saldo($simpanan_id, $total_pengurangan);
+        $this->Deposito_model->ubah_status($simpanan_id, 'nonaktif');
 
-    echo json_encode($msg);
-}
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            $msg = ['error_save' => 'Terjadi kesalahan teknis saat menyimpan transaksi. Transaksi dibatalkan.'];
+        } else {
+            $this->db->trans_commit();
+            $encoded_rek = $this->_safe_base64_encode($simpanan_data->no_rekening);
+            $redirect_url_final = site_url('deposito/detail/' . $encoded_rek);
+            $pesan_sukses = 'Pencairan deposito berhasil. Saldo telah ditarik seluruhnya dan rekening kini nonaktif.';
+
+            $msg = [
+                'success' => $pesan_sukses,
+                'redirect' => $redirect_url_final
+            ];
+        }
+
+        echo json_encode($msg);
+    }
 
     private function _safe_base64_encode($string)
     {
@@ -269,14 +263,12 @@ public function proses()
             $row[] = '<div class="text-end">Rp ' . number_format($item->jumlah_penarikan, 2, ',', '.') . '</div>';
             $row[] = '<div class="text-end">Rp ' . number_format($item->jumlah_denda, 2, ',', '.') . '</div>';
             $row[] = $item->nama_pegawai ? htmlspecialchars($item->nama_pegawai, ENT_QUOTES, 'UTF-8') : '-';
-
             $row[] = '<div class="text-center">
-                    <button class="btn btn-danger btn-sm" title="Hapus Penarikan"
-                        onclick="deleteDetailPenarikan(' . $item->id . ', \'' . htmlspecialchars(number_format($item->jumlah_penarikan, 2, ',', '.'), ENT_QUOTES, 'UTF-8') . '\')">
-                        <i class="fa fa-trash"></i>
-                    </button>
-                    </div>';
-
+                      <button class="btn btn-danger btn-sm" title="Hapus Penarikan"
+                          onclick="deleteDetailPenarikan(' . $item->id . ', \'' . htmlspecialchars(number_format($item->jumlah_penarikan, 2, ',', '.'), ENT_QUOTES, 'UTF-8') . '\')">
+                          <i class="fa fa-trash"></i>
+                      </button>
+                      </div>';
             $data[] = $row;
         }
 
@@ -293,5 +285,36 @@ public function proses()
 
         header('Content-Type: application/json');
         echo json_encode($output);
+    }
+
+    public function get_combo_rekening_nasabah()
+    {
+        $searchTerm = $this->input->get('q');
+        $this->load->model('Deposito_model');
+        $data = $this->Deposito_model->get_rekening_nasabah_combo($searchTerm);
+
+        $result = [];
+        foreach ($data as $row) {
+            $result[] = [
+                'id' => $row->id,
+                'text' => $row->text,
+                'nasabah_id' => $row->nasabah_id
+            ];
+        }
+
+        echo json_encode($result);
+    }
+
+    public function get_detail_deposito_by_id()
+    {
+        $id = $this->input->post('deposito_id');
+        $this->load->model('Deposito_model');
+        $data = $this->Deposito_model->get_data_by_id($id);
+
+        if ($data) {
+            echo json_encode(['success' => true, 'data' => $data]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
     }
 }

@@ -154,13 +154,10 @@ class Deposito_model extends CI_Model
         $this->db->join('tbjenistabungan', 'tbdeposito.jenistabungan_id = tbjenistabungan.id', 'left');
         $this->db->join('tbnasabah', 'tbdeposito.nasabah_id = tbnasabah.id', 'left');
         $this->db->join('tbpegawai as pegawai', 'tbdeposito.pegawai_id = pegawai.id', 'left');
-
-        // Asumsi untuk mendapatkan nama Pimpinan/Kepala dan Bendahara dari tabel pegawai
         $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'KEPALA BAGIAN TATA USAHA'", 'left');
         $this->db->join('tbpegawai as bendahara', "bendahara.jabatan = 'Bendahara'", 'left');
-
         $this->db->where('tbdeposito.id', $id);
-        $this->db->limit(1); // Pastikan hanya satu baris yang diambil
+        $this->db->limit(1);
 
         $query = $this->db->get();
         return $query->row();
@@ -171,5 +168,29 @@ class Deposito_model extends CI_Model
         $this->db->where('id', $deposito_id);
         $this->db->update('tbdeposito', ['status' => $status_baru]);
         return $this->db->affected_rows();
+    }
+
+    public function get_rekening_nasabah_combo($searchTerm = null)
+    {
+        $this->db->select('
+            tbdeposito.id,
+            CONCAT("(", tbdeposito.no_rekening, ") - ", tbnasabah.nama_lengkap, " - ", tbjenistabungan.nama) as text,
+            tbnasabah.id as nasabah_id
+        ');
+        $this->db->from('tbdeposito');
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
+        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
+        $this->db->where('tbjenistabungan.nama', 'Deposito');
+        $this->db->where('tbdeposito.status', 'aktif');
+        $this->db->where('tbdeposito.jumlah_deposito >', 0);
+
+        if ($searchTerm) {
+        $this->db->group_start();
+        $this->db->like('tbdeposito.no_rekening', $searchTerm);
+        $this->db->or_like('tbnasabah.nama_lengkap', $searchTerm);
+        $this->db->group_end();
+    }
+
+        return $this->db->get()->result();
     }
 }
