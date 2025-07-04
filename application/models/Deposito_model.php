@@ -173,10 +173,12 @@ class Deposito_model extends CI_Model
     public function get_rekening_nasabah_combo($searchTerm = null)
     {
         $this->db->select('
-            tbdeposito.id,
-            CONCAT("(", tbdeposito.no_rekening, ") - ", tbnasabah.nama_lengkap, " - ", tbjenistabungan.nama) as text,
-            tbnasabah.id as nasabah_id
-        ');
+        tbdeposito.id,
+        tbdeposito.no_rekening,
+        tbnasabah.nama_lengkap,
+        tbjenistabungan.nama as jenis_tabungan,
+        tbnasabah.id as nasabah_id
+    ');
         $this->db->from('tbdeposito');
         $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
         $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
@@ -185,12 +187,29 @@ class Deposito_model extends CI_Model
         $this->db->where('tbdeposito.jumlah_deposito >', 0);
 
         if ($searchTerm) {
-        $this->db->group_start();
-        $this->db->like('tbdeposito.no_rekening', $searchTerm);
-        $this->db->or_like('tbnasabah.nama_lengkap', $searchTerm);
-        $this->db->group_end();
-    }
+            $this->db->group_start();
+            $this->db->like('tbdeposito.no_rekening', $searchTerm);
+            $this->db->or_like('tbnasabah.nama_lengkap', $searchTerm);
+            $this->db->group_end();
+        }
 
         return $this->db->get()->result();
     }
+
+public function get_by_id($id)
+{
+    $this->db->select('
+        tbdeposito.*, 
+        tbnasabah.nama_lengkap, 
+        tbnasabah.id as nasabah_id,
+        tbjenistabungan.nama as jenis_tabungan
+    ');
+    $this->db->from('tbdeposito');
+    $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
+    $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id', 'left');
+    $this->db->where('tbdeposito.id', $id);
+    return $this->db->get()->row();
+}
+
+
 }

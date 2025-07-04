@@ -29,8 +29,8 @@ class Pencairan extends CI_Controller
         $encoded_rek = $this->input->get('id');
         $tabungan = null;
         if (!empty($encoded_rek)) {
-            $no_rekening = safe_base64_decode_pencairan($encoded_rek);
-            $tabungan = $this->Deposito_model->get_data_by_norek($no_rekening);
+            $id_deposito = safe_base64_decode_pencairan($encoded_rek);
+            $tabungan = $this->Deposito_model->get_by_id($id_deposito);
         }
 
         $data = [
@@ -297,8 +297,10 @@ class Pencairan extends CI_Controller
         foreach ($data as $row) {
             $result[] = [
                 'id' => $row->id,
-                'text' => $row->text,
-                'nasabah_id' => $row->nasabah_id
+                'text' => $row->no_rekening,
+                'nasabah_id' => $row->nasabah_id,
+                'nama_nasabah' => $row->nama_lengkap,
+                'jenis_tabungan' => $row->jenis_tabungan
             ];
         }
 
