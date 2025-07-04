@@ -165,4 +165,17 @@ class Simpanan_model extends CI_Model
         return $this->db->where('id', $simpanan_id)
             ->update('tbsimpanan', ['jumlah_simpanan' => $total]);
     }
+
+    public function get_data_tabungan_full_by_norek($no_rekening)
+{
+    return $this->db
+        ->select('tbsimpanan.*, tbnasabah.nama_lengkap, tbnasabah.id as nasabah_id, tbjenistabungan.nama as jenis_tabungan')
+        ->from('tbsimpanan')
+        ->join('tbnasabah', 'tbsimpanan.nasabah_id = tbnasabah.id')
+        ->join('tbjenistabungan', 'tbsimpanan.jenistabungan_id = tbjenistabungan.id')
+        ->where('tbsimpanan.no_rekening', $no_rekening)
+        ->get()
+        ->row();
+}
+
 }

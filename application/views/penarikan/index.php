@@ -15,44 +15,26 @@
                         <div id="errorTanggal" class="invalid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group" style="height: 80px;">
-                        <label for="nasabah">Pilih Nasabah</label>
-                        <div class="d-flex align-items-center">
-                            <select id="nasabah" class="form-control select2" name="nasabah" <?= $disabled ? 'disabled' : '' ?> style="width: auto; flex: 1;">
-                                <option value="">-- Pilih Nasabah --</option>
-                                <?php foreach ($nasabah as $n): ?>
-                                    <option value="<?= $n->id ?>" <?= ($selected_nasabah == $n->id) ? 'selected' : '' ?>>
-                                        <?= $n->nama_lengkap ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div id="errorNasabah" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="rekening">Nomor Rekening</label>
-                        <select class="form-control select2" name="simpanan_id" id="rekening" <?= $disabled ? 'disabled' : '' ?>>
-                            <?php if (!empty($tabungan)): ?>
-                                <option value="<?= $tabungan->id ?>" selected><?= $tabungan->no_rekening ?></option>
-                            <?php else: ?>
-                                <option value="">-- Pilih Rekening --</option>
-                            <?php endif; ?>
+                    <div class="form-group mb-3">
+                        <label for="comboRekening">Pilih No. Rekening</label>
+                        <input type="hidden" id="preselectComboValue" value="<?= $combo_value ?>">
+                        <input type="hidden" id="preselectComboId" value="<?= $selected_tabungan ?>">
+                        <select id="comboRekening" class="form-control select2" name="comboRekening" <?= $disabled ? 'disabled' : '' ?>>
+                            <option value="">-- Pilih No. Rekening --</option>
+                            <?php foreach ($nasabah as $n): ?>
+                                <option value="<?= $n->id_tabungan ?>">
+                                    <?= $n->no_rekening ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                         <div id="errorSimpanan" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <?php if (!empty($tabungan)): ?>
-                        <input type="hidden" id="preselectedNasabah" value="<?= $tabungan->nasabah_id ?>">
-                        <input type="hidden" id="preselectedRekening" value="<?= $tabungan->id ?>">
-                    <?php endif; ?>
-
-                    <?php if (!empty($tabungan)): ?>
-                        <input type="hidden" name="nasabah" value="<?= $tabungan->nasabah_id ?>">
-                        <input type="hidden" name="simpanan_id" value="<?= $tabungan->id ?>">
-                    <?php endif; ?>
+                    <!-- Tempat info nasabah -->
+                    <div id="infoNasabah" style="display:none; margin-bottom: 15px;">
+                        <p><strong>Nama Nasabah:</strong> <span id="infoNama"></span></p>
+                        <p><strong>Jenis Tabungan:</strong> <span id="infoJenisTabungan"></span></p>
+                    </div>
 
                     <div class="form-group">
                         <label for="saldo">Saldo</label>
@@ -144,16 +126,13 @@
         totalDitarikAN.set(0);
 
         function updateTotalYangAkanDitarik() {
-            let jumlahPenarikanVal = 0;
             const jumlahPenarikanStr = $('#jumlah_penarikan').autoNumeric('get');
-            if (jumlahPenarikanStr && typeof jumlahPenarikanStr === 'string') {
-                jumlahPenarikanVal = parseFloat(jumlahPenarikanStr.replace(/\./g, '').replace(',', '.')) || 0;
-            }
-            const totalAkanDitarik = jumlahPenarikanVal;
-            totalDitarikAN.set(totalAkanDitarik);
+            const jumlahPenarikanVal = parseFloat(jumlahPenarikanStr.replace(/\./g, '').replace(',', '.')) || 0;
+
+            totalDitarikAN.set(jumlahPenarikanVal);
 
             const saldoSaatIniVal = saldoAN.getNumber() || 0;
-            const sisaSaldo = saldoSaatIniVal - totalAkanDitarik;
+            const sisaSaldo = saldoSaatIniVal - jumlahPenarikanVal;
             perkiraanSisaSaldoAN.set(sisaSaldo);
 
             if (sisaSaldo < 0) {
@@ -167,14 +146,72 @@
             updateTotalYangAkanDitarik();
         });
 
+        $('#comboRekening').select2({
+            placeholder: '-- Cari rekening/nasabah --',
+            ajax: {
+                url: '<?= base_url("penarikan/get_combo_rekening_nasabah") ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                },
+                cache: true
+            }
+        });
+
+        $('#comboRekening').on('change', function() {
+            const idTabungan = $(this).val();
+            $('#hidden_tabungan').val(idTabungan);
+
+            if (idTabungan) {
+                $.ajax({
+                    url: '<?= base_url('penarikan/fetchRekening') ?>',
+                    method: 'POST',
+                    data: {
+                        id: idTabungan
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response && !response.error) {
+                            $('#infoNasabah').show();
+                            $('#infoNama').text(response.nama_nasabah || '-');
+                            $('#infoJenisTabungan').text(response.jenis_tabungan || '-');
+                            saldoAN.set(response.saldo || 0);
+                            updateTotalYangAkanDitarik();
+                        } else {
+                            $('#infoNasabah').hide();
+                            saldoAN.set(0);
+                        }
+                    },
+                    error: function() {
+                        $('#infoNasabah').hide();
+                        saldoAN.set(0);
+                    }
+                });
+            } else {
+                $('#infoNasabah').hide();
+                $('#hidden_tabungan').val('');
+                saldoAN.set(0);
+                updateTotalYangAkanDitarik();
+            }
+        });
+
+
+
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
-            const namaNasabahText = $('#nasabah option:selected').text() || 'Nasabah belum dipilih';
-            const noRekeningText = $('#rekening option:selected').text() || 'Rekening belum dipilih';
+
+            const noRekNamaText = $('#comboRekening option:selected').text() || 'Belum dipilih';
             const saldoSaatIniNum = saldoAN.getNumber() || 0;
             const jumlahPenarikanNum = parseFloat($('#jumlah_penarikan').autoNumeric('get').replace(/\./g, '').replace(',', '.')) || 0;
-            const totalAkanDitarikNum = jumlahPenarikanNum;
-            const perkiraanSisaSaldoNum = saldoSaatIniNum - totalAkanDitarikNum;
+            const perkiraanSisaSaldoNum = saldoSaatIniNum - jumlahPenarikanNum;
             const formatRp = (num) => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
 
             Swal.fire({
@@ -182,32 +219,12 @@
                 width: '600px',
                 html: `Mohon periksa kembali detail transaksi berikut:<br><br>` +
                     `<table style="width:100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; line-height: 1.6;">` +
-                    `  <tr>` +
-                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 180px;">Nasabah:</td>` +
-                    `    <td style="padding: 4px 0 4px 5px; vertical-align: top;">${namaNasabahText}</td>` +
-                    `  </tr>` +
-                    `  <tr>` +
-                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">No. Rekening:</td>` +
-                    `    <td style="padding: 4px 0 4px 5px; vertical-align: top;">${noRekeningText}</td>` +
-                    `  </tr>` +
-                    `  <tr>` +
-                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Saldo Saat Ini:</td>` +
-                    `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(saldoSaatIniNum)}</td>` +
-                    `  </tr>` +
-                    `  <tr>` +
-                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Jumlah Penarikan:</td>` +
-                    `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(jumlahPenarikanNum)}</td>` +
-                    `  </tr>` +
-                    `  <tr>` +
-                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Total Akan Didebet:</td>` +
-                    `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(totalAkanDitarikNum)}</td>` +
-                    `  </tr>` +
-                    `  <tr>` +
-                    `    <td style="padding: 4px 10px 4px 0; font-weight: bold; vertical-align: top; width: 220px;">Perkiraan Sisa Saldo:</td>` +
-                    `    <td style="padding: 4px 0; vertical-align: top;">${formatRp(perkiraanSisaSaldoNum)}</td>` +
-                    `  </tr>` +
-                    `</table>` +
-                    `Apakah Anda yakin ingin melanjutkan?`,
+                    `<tr><td style="padding: 4px 10px 4px 0; font-weight: bold;">Rekening & Nasabah:</td><td>${noRekNamaText}</td></tr>` +
+                    `<tr><td style="padding: 4px 10px 4px 0; font-weight: bold;">Saldo Saat Ini:</td><td>${formatRp(saldoSaatIniNum)}</td></tr>` +
+                    `<tr><td style="padding: 4px 10px 4px 0; font-weight: bold;">Jumlah Penarikan:</td><td>${formatRp(jumlahPenarikanNum)}</td></tr>` +
+                    `<tr><td style="padding: 4px 10px 4px 0; font-weight: bold;">Total Akan Didebet:</td><td>${formatRp(jumlahPenarikanNum)}</td></tr>` +
+                    `<tr><td style="padding: 4px 10px 4px 0; font-weight: bold;">Perkiraan Sisa Saldo:</td><td>${formatRp(perkiraanSisaSaldoNum)}</td></tr>` +
+                    `</table>Apakah Anda yakin ingin melanjutkan?`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
@@ -231,30 +248,22 @@
                         contentType: false,
                         cache: false,
                         beforeSend: function() {
-                            $('#tombol_simpan').prop('disabled', true)
-                            $('#tombol_simpan').html('<i class="fa fa-spin fa-spinner"></i>')
+                            $('#tombol_simpan').prop('disabled', true).html('<i class="fa fa-spin fa-spinner"></i>');
                         },
                         complete: function() {
-                            $('#tombol_simpan').prop('disabled', false)
-                            $('#tombol_simpan').html('Tarik Uang')
+                            $('#tombol_simpan').prop('disabled', false).html('Tarik Uang');
                         },
                         success: function(response) {
                             if (response.error) {
                                 let dataError = response.error;
-                                if (dataError.errorNasabah) {
-                                    $('#errorNasabah').html(dataError.errorNasabah).show();
-                                    $('#nasabah').addClass('is-invalid');
-                                } else {
-                                    $('#errorNasabah').fadeOut();
-                                    $('#nasabah').removeClass('is-invalid').addClass('is-valid');
-                                }
                                 if (dataError.errorSimpanan) {
                                     $('#errorSimpanan').html(dataError.errorSimpanan).show();
-                                    $('#rekening').addClass('is-invalid');
+                                    $('#comboRekening').addClass('is-invalid');
                                 } else {
                                     $('#errorSimpanan').fadeOut();
-                                    $('#rekening').removeClass('is-invalid').addClass('is-valid');
+                                    $('#comboRekening').removeClass('is-invalid').addClass('is-valid');
                                 }
+
                                 if (dataError.errorJumlah) {
                                     $('#errorJumlah').html(dataError.errorJumlah).show();
                                     $('#jumlah_penarikan').addClass('is-invalid');
@@ -262,14 +271,13 @@
                                     $('#errorJumlah').fadeOut();
                                     $('#jumlah_penarikan').removeClass('is-invalid').addClass('is-valid');
                                 }
+
                                 if (dataError.errorPegawai) {
                                     $('#errorPegawai').html(dataError.errorPegawai).show();
                                     $('#pegawai_id').addClass('is-invalid');
                                 } else {
-                                    if ($('#pegawai_id').is('select')) {
-                                        $('#errorPegawai').fadeOut();
-                                        $('#pegawai_id').removeClass('is-invalid').addClass('is-valid');
-                                    }
+                                    $('#errorPegawai').fadeOut();
+                                    $('#pegawai_id').removeClass('is-invalid').addClass('is-valid');
                                 }
                             } else if (response.error_save) {
                                 Swal.fire("Gagal!", response.error_save, "error");
@@ -283,11 +291,7 @@
                                     allowEnterKey: false
                                 }).then((result) => {
                                     if (result.isConfirmed) {
-                                        if (response.redirect) {
-                                            window.location.href = response.redirect;
-                                        } else {
-                                            window.location.href = '<?= base_url('penarikan') ?>';
-                                        }
+                                        window.location.href = response.redirect || '<?= base_url('penarikan') ?>';
                                     }
                                 });
                             } else {
@@ -302,154 +306,12 @@
             });
         });
 
-        $('#nasabah').select2({
-            placeholder: 'Cari nama nasabah...',
-            ajax: {
-                url: '<?= base_url("nasabah/cari_nasabah") ?>',
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        q: params.term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data
-                    };
-                },
-                cache: true
-            }
-        });
-
-        $('#nasabah').on('change', function() {
-            var nasabahId = $(this).val();
-
-            $('#rekening').html('<option value="">-- Pilih Rekening --</option>').val("").trigger('change');
-            $('#jumlah_penarikan').autoNumeric('set', '');
-            totalDitarikAN.set(0);
-
-            $('.invalid-feedback').each(function() {
-                $(this).html('').hide();
-            });
-            $('form .is-invalid').removeClass('is-invalid');
-            $('form .is-valid').removeClass('is-valid');
-
-            if (nasabahId) {
-                $('#rekening').html('<option value="">Loading...</option>');
-                $.ajax({
-                    url: '<?= base_url("penarikan/get_rekening_by_nasabah") ?>',
-                    method: 'POST',
-                    data: {
-                        nasabah_id: nasabahId
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        var html = '<option value="">-- Pilih Rekening --</option>';
-                        if (data && data.length > 0) {
-                            data.forEach(function(item) {
-                                html += `<option value="${item.id}">${item.text}</option>`;
-                            });
-                        }
-
-                        $('#rekening').html(html);
-
-                        const preselected = $('#preselectedRekening').val();
-                        if (preselected) {
-                            $('#rekening').val(preselected).trigger('change');
-                            $('#rekening').prop('disabled', true);
-                        }
-                    },
-                    error: function() {
-                        alert('Gagal mengambil data rekening.');
-                        $('#rekening').html('<option value="">-- Pilih Rekening --</option>').val("").trigger('change');
-                    }
-                });
-            }
-        });
-
-        $('#rekening').select2({
-            placeholder: '-- Pilih Rekening --'
-        });
-
-        const preselectedNasabah = $('#preselectedNasabah').val();
-
-        if (preselectedNasabah) {
-            $('#nasabah').trigger('change');
+        // Preselect jika ada
+        const preselectText = $('#preselectComboValue').val();
+        const preselectId = $('#preselectComboId').val();
+        if (preselectId && preselectText) {
+            const newOption = new Option(preselectText, preselectId, true, true);
+            $('#comboRekening').append(newOption).trigger('change');
         }
-
-        $('#rekening').on('change', function() {
-            const id = $(this).val();
-
-            if (id) {
-                $.ajax({
-                    url: '<?= base_url('penarikan/fetchRekening') ?>',
-                    method: 'POST',
-                    data: {
-                        id: id
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.error) {
-                            alert(response.error);
-                            saldoAN.set(0);
-                            $('#tenor').val('');
-                            $('#jumlah_denda').val('');
-                            $('#jenis_denda').val('');
-                            $('#jenis_tabungan').hide();
-                            $('#jumlah_penarikan').autoNumeric('set', '');
-                            updateTotalYangAkanDitarik();
-                            return;
-                        }
-
-                        saldoAN.set(response.saldo);
-                        $('#tenor').val(response.tenor);
-                        $('#jumlah_denda').val(response.jumlah_denda);
-                        $('#jenis_denda').val(response.jenis_denda);
-
-                        if (response.kategori && response.kategori.nama === 'Deposito') {
-                            $('#jenis_tabungan').show();
-
-                            if (response.calculated_penalty_rp > 0) {
-                                Swal.fire({
-                                    title: 'Informasi Denda Deposito',
-                                    html: `Peringatan: Penarikan untuk rekening Deposito ini sebelum tanggal jatuh tempo (<b>${response.tenor}</b>) akan dikenakan denda.<br><br>` +
-                                        `Perkiraan denda jika ditarik hari ini: <b>Rp ${new Intl.NumberFormat('id-ID').format(response.calculated_penalty_rp)}</b>.<br><br>` +
-                                        `Pastikan nasabah telah memahami ketentuan ini sebelum melanjutkan proses penarikan.`,
-                                    icon: 'warning',
-                                    confirmButtonText: 'Saya Mengerti',
-                                    allowOutsideClick: false,
-                                    allowEscapeKey: false,
-                                    allowEnterKey: false,
-                                });
-                            }
-
-                        } else {
-                            $('#jenis_tabungan').hide();
-                        }
-
-                        updateTotalYangAkanDitarik();
-                    },
-                    error: function(xhr, thrownError) {
-                        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                        saldoAN.set(0);
-                        $('#tenor').val('');
-                        $('#jumlah_denda').val('');
-                        $('#jenis_denda').val('');
-                        $('#jenis_tabungan').hide();
-                        $('#jumlah_penarikan').autoNumeric('set', '');
-                        updateTotalYangAkanDitarik();
-                    }
-                });
-            } else {
-                saldoAN.set(0);
-                $('#tenor').val('');
-                $('#jumlah_denda').val('');
-                $('#jenis_denda').val('');
-                $('#jenis_tabungan').hide();
-                $('#jumlah_penarikan').autoNumeric('set', '');
-                updateTotalYangAkanDitarik();
-            }
-        });
     });
 </script>

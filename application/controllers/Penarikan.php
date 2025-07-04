@@ -66,22 +66,37 @@ class Penarikan extends CI_Controller
         {
             return base64_decode(strtr($string, '-_?', '+/='));
         }
+
         $encoded_rek = $this->input->get('id');
+        $tabungan = null;
+        $combo_value = '';
+        $selected_nasabah = null;
+        $selected_rekening = null;
+
         if (!empty($encoded_rek)) {
             $no_rekening = safe_base64_decode($encoded_rek);
-            $tabungan = $this->Simpanan_model->get_data_by_norek($no_rekening);
+            $tabungan = $this->Simpanan_model->get_data_tabungan_full_by_norek($no_rekening);
+
+            if ($tabungan) {
+                $selected_nasabah = $tabungan->nasabah_id;
+                $selected_rekening = $tabungan->no_rekening;
+                $combo_value = "{$tabungan->no_rekening}";
+            }
         }
 
         $data = [
-            'tabungan' => $tabungan ?? null,
-            'selected_nasabah' => $tabungan->nasabah_id ?? null,
+            'tabungan' => $tabungan,
             'selected_rekening' => $tabungan->no_rekening ?? null,
+            'selected_tabungan' => $tabungan->id ?? null,
+            'selected_nasabah' => $selected_nasabah, // << Tambahkan ini
+            'combo_value' => $combo_value,
             'disabled' => !empty($tabungan),
             'jenis' => $this->Kategori_model->get_data(),
             'pegawai' => $this->Pegawai_model->get_data(),
-            'nasabah' => $this->Nasabah_model->get_data(),
-            'level' => $this->session->userData('level')
+            'nasabah' => $this->Penarikan_model->get_rekening_nasabah_combo(),
+            'level' => $this->session->userData('level'),
         ];
+
 
         $parser = [
             'judul' => "Formulir Penarikan Tunai",
@@ -112,163 +127,130 @@ class Penarikan extends CI_Controller
         return strtr(base64_encode($string), '+/=', '-_?');
     }
 
-    public function proses()
-    {
-        $waktu_sekarang = date('H:i:s');
-        $tanggal_penarikan_input = $this->input->post('tanggal_penarikan') . ' ' . $waktu_sekarang;
-        $simpanan_id = $this->input->post('simpanan_id');
-        $jumlah_penarikan_diminta = (float) str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_penarikan') ?? '');
-        $pegawai_id = $this->input->post('pegawai_id');
-        $level_user = $this->session->userdata('level');
+public function proses()
+{
+    $waktu_sekarang = date('H:i:s');
+    $tanggal_penarikan_input = $this->input->post('tanggal_penarikan') . ' ' . $waktu_sekarang;
+    $simpanan_id = $this->input->post('tabungan'); // dari hidden input
+    $jumlah_penarikan_diminta = (float) str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_penarikan') ?? '');
+    $pegawai_id = $this->input->post('pegawai_id');
+    $level_user = $this->session->userdata('level');
 
-        $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
-            'required'   => 'Nasabah wajib dipilih.',
+    // VALIDASI
+    $this->form_validation->set_rules('tabungan', 'Tabungan', 'required', [
+        'required' => 'Tabungan wajib dipilih.'
+    ]);
+    $this->form_validation->set_rules('jumlah_penarikan', 'Jumlah Penarikan', 'required', [
+        'required' => 'Jumlah penarikan wajib diisi.'
+    ]);
+    if ($level_user == 'Admin') {
+        $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
+            'required' => 'Pegawai wajib dipilih oleh Admin.'
         ]);
-        $this->form_validation->set_rules('simpanan_id', 'Tabungan', 'required', [
-            'required'   => 'Tabungan wajib dipilih.',
-        ]);
+    }
 
-        $this->form_validation->set_rules('jumlah_penarikan', 'Jumlah Penarikan', 'required', [
-            'required'   => 'Jumlah penarikan wajib diisi.',
-        ]);
+    // Default
+    $penalty_rp_final = 0;
+    $simpanan_data = null;
+    $jenis_tabungan_data = null;
+    $saldo_saat_ini = 0;
+    $pengendapan_minimal = 0;
 
-        if ($level_user == 'Admin') {
-            $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
-                'required' => 'Pegawai wajib dipilih oleh Admin.',
-            ]);
-        }
+    // AMBIL DATA SIMPANAN
+    if (!empty($simpanan_id)) {
+        $simpanan_data = $this->Penarikan_model->get_simpanan_by_id($simpanan_id);
 
-        $penalty_rp_final = 0;
-        $simpanan_data = null;
-        $jenis_tabungan_data = null;
-        $saldo_saat_ini = 0;
-        $pengendapan_minimal = 0;
+        if (!empty($simpanan_data)) {
+            $jenis_tabungan_data = $this->Kategori_model->get_data_by_id($simpanan_data->jenistabungan_id);
 
-        // Ambil Data Simpanan & Kategori, Hitung Denda, dan Set Aturan Validasi Spesifik
-        if (!empty($simpanan_id)) {
-            $simpanan_data = $this->Penarikan_model->get_simpanan_by_id($simpanan_id);
+            if (!empty($jenis_tabungan_data)) {
+                $saldo_saat_ini = (float) $simpanan_data->jumlah_simpanan;
+                $pengendapan_minimal = (float) $jenis_tabungan_data->pengendapan;
 
-            if (!empty($simpanan_data)) {
-                $jenis_tabungan_data = $this->Kategori_model->get_data_by_id($simpanan_data->jenistabungan_id);
-
-                if (!empty($jenis_tabungan_data)) {
-                    $saldo_saat_ini = (float) $simpanan_data->jumlah_simpanan;
-                    $pengendapan_minimal = (float) $jenis_tabungan_data->pengendapan;
-
-                    $original_deposit_date_dt = new DateTime($simpanan_data->tanggal_simpanan);
-                    // $duration_months = (int) $simpanan_data->durasi;
-                    $grace_period_days = 7;
-
-                    $date_of_withdrawal_dt = new DateTime($tanggal_penarikan_input);
-
-                    $penalty_rate = (float) $jenis_tabungan_data->jumlah_denda;
-
-                    $current_eval_deposit_date_dt = clone $original_deposit_date_dt;
-
-                    // if ($jenis_tabungan_data->nama === 'Deposito') {
-                    //     while (true) {
-                    //         $current_eval_tenor_date_dt = clone $current_eval_deposit_date_dt;
-                    //         $current_eval_tenor_date_dt->modify("+{$duration_months} months");
-
-                    //         $current_eval_grace_end_dt = clone $current_eval_tenor_date_dt;
-                    //         $current_eval_grace_end_dt->modify("+{$grace_period_days} days");
-
-                    //         if ($date_of_withdrawal_dt < $current_eval_tenor_date_dt) {
-                    //             $penalty_rp_final = round(($penalty_rate / 100) * $simpanan_data->jumlah_simpanan);
-                    //             break;
-                    //         } else if ($date_of_withdrawal_dt >= $current_eval_tenor_date_dt && $date_of_withdrawal_dt <= $current_eval_grace_end_dt) {
-                    //             $penalty_rp_final = 0;
-                    //             break;
-                    //         } else {
-                    //             $current_eval_deposit_date_dt = clone $current_eval_grace_end_dt;
-                    //             $current_eval_deposit_date_dt->modify('+1 day');
-                    //         }
-                    //     }
-                    // } else {
-                        $penalty_rp_final = 0;
-                    // }
-
-                    $this->form_validation->set_rules(
-                        'jumlah_penarikan',
-                        'Jumlah Penarikan',
-                        'required|callback_valid_jumlah_penarikan[' . $saldo_saat_ini . ',' . $pengendapan_minimal . ',' . $penalty_rp_final . ']',
-                        ['required' => 'Jumlah penarikan wajib diisi.']
-                    );
-                }
+                // Cek denda jika perlu (misal: deposito)
+                $penalty_rate = (float) $jenis_tabungan_data->jumlah_denda;
+                $penalty_rp_final = 0;
             }
+
+            // VALIDASI JUMLAH SETELAH CEK SALDO
+            $this->form_validation->set_rules(
+                'jumlah_penarikan',
+                'Jumlah Penarikan',
+                'required|callback_valid_jumlah_penarikan[' . $saldo_saat_ini . ',' . $pengendapan_minimal . ',' . $penalty_rp_final . ']',
+                ['required' => 'Jumlah penarikan wajib diisi.']
+            );
         }
+    }
 
-        if ($this->form_validation->run() == FALSE) {
-            $errors = [
-                'errorNasabah'   => form_error('nasabah'),
-                'errorSimpanan'  => form_error('simpanan_id'),
-                'errorJumlah'    => form_error('jumlah_penarikan')
-            ];
-            if ($level_user == 'Admin' && form_error('pegawai_id')) {
-                $errors['errorPegawai'] = form_error('pegawai_id');
-            }
-            $msg = ['error' => $errors];
-        } else {
-            $this->db->trans_start();
+    if ($this->form_validation->run() == FALSE) {
+        $errors = [
+            'errorSimpanan'  => form_error('tabungan'),
+            'errorJumlah'    => form_error('jumlah_penarikan')
+        ];
+        if ($level_user == 'Admin' && form_error('pegawai_id')) {
+            $errors['errorPegawai'] = form_error('pegawai_id');
+        }
+        echo json_encode(['error' => $errors]);
+        return;
+    }
 
-            $data_penarikan_header = [
-                'simpanan_id'       => $simpanan_id,
-                'pegawai_id'        => $pegawai_id,
-                'tanggal_penarikan' => $tanggal_penarikan_input,
-                'jumlah_denda'      => $penalty_rp_final,
-                'total_penarikan'   => $jumlah_penarikan_diminta
-            ];
-            $inserted_header = $this->Penarikan_model->simpan_penarikan($data_penarikan_header);
+    // MULAI TRANSAKSI
+    $this->db->trans_start();
 
-            if ($inserted_header) {
-                $data_penarikan_detail = [
-                    'simpanan_id'       => $simpanan_id,
-                    'tanggal_penarikan' => $tanggal_penarikan_input,
-                    'jumlah_penarikan'  => $jumlah_penarikan_diminta,
-                    'pegawai_id'        => $pegawai_id,
-                    'status'            => 'disetujui'
-                ];
-                $inserted_detail = $this->Tarik_model->simpan_detail_penarikan($data_penarikan_detail);
+    $data_penarikan_header = [
+        'simpanan_id'       => $simpanan_id,
+        'pegawai_id'        => $pegawai_id,
+        'tanggal_penarikan' => $tanggal_penarikan_input,
+        'jumlah_denda'      => $penalty_rp_final,
+        'total_penarikan'   => $jumlah_penarikan_diminta
+    ];
+    $inserted_header = $this->Penarikan_model->simpan_penarikan($data_penarikan_header);
 
-                if ($inserted_detail) {
-                    $total_deduction_from_saldo = $jumlah_penarikan_diminta + $penalty_rp_final;
-                    log_message('debug', "Mencoba mengurangi saldo untuk simpanan_id: {$simpanan_id} sejumlah: {$total_deduction_from_saldo}");
-                    $saldo_berkurang = $this->Penarikan_model->kurangi_saldo_simpanan($simpanan_id, $total_deduction_from_saldo);
+    if ($inserted_header) {
+        $data_penarikan_detail = [
+            'simpanan_id'       => $simpanan_id,
+            'tanggal_penarikan' => $tanggal_penarikan_input,
+            'jumlah_penarikan'  => $jumlah_penarikan_diminta,
+            'pegawai_id'        => $pegawai_id,
+            'status'            => 'disetujui'
+        ];
+        $inserted_detail = $this->Tarik_model->simpan_detail_penarikan($data_penarikan_detail);
 
-                    if ($saldo_berkurang) {
-                        $this->db->trans_commit();
+        if ($inserted_detail) {
+            $total_deduction = $jumlah_penarikan_diminta + $penalty_rp_final;
+            $saldo_berkurang = $this->Penarikan_model->kurangi_saldo_simpanan($simpanan_id, $total_deduction);
 
-                        $redirect_url_final = site_url('simpanan');
-                        $pesan_sukses = 'Penarikan berhasil diproses, detail dicatat, dan saldo telah diperbarui.';
+            if ($saldo_berkurang) {
+                $this->db->trans_commit();
 
-                        if (!empty($simpanan_data) && isset($simpanan_data->no_rekening)) {
-                            $encoded_rek = $this->_safe_base64_encode($simpanan_data->no_rekening);
-                            $redirect_url_final = site_url('penarikan/detail/' . $encoded_rek);
-                        } else {
-                            $pesan_sukses .= ' Namun, gagal menyiapkan link detail otomatis karena data simpanan tidak lengkap.';
-                            log_message('error', 'Gagal mendapatkan no_rekening dari $simpanan_data untuk redirect setelah penarikan simpanan_id: ' . $simpanan_id . '. $simpanan_data: ' . print_r($simpanan_data, true));
-                        }
-
-                        $msg = [
-                            'success' => $pesan_sukses,
-                            'redirect' => $redirect_url_final
-                        ];
-                    } else {
-                        $this->db->trans_rollback();
-                        $msg = ['error_save' => 'Gagal memperbarui saldo nasabah. Transaksi dibatalkan.'];
-                        log_message('error', "Gagal update saldo untuk simpanan_id: {$simpanan_id}. Transaksi di-rollback.");
-                    }
-                } else {
-                    $this->db->trans_rollback();
-                    $msg = ['error_save' => 'Gagal menyimpan detail penarikan. Transaksi dibatalkan.'];
+                $redirect_url = site_url('penarikan');
+                if (!empty($simpanan_data) && isset($simpanan_data->no_rekening)) {
+                    $encoded = $this->_safe_base64_encode($simpanan_data->no_rekening);
+                    $redirect_url = site_url('penarikan/detail/' . $encoded);
                 }
+
+                echo json_encode([
+                    'success' => 'Penarikan berhasil diproses.',
+                    'redirect' => $redirect_url
+                ]);
+                return;
             } else {
                 $this->db->trans_rollback();
-                $msg = ['error_save' => 'Gagal menyimpan data penarikan (header). Transaksi dibatalkan.'];
+                echo json_encode(['error_save' => 'Gagal mengurangi saldo.']);
+                return;
             }
+        } else {
+            $this->db->trans_rollback();
+            echo json_encode(['error_save' => 'Gagal menyimpan detail penarikan.']);
+            return;
         }
-        echo json_encode($msg);
+    } else {
+        $this->db->trans_rollback();
+        echo json_encode(['error_save' => 'Gagal menyimpan header penarikan.']);
+        return;
     }
+}
+
 
     public function valid_jumlah_penarikan($jumlah_diminta_str, $params)
     {
@@ -325,81 +307,21 @@ class Penarikan extends CI_Controller
     }
 
     public function fetchRekening()
-    {
-        if ($this->input->is_ajax_request()) {
-            $simpanan_id = $this->input->post('id');
+{
+    $id = $this->input->post('id');
+    $data = $this->Penarikan_model->get_simpanan_detail_by_id($id);
 
-            $simpanan = $this->Simpanan_model->get_data_by_id($simpanan_id);
-            if (!$simpanan) {
-                echo json_encode(['error' => 'Data simpanan tidak ditemukan.']);
-                return;
-            }
-
-            $jenis_tabungan = $this->Kategori_model->get_data_by_id($simpanan->jenistabungan_id);
-            if (!$jenis_tabungan) {
-                echo json_encode(['error' => 'Data kategori tabungan tidak ditemukan.']);
-                return;
-            }
-
-            // $original_deposit_date_dt = new DateTime($simpanan->tanggal_simpanan);
-            // // $duration_months = (int) $simpanan->durasi;
-            // $grace_period_days = 7;
-            // $current_date_dt = new DateTime(date('Y-m-d'));
-
-            // $penalty_rate = (float) $jenis_tabungan->jumlah_denda;
-            // $final_calculated_penalty_rp = 0;
-            // $display_penalty_rate_config = 0;
-
-            // $current_eval_deposit_date_dt = clone $original_deposit_date_dt;
-            // $effective_tenor_to_display_dt = clone $current_eval_deposit_date_dt;
-            // // $effective_tenor_to_display_dt->modify("+{$duration_months} months");
-
-            // if ($jenis_tabungan->nama === 'Deposito') {
-            //     $display_penalty_rate_config = $penalty_rate;
-
-            //     while (true) {
-            //         $current_eval_tenor_date_dt = clone $current_eval_deposit_date_dt;
-            //         // $current_eval_tenor_date_dt->modify("+{$duration_months} months");
-
-            //         $current_eval_grace_end_dt = clone $current_eval_tenor_date_dt;
-            //         $current_eval_grace_end_dt->modify("+{$grace_period_days} days");
-
-            //         $effective_tenor_to_display_dt = clone $current_eval_tenor_date_dt;
-
-            //         if ($current_date_dt < $current_eval_tenor_date_dt) {
-            //             // KASUS 1: Penarikan SEBELUM tenor evaluasi saat ini berakhir -> KENA DENDA
-            //             $final_calculated_penalty_rp = round(($penalty_rate / 100) * $simpanan->jumlah_simpanan);
-            //             break;
-            //         } else if ($current_date_dt >= $current_eval_tenor_date_dt && $current_date_dt <= $current_eval_grace_end_dt) {
-            //             // KASUS 2: Penarikan PADA tenor atau DALAM masa tenggang -> TIDAK KENA DENDA
-            //             $final_calculated_penalty_rp = 0;
-            //             $display_penalty_rate_config = 0;
-            //             break;
-            //         } else {
-            //             // KASUS 3: Deposito Dianggap ROLL OVER, lanjut ke periode berikutnya
-            //             $current_eval_deposit_date_dt = clone $current_eval_grace_end_dt;
-            //             $current_eval_deposit_date_dt->modify('+1 day');
-            //         }
-            //     }
-            // } else {
-            //     $final_calculated_penalty_rp = 0;
-            //     $display_penalty_rate_config = 0;
-            // }
-
-            $msg = [
-                'saldo' => $simpanan->jumlah_simpanan,
-                // 'durasi' => $simpanan->durasi,
-                // 'tenor' => $effective_tenor_to_display_dt->format('Y-m-d'),
-                // 'jumlah_denda' => $display_penalty_rate_config,
-                // 'jenis_denda' => ($jenis_tabungan->nama === 'Deposito' && $display_penalty_rate_config > 0) ? $jenis_tabungan->jenis_denda : '',
-                'kategori' => $jenis_tabungan,
-                // 'calculated_penalty_rp' => $final_calculated_penalty_rp
-            ];
-            echo json_encode($msg);
-        } else {
-            show_custom_404();
-        }
+    if ($data) {
+        echo json_encode([
+            'nama_nasabah'      => $data->nama_lengkap,
+            'jenis_tabungan'    => $data->jenis_tabungan,
+            'saldo'             => $data->jumlah_simpanan
+        ]);
+    } else {
+        echo json_encode(['error' => 'Data tidak ditemukan']);
     }
+}
+
 
     public function updateData()
     {
@@ -603,4 +525,14 @@ class Penarikan extends CI_Controller
             echo json_encode(['error' => 'Gagal menghapus data penarikan (header). Transaksi dibatalkan.']);
         }
     }
+
+    public function get_combo_rekening_nasabah()
+    {
+        $search = $this->input->get('q');
+        $this->load->model('Penarikan_model');
+        $result = $this->Penarikan_model->get_combo_rekening_nasabah($search);
+        echo json_encode($result);
+    }
+
+    
 }
