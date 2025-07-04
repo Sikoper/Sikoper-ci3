@@ -8,6 +8,9 @@ class Simpanan_model extends CI_Model
     var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbjenistabungan.nama');
     var $order = array('no_rekening' => 'ASC');
 
+    public $_table_detail_simpanan = 'tbdetail_simpanan';
+    public $_table_transaksi = 'tbtransaksi';
+
     private function _get_datatables_query()
     {
         $this->db->select('tbsimpanan.*, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah');
@@ -73,9 +76,34 @@ class Simpanan_model extends CI_Model
         return $this->db->insert('tbsimpanan', $data);
     }
 
+    public function hapus_simpanan_lengkap($id_simpanan)
+    {
+        if (empty($id_simpanan)) {
+            return false;
+        }
+        $this->db->trans_start();
+
+        $this->db->where('simpanan_id', $id_simpanan);
+        $this->db->delete($this->_table_detail_simpanan);
+
+        $this->db->where('simpanan_id', $id_simpanan);
+        $this->db->delete($this->_table_transaksi);
+
+        $this->db->where('id', $id_simpanan);
+        $this->db->delete($this->table);
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            log_message('error', 'Gagal menghapus data simpanan lengkap untuk ID: ' . $id_simpanan);
+            return false;
+        }
+        return true;
+    }
+
     public function delete_data($id)
     {
-        return $this->db->delete('tbsimpanan', ['id' => $id]);
+        return $this->hapus_simpanan_lengkap($id);
     }
 
     public function edit_data($id, $data)

@@ -8,6 +8,10 @@ class Deposito_model extends CI_Model
     var $column_search = array('tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
     var $order = array('no_rekening' => 'ASC');
 
+    public $_table_penarikan_deposito = 'tbpenarikan_deposito';
+    public $_table_bunga_log = 'tbdeposito_bunga_log';
+    public $_table_transaksi_deposito = 'tbtransaksi_deposito';
+
     private function _get_datatables_query()
     {
         $this->db->select('tbdeposito.*, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah');
@@ -73,9 +77,40 @@ class Deposito_model extends CI_Model
         return $this->db->insert($this->table, $data);
     }
 
+    public function hapus_deposito_lengkap($id_deposito)
+    {
+        if (empty($id_deposito)) {
+            return false;
+        }
+
+        $this->db->trans_start();
+
+        $this->db->where('deposito_id', $id_deposito);
+        $this->db->delete($this->_table_penarikan_deposito);
+
+        $this->db->where('deposito_id', $id_deposito);
+        $this->db->delete($this->_table_bunga_log);
+
+        $this->db->where('deposito_id', $id_deposito);
+        $this->db->delete($this->_table_transaksi_deposito);
+
+        $this->db->where('id', $id_deposito);
+        $this->db->delete($this->table);
+
+        $this->db->trans_complete();
+
+
+        if ($this->db->trans_status() === FALSE) {
+            log_message('error', 'Gagal menghapus data deposito lengkap untuk ID: ' . $id_deposito);
+            return false;
+        }
+        return true;
+    }
+
     public function delete_data($id)
     {
-        return $this->db->delete($this->table, ['id' => $id]);
+
+        return $this->hapus_deposito_lengkap($id);
     }
 
     public function edit_data($id, $data)
@@ -196,20 +231,18 @@ class Deposito_model extends CI_Model
         return $this->db->get()->result();
     }
 
-public function get_by_id($id)
-{
-    $this->db->select('
+    public function get_by_id($id)
+    {
+        $this->db->select('
         tbdeposito.*, 
         tbnasabah.nama_lengkap, 
         tbnasabah.id as nasabah_id,
         tbjenistabungan.nama as jenis_tabungan
     ');
-    $this->db->from('tbdeposito');
-    $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
-    $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id', 'left');
-    $this->db->where('tbdeposito.id', $id);
-    return $this->db->get()->row();
-}
-
-
+        $this->db->from('tbdeposito');
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
+        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id', 'left');
+        $this->db->where('tbdeposito.id', $id);
+        return $this->db->get()->row();
+    }
 }
