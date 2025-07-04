@@ -17,6 +17,9 @@
 
                     <div class="form-group mb-3">
                         <label for="comboRekening">Pilih No. Rekening</label>
+
+                        <input type="hidden" name="tabungan" id="hidden_tabungan">
+
                         <input type="hidden" id="preselectComboValue" value="<?= $combo_value ?>">
                         <input type="hidden" id="preselectComboId" value="<?= $selected_tabungan ?>">
                         <select id="comboRekening" class="form-control select2" name="comboRekening" <?= $disabled ? 'disabled' : '' ?>>
@@ -167,6 +170,16 @@
         });
 
         $('#comboRekening').on('change', function() {
+            $('#jumlah_penarikan').autoNumeric('set', '');
+            $('#infoNasabah').hide();
+            saldoAN.set(0);
+            totalDitarikAN.set(0);
+            perkiraanSisaSaldoAN.set(0);
+
+            <?php if ($level == 'Admin'): ?>
+                $('#pegawai_id').val('').trigger('change');
+            <?php endif; ?>
+
             const idTabungan = $(this).val();
             $('#hidden_tabungan').val(idTabungan);
 
@@ -183,27 +196,18 @@
                             $('#infoNasabah').show();
                             $('#infoNama').text(response.nama_nasabah || '-');
                             $('#infoJenisTabungan').text(response.jenis_tabungan || '-');
+
                             saldoAN.set(response.saldo || 0);
                             updateTotalYangAkanDitarik();
-                        } else {
-                            $('#infoNasabah').hide();
-                            saldoAN.set(0);
                         }
                     },
                     error: function() {
-                        $('#infoNasabah').hide();
                         saldoAN.set(0);
+                        updateTotalYangAkanDitarik();
                     }
                 });
-            } else {
-                $('#infoNasabah').hide();
-                $('#hidden_tabungan').val('');
-                saldoAN.set(0);
-                updateTotalYangAkanDitarik();
             }
         });
-
-
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();

@@ -29,17 +29,22 @@ class Setoran extends CI_Controller
         {
             return base64_decode(strtr($string, '-_?', '+/='));
         }
+
         $encoded_rek = $this->input->get('id');
+        $tabungan = null;
+
         if (!empty($encoded_rek)) {
             $no_rekening = safe_base64_decode($encoded_rek);
             $tabungan = $this->Simpanan_model->get_data_by_norek($no_rekening);
         }
+
         $pegawai = $this->Pegawai_model->get_data();
 
         $data = [
-            'tabungan' => $tabungan ?? null,
+            'tabungan' => $tabungan,
             'selected_nasabah' => $tabungan->nasabah_id ?? null,
             'selected_rekening' => $tabungan->no_rekening ?? null,
+            'selected_tabungan_id' => $tabungan->id ?? null,
             'disabled' => !empty($tabungan),
             'pegawai' => $pegawai,
             'nasabah' => $this->Nasabah_model->get_data(),
@@ -52,6 +57,7 @@ class Setoran extends CI_Controller
         ];
         $this->parser->parse('templates/main', $parser);
     }
+
 
     public function simpanData()
     {
@@ -212,7 +218,7 @@ class Setoran extends CI_Controller
     {
         if ($this->input->is_ajax_request()) {
             header('Content-Type: application/json');
-            $id_rekening = $this->input->post('id_rekening');
+            $id_rekening = $this->input->post('id');
 
             if ($id_rekening) {
                 $data_simpanan = $this->Simpanan_model->get_data_by_id($id_rekening);
@@ -262,6 +268,57 @@ class Setoran extends CI_Controller
             }
 
             echo json_encode($msg);
+        }
+    }
+
+    public function get_combo_rekening_nasabah()
+    {
+        $term = $this->input->get('search');
+        log_message('debug', 'Search keyword: ' . $term);
+
+        $result = $this->Simpanan_model->cari_rekening_nasabah($term);
+
+        $data = [];
+        foreach ($result as $row) {
+            $data[] = [
+                'id' => $row->id,
+                'text' => $row->no_rekening
+            ];
+        }
+
+        echo json_encode($data);
+    }
+
+    public function get_detail_rekening()
+    {
+        if ($this->input->is_ajax_request()) {
+            $id = $this->input->post('id');
+            log_message('debug', 'ID yang dikirim: ' . $id); // <--- tambahkan ini
+
+            $data = $this->Simpanan_model->get_detail_tabungan_by_id($id);
+            log_message('debug', 'Hasil query: ' . print_r($data, true)); // <---
+
+            if ($data) {
+                $response = [
+                    'status' => 'success',
+                    'data' => [
+                        'id' => $data->id,
+                        'no_rekening' => $data->no_rekening,
+                        'nasabah_id' => $data->nasabah_id,
+                        'nama_lengkap' => $data->nama_lengkap,
+                        'jenis_tabungan' => $data->jenis_tabungan,
+                        'nik' => $data->nik,
+                        'alamat' => $data->alamat,
+                        'jumlah_simpanan' => $data->jumlah_simpanan
+                    ]
+                ];
+            } else {
+                $response = ['status' => 'error', 'message' => 'Data tidak ditemukan.'];
+            }
+
+            echo json_encode($response);
+        } else {
+            exit('No direct script access allowed');
         }
     }
 }

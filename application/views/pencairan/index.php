@@ -15,6 +15,7 @@
                             <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
                             <input type="hidden" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
                         </div>
+                        <div id="errorTanggal" class="invalid-feedback" style="display: none;"></div>
                     </div>
                     <div class="form-group mb-3">
                         <label for="comboRekening">Pilih No. Rekening</label>
@@ -146,6 +147,7 @@
             $('#infoJenisTabungan').text(selected.jenis_tabungan);
             $('#infoNasabah').slideDown();
             $('.is-invalid').removeClass('is-invalid');
+            
             $.ajax({
                 url: '<?= base_url("pencairan/fetchRekening") ?>',
                 method: 'POST',
@@ -269,26 +271,29 @@
     });
 </script>
 <?php if (!empty($tabungan)) : ?>
-<script>
-    $(document).ready(function () {
-        const newOption = new Option('<?= $tabungan->no_rekening ?>', '<?= $tabungan->id ?>', true, true);
-        $('#comboRekening').append(newOption).trigger('change');
+    <script>
+        $(document).ready(function() {
+            const newOption = new Option('<?= $tabungan->no_rekening ?>', '<?= $tabungan->id ?>', true, true);
+            $('#comboRekening').append(newOption).trigger('change');
 
-        $.ajax({
-            url: '<?= base_url("pencairan/get_combo_rekening_nasabah") ?>',
-            dataType: 'json',
-            data: { q: '' },
-            success: function(data) {
-                const found = data.find(item => item.id == '<?= $tabungan->id ?>');
-                if (found) {
-                    $('#comboRekening').trigger({
-                        type: 'select2:select',
-                        params: { data: found }
-                    });
+            $.ajax({
+                url: '<?= base_url("pencairan/get_combo_rekening_nasabah") ?>',
+                dataType: 'json',
+                data: {
+                    q: ''
+                },
+                success: function(data) {
+                    const found = data.find(item => item.id == '<?= $tabungan->id ?>');
+                    if (found) {
+                        $('#comboRekening').trigger({
+                            type: 'select2:select',
+                            params: {
+                                data: found
+                            }
+                        });
+                    }
                 }
-            }
+            });
         });
-    });
-</script>
+    </script>
 <?php endif; ?>
-

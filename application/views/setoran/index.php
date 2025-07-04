@@ -9,50 +9,30 @@
                     <div class="col-md-6">
                         <?= form_open('', ['id' => 'form_simpan', 'data-level' => $this->session->userdata('level')]) ?>
 
-                        <div class="form-group mb-3">
-                            <label for="tanggal_setoran_display">Tanggal</label>
-                            <input type="text" id="tanggal_setoran_display" value="<?= date('d-m-Y') ?>" class="form-control" style="background-color: #e9ecef;" readonly>
-                            <input type="hidden" id="tanggal_setoran" name="tanggal_setoran" value="<?= date('Y-m-d') ?>">
-                            <div id="errorTanggalSetoran" class="invalid-feedback"></div>
+                    <div class="form-group mb-3" style="height: 80px;">
+                        <label for="tanggal_penarikan">Tanggal Penarikan</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
+                            <input type="hidden" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
                         </div>
+                        <div id="errorTanggal" class="invalid-feedback" style="display: none;"></div>
+                    </div>
 
                         <div class="form-group mb-3">
-                            <label for="nasabah">Pilih Nasabah</label>
-                            <select id="nasabah" class="form-control select2" name="nasabah" <?= $disabled ? 'disabled' : '' ?>>
-                                <option value="">-- Pilih Nasabah --</option>
-                                <?php foreach ($nasabah as $n): ?>
-                                    <option value="<?= $n->id ?>" <?= ($selected_nasabah == $n->id) ? 'selected' : '' ?>>
-                                        <?= $n->nama_lengkap ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div id="errorNasabah" class="invalid-feedback"></div>
-                            <small class="form-text text-muted">Klik untuk mencari nama nasabah.</small>
-                        </div>
-
-                        <div id="detail_nasabah_info" class="alert alert-light mt-2" style="display:none;"></div>
-
-                        <div class="form-group mb-3">
-                            <label for="tabungan">Pilih Tabungan</label>
-                            <select class="form-control select2" name="tabungan" id="tabungan" <?= $disabled ? 'disabled' : '' ?>>
-                                <?php if (!empty($tabungan)): ?>
-                                    <option value="<?= $tabungan->id ?>" selected><?= $tabungan->no_rekening ?></option>
-                                <?php else: ?>
-                                    <option value="">-- Pilih Rekening --</option>
-                                <?php endif; ?>
+                            <label for="comboRekening">Pilih Rekening</label>
+                            <select id="comboRekening" name="comboRekening" class="form-control select2">
+                                <option value="">-- Pilih Rekening --</option>
                             </select>
                             <div id="errorTabungan" class="invalid-feedback"></div>
+                            <small class="form-text text-muted">Cari berdasarkan nomor rekening</small>
                         </div>
 
-                        <?php if (!empty($tabungan)): ?>
-                            <input type="hidden" id="preselectedNasabah" value="<?= $tabungan->nasabah_id ?>">
-                            <input type="hidden" id="preselectedTabungan" value="<?= $tabungan->id ?>">
-                        <?php endif; ?>
+                        <!-- Hidden untuk dikirim -->
+                        <input type="hidden" name="tabungan" id="inputTabungan">
+                        <input type="hidden" name="nasabah" id="inputNasabah">
 
-                        <?php if (!empty($tabungan)): ?>
-                            <input type="hidden" name="nasabah" value="<?= $tabungan->nasabah_id ?>">
-                            <input type="hidden" name="tabungan" value="<?= $tabungan->id ?>">
-                        <?php endif; ?>
+                        <!-- Info deskriptif -->
+                        <div id="detail_nasabah_info" class="alert alert-light mt-2" style="display:none;"></div>
 
                         <div class="form-group mb-3">
                             <label for="sisa_saldo">Saldo Saat Ini</label>
@@ -110,115 +90,89 @@
             mDec: '0'
         });
 
-        $('#nasabah').select2({
-            placeholder: '-- Pilih Nasabah --'
+        $('#comboRekening').select2({
+            placeholder: '-- Pilih Rekening --',
+            ajax: {
+                url: '<?= base_url('setoran/get_combo_rekening_nasabah') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        search: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                },
+                cache: true
+            }
         });
-        $('#tabungan').select2({
-            placeholder: '-- Pilih Rekening --'
+
+        $('#comboRekening').on('change', function() {
+            let idRekening = $(this).val();
+            let infoDiv = $('#detail_nasabah_info');
+            $('#inputTabungan').val('');
+            $('#inputNasabah').val('');
+            $('#sisa_saldo').val('Memuat...');
+            $('#jumlah_setoran').autoNumeric('set', '');
+
+            // Jika yang login adalah Admin, reset juga pilihan Pegawai
+            if ($('#form_simpan').data('level') === 'Admin') {
+                $('#pegawai_id').val('').trigger('change');
+            }
+
+            if (idRekening) {
+                $.ajax({
+                    url: '<?= base_url("setoran/get_detail_rekening") ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        id: idRekening
+                    },
+                    success: function(res) {
+                        if (res.status === 'success') {
+                            $('#inputTabungan').val(res.data.id);
+                            $('#inputNasabah').val(res.data.nasabah_id);
+
+                            infoDiv.html(`
+                                <strong>Nama:</strong> ${res.data.nama_lengkap}<br>
+                                <strong>Jenis Tabungan:</strong> ${res.data.jenis_tabungan}<br>
+                                <strong>NIK:</strong> ${res.data.nik}<br>
+                                <strong>Alamat:</strong> ${res.data.alamat}
+                            `).show();
+
+                            let saldo = new Intl.NumberFormat('id-ID').format(res.data.jumlah_simpanan);
+                            $('#sisa_saldo').val(saldo);
+                        } else {
+                            infoDiv.html('<em>Gagal mengambil data rekening.</em>').show();
+                            $('#sisa_saldo').val('Gagal');
+                        }
+
+                        cekKesiapanForm();
+                    }
+                });
+            } else {
+                infoDiv.hide().html('');
+                $('#sisa_saldo').val('Pilih Rekening Untuk Melihat Saldo');
+                cekKesiapanForm();
+            }
         });
+
         <?php if ($level == 'Admin'): ?>
             $('#pegawai_id').select2({
                 placeholder: '-- Pilih Pegawai --'
             });
         <?php endif; ?>
 
-        $('#nasabah').on('change', function() {
-            console.log('Nasabah selection changed. Firing event...');
-            let nasabahId = $(this).val();
-            const selectTabungan = $('#tabungan');
-            const detailInfo = $('#detail_nasabah_info');
-
-            $('#sisa_saldo').val('Pilih Tabungan Untuk Melihat Saldo');
-            $('#jumlah_setoran').autoNumeric('set', '');
-            detailInfo.hide().html('');
-            selectTabungan.html('<option value="">--- Pilih tabungan ---</option>').trigger('change');
-
-            if (nasabahId) {
-                selectTabungan.prop('disabled', false).html('<option value="">--- Memuat rekening... ---</option>');
-                $.ajax({
-                    type: "POST",
-                    url: "<?= base_url('setoran/get_no_rekening') ?>",
-                    data: {
-                        nasabah: nasabahId
-                    },
-                    dataType: "json",
-                    success: function(response) {
-                        console.log('AJAX success: Received rekening data.');
-                        if (response.data) {
-                            selectTabungan.html(response.data);
-
-                            if (response.detail_nasabah) {
-                                let detail = response.detail_nasabah;
-                                detailInfo.html(`<strong>NIK:</strong> ${detail.nik || '-'}<br><strong>Alamat:</strong> ${detail.alamat || '-'}`).show();
-                            }
-
-                            const preselectedTabunganId = $('#preselectedTabungan').val();
-                            if (preselectedTabunganId) {
-                                console.log('Preselected tabungan found. Triggering its change event.');
-                                selectTabungan.val(preselectedTabunganId).trigger('change');
-
-                                $('#nasabah').prop('disabled', true);
-                                selectTabungan.prop('disabled', true);
-                            }
-                        } else {
-                            selectTabungan.html('<option value="">-- Tidak ada rekening --</option>');
-                        }
-                    },
-                    error: function() {
-                        selectTabungan.html('<option value="">-- Gagal memuat --</option>');
-                    }
-                });
-            } else {
-                selectTabungan.prop('disabled', true);
-            }
-            cekKesiapanForm();
-        });
-
-        $('#tabungan').on('change', function() {
-            console.log('SUCCESS: Tabungan change event fired!');
-            let idRekening = $(this).val();
-            let inputSaldo = $('#sisa_saldo');
-
-            if (idRekening) {
-                inputSaldo.val('Memuat...');
-                $.ajax({
-                    url: '<?= base_url("setoran/get-saldo") ?>',
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {
-                        id_rekening: idRekening
-                    },
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            let saldoFormatted = new Intl.NumberFormat('id-ID', {
-                                style: 'decimal',
-                                minimumFractionDigits: 0
-                            }).format(response.saldo);
-
-                            inputSaldo.val(saldoFormatted);
-                        } else {
-                            inputSaldo.val(response.message || 'Gagal memuat');
-                        }
-                        cekKesiapanForm();
-                    },
-                    error: function() {
-                        inputSaldo.val('Gagal memuat saldo.');
-                        cekKesiapanForm();
-                    }
-                });
-            } else {
-                inputSaldo.val('Pilih Tabungan Untuk Melihat Saldo');
-                cekKesiapanForm();
-            }
-        });
-
         $('#jumlah_setoran, #pegawai_id').on('keyup change', function() {
             cekKesiapanForm();
         });
 
         function cekKesiapanForm() {
-            const nasabah = $('#nasabah').val();
-            const tabungan = $('#tabungan').val();
+            const nasabah = $('#inputNasabah').val();
+            const tabungan = $('#inputTabungan').val();
             const jumlahSetoran = $('#jumlah_setoran').autoNumeric('get');
             const level = $('#form_simpan').data('level');
             let pegawaiValid = true;
@@ -266,19 +220,12 @@
                             $('#errorTanggalSetoran').fadeOut();
                             $('#tanggal_setoran').removeClass('is-invalid').addClass('is-valid');
                         }
-                        if (dataError.errorNasabah) {
-                            $('#errorNasabah').html(dataError.errorNasabah).show();
-                            $('#nasabah').addClass('is-invalid');
-                        } else {
-                            $('#errorNasabah').fadeOut();
-                            $('#nasabah').removeClass('is-invalid').addClass('is-valid');
-                        }
                         if (dataError.errorTabungan) {
                             $('#errorTabungan').html(dataError.errorTabungan).show();
-                            $('#tabungan').addClass('is-invalid');
+                            $('#comboRekening').addClass('is-invalid');
                         } else {
                             $('#errorTabungan').fadeOut();
-                            $('#tabungan').removeClass('is-invalid').addClass('is-valid');
+                            $('#comboRekening').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorJumlahSetoran) {
                             $('#errorJumlahSetoran').html(dataError.errorJumlahSetoran).show();
@@ -308,12 +255,19 @@
             });
         });
 
-        cekKesiapanForm();
+        // Inject data jika membuka dari link detail
+        const selectedRekening = '<?= $selected_rekening ?? '' ?>';
+        const selectedTabunganId = '<?= $selected_tabungan_id ?? '' ?>';
+        const selectedNasabahId = '<?= $selected_nasabah ?? '' ?>';
 
-        const preselectedNasabah = $('#preselectedNasabah').val();
-        if (preselectedNasabah) {
-            console.log('Page loaded with preselected nasabah. Firing trigger...');
-            $('#nasabah').trigger('change');
+        if (selectedRekening && selectedTabunganId && selectedNasabahId) {
+            const newOption = new Option(selectedRekening, selectedTabunganId, true, true);
+            $('#comboRekening').append(newOption).trigger('change');
+
+            $('#inputTabungan').val(selectedTabunganId);
+            $('#inputNasabah').val(selectedNasabahId);
         }
+
+        cekKesiapanForm();
     });
 </script>
