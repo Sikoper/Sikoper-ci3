@@ -61,94 +61,97 @@ class Setoran extends CI_Controller
 
     public function simpanData()
     {
-        if ($this->input->is_ajax_request()) {
-            // Set timezone ke Waktu Indonesia Tengah (WITA / UTC+8)
-            date_default_timezone_set('Asia/Makassar');
+        // if ($this->input->is_ajax_request()) {
+        // Set timezone ke Waktu Indonesia Tengah (WITA / UTC+8)
+        date_default_timezone_set('Asia/Makassar');
 
-            // Ambil tanggal dari form dan gabungkan dengan waktu saat ini
-            $tanggal_dari_form = $this->input->post('tanggal_setoran');
-            $waktu_sekarang = date('H:i:s'); // Mendapatkan waktu saat ini, misal: 09:42:00
-            $tanggal_setoran = $tanggal_dari_form . ' ' . $waktu_sekarang; // Menggabungkan menjadi format DATETIME
+        // Ambil tanggal dari form dan gabungkan dengan waktu saat ini
+        $tanggal_dari_form = $this->input->post('tanggal_setoran');
+        $waktu_sekarang = date('H:i:s'); // Mendapatkan waktu saat ini, misal: 09:42:00
+        $tanggal_setoran = $tanggal_dari_form . ' ' . $waktu_sekarang; // Menggabungkan menjadi format DATETIME
 
-            $tabungan = $this->input->post('tabungan');
-            $jumlah_setoran = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_setoran'));
-            $pegawai_id = $this->input->post('pegawai_id');
+        $tabungan = $this->input->post('tabungan');
+        $jumlah_setoran = $this->input->post('jumlah_setoran');
+        // echo '<pre>';
+        // print_r($jumlah_setoran);
+        // exit;
+        $pegawai_id = $this->input->post('pegawai_id');
 
-            if ($this->session->userdata('level') == 'Admin') {
-                $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
-                    'required' => 'Pegawai wajib dipilih.'
-                ]);
-            }
-
-            $this->form_validation->set_rules('tanggal_setoran', 'Tanggal Setoran', 'required', [
-                'required'  => 'Tanggal setoran wajib diisi.'
+        if ($this->session->userdata('level') == 'Admin') {
+            $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
+                'required' => 'Pegawai wajib dipilih.'
             ]);
-
-            $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
-                'required'  => 'Nasabah wajib diisi.'
-            ]);
-
-            $this->form_validation->set_rules('tabungan', 'Tabungan', 'required', [
-                'required'  => 'Tabungan wajib diisi.'
-            ]);
-
-            $this->form_validation->set_rules('jumlah_setoran', 'Jumlah Setoran', 'required', [
-                'required'  => 'Jumlah setoran wajib diisi.'
-            ]);
-
-            if ($this->form_validation->run() == FALSE) {
-                $msg = [
-                    'error' => [
-                        'errorTanggalSetoran'   => form_error('tanggal_setoran'),
-                        'errorNasabah'          => form_error('nasabah'),
-                        'errorTabungan'         => form_error('tabungan'),
-                        'errorJumlahSetoran'    => form_error('jumlah_setoran'),
-                        'errorPegawai'          => form_error('pegawai_id')
-                    ]
-                ];
-            } else {
-                // Data yang akan dimasukkan ke database, sekarang dengan datetime lengkap
-                $data = [
-                    'simpanan_id' => $tabungan,
-                    'tanggal_setoran' => $tanggal_setoran, // Menggunakan variabel datetime yang sudah digabung
-                    'jumlah_setoran' => $jumlah_setoran,
-                    'pegawai_id' => $pegawai_id
-                ];
-
-                // Perbaikan: Pastikan fungsi hanya dideklarasikan sekali
-                if (!function_exists('safe_base64_encode')) {
-                    function safe_base64_encode($string)
-                    {
-                        return strtr(base64_encode($string), '+/=', '-_?');
-                    }
-                }
-
-                $this->db->trans_start(); // Mulai transaksi
-
-                // 1. Masukkan detail setoran
-                $this->Setoran_model->insert_data($data);
-
-                // 2. Update saldo di tabel utama
-                $sql = "UPDATE tbsimpanan SET jumlah_simpanan = jumlah_simpanan + ? WHERE id = ?";
-                $this->db->query($sql, array($jumlah_setoran, $tabungan));
-
-                $this->db->trans_complete(); // Selesaikan transaksi
-
-                if ($this->db->trans_status() === FALSE) {
-                    // Jika transaksi gagal, kirim pesan error
-                    $msg = ['error' => 'Gagal menyimpan data karena ada masalah pada database.'];
-                } else {
-                    // Jika transaksi berhasil
-                    $data_simpanan = $this->Simpanan_model->get_data_by_id($tabungan);
-                    $msg = [
-                        'success' => 'Data berhasil ditambahkan.',
-                        'redirect' => base_url('simpanan/detail/') . safe_base64_encode($data_simpanan->no_rekening)
-                    ];
-                }
-            }
-
-            echo json_encode($msg);
         }
+
+        $this->form_validation->set_rules('tanggal_setoran', 'Tanggal Setoran', 'required', [
+            'required'  => 'Tanggal setoran wajib diisi.'
+        ]);
+
+        $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
+            'required'  => 'Nasabah wajib diisi.'
+        ]);
+
+        $this->form_validation->set_rules('tabungan', 'Tabungan', 'required', [
+            'required'  => 'Tabungan wajib diisi.'
+        ]);
+
+        $this->form_validation->set_rules('jumlah_setoran', 'Jumlah Setoran', 'required', [
+            'required'  => 'Jumlah setoran wajib diisi.'
+        ]);
+
+        if ($this->form_validation->run() == FALSE) {
+            $msg = [
+                'error' => [
+                    'errorTanggalSetoran'   => form_error('tanggal_setoran'),
+                    'errorNasabah'          => form_error('nasabah'),
+                    'errorTabungan'         => form_error('tabungan'),
+                    'errorJumlahSetoran'    => form_error('jumlah_setoran'),
+                    'errorPegawai'          => form_error('pegawai_id')
+                ]
+            ];
+        } else {
+            // Data yang akan dimasukkan ke database, sekarang dengan datetime lengkap
+            $data = [
+                'simpanan_id' => $tabungan,
+                'tanggal_setoran' => $tanggal_setoran, // Menggunakan variabel datetime yang sudah digabung
+                'jumlah_setoran' => $jumlah_setoran,
+                'pegawai_id' => $pegawai_id
+            ];
+
+            // Perbaikan: Pastikan fungsi hanya dideklarasikan sekali
+            if (!function_exists('safe_base64_encode')) {
+                function safe_base64_encode($string)
+                {
+                    return strtr(base64_encode($string), '+/=', '-_?');
+                }
+            }
+
+            $this->db->trans_start(); // Mulai transaksi
+
+            // 1. Masukkan detail setoran
+            $this->Setoran_model->insert_data($data);
+
+            // 2. Update saldo di tabel utama
+            $sql = "UPDATE tbsimpanan SET jumlah_simpanan = jumlah_simpanan + ? WHERE id = ?";
+            $this->db->query($sql, array($jumlah_setoran, $tabungan));
+
+            $this->db->trans_complete(); // Selesaikan transaksi
+
+            if ($this->db->trans_status() === FALSE) {
+                // Jika transaksi gagal, kirim pesan error
+                $msg = ['error' => 'Gagal menyimpan data karena ada masalah pada database.'];
+            } else {
+                // Jika transaksi berhasil
+                $data_simpanan = $this->Simpanan_model->get_data_by_id($tabungan);
+                $msg = [
+                    'success' => 'Data berhasil ditambahkan.',
+                    'redirect' => base_url('simpanan/detail/') . safe_base64_encode($data_simpanan->no_rekening)
+                ];
+            }
+        }
+
+        echo json_encode($msg);
+        // }
     }
 
     public function fetchData()

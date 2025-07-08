@@ -24,6 +24,8 @@
                         <div class="invalid-feedback" id="errorSimpanan"></div>
                     </div>
 
+                    <input type="hidden" name="deposito" id="inputDeposito">
+
                     <div id="infoNasabah" style="display: none; margin-bottom: 15px;">
                         <p><strong>Nama Nasabah:</strong> <span id="infoNama"></span></p>
                         <p><strong>Jenis Tabungan:</strong> <span id="infoJenisTabungan"></span></p>
@@ -146,6 +148,7 @@
             $('#infoNama').text(selected.nama_nasabah);
             $('#infoJenisTabungan').text(selected.jenis_tabungan);
             $('#infoNasabah').slideDown();
+            // $('#comboRekening').prop('disabled', true);
             $('.is-invalid').removeClass('is-invalid');
             
             $.ajax({

@@ -123,7 +123,7 @@ class Pencairan extends CI_Controller
     public function proses()
     {
         // 1. VALIDASI INPUT FORM (Validasi 'nasabah' dihapus, validasi 'simpanan_id' diubah ke 'deposito_id')
-        $this->form_validation->set_rules('deposito_id', 'Rekening Deposito', 'required', ['required' => 'Rekening Deposito wajib dipilih.']);
+        $this->form_validation->set_rules('deposito', 'Rekening Deposito', 'required', ['required' => 'Rekening Deposito wajib dipilih.']);
         $this->form_validation->set_rules('tanggal_penarikan', 'Tanggal Penarikan', 'required', ['required' => 'Tanggal penarikan wajib diisi.']);
 
         if ($this->session->userdata('level') == 'Admin') {
@@ -132,7 +132,7 @@ class Pencairan extends CI_Controller
 
         if ($this->form_validation->run() == FALSE) {
             $errors = [
-                'errorSimpanan'  => form_error('deposito_id'), // Diubah ke deposito_id
+                'errorSimpanan'  => form_error('deposito'), // Diubah ke deposito_id
                 'errorPegawai'   => form_error('pegawai_id') ?? '',
                 'errorTanggal'   => form_error('tanggal_penarikan')
             ];
@@ -141,7 +141,7 @@ class Pencairan extends CI_Controller
         }
 
         // 2. PENGAMBILAN DATA & PERHITUNGAN DENDA OLEH SERVER
-        $simpanan_id = $this->input->post('deposito_id'); // Diubah ke deposito_id
+        $simpanan_id = $this->input->post('deposito'); // Diubah ke deposito_id
         $simpanan_data = $this->Deposito_model->get_data_by_id($simpanan_id);
 
         if (!$simpanan_data) {

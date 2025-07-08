@@ -9,14 +9,14 @@
                     <div class="col-md-6">
                         <?= form_open('', ['id' => 'form_simpan', 'data-level' => $this->session->userdata('level')]) ?>
 
-                    <div class="form-group mb-3" style="height: 80px;">
-                        <label for="tanggal_penarikan">Tanggal Penarikan</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
-                            <input type="hidden" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
+                        <div class="form-group mb-3" style="height: 80px;">
+                            <label for="tanggal_setoran">Tanggal Penarikan</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
+                                <input type="hidden" name="tanggal_setoran" value="<?= date('Y-m-d') ?>">
+                            </div>
+                            <div id="errorTanggalSetoran" class="invalid-feedback" style="display: none;"></div>
                         </div>
-                        <div id="errorTanggal" class="invalid-feedback" style="display: none;"></div>
-                    </div>
 
                         <div class="form-group mb-3">
                             <label for="comboRekening">Pilih Rekening</label>
@@ -194,6 +194,9 @@
             let form = $('#form_simpan')[0];
             let data = new FormData(form);
 
+            let unformattedValue = $('#jumlah_setoran').autoNumeric('get');
+            data.set('jumlah_setoran', unformattedValue);
+
             $.ajax({
                 type: "POST",
                 url: "<?= base_url('setoran/simpanData') ?>",
@@ -263,7 +266,7 @@
         if (selectedRekening && selectedTabunganId && selectedNasabahId) {
             const newOption = new Option(selectedRekening, selectedTabunganId, true, true);
             $('#comboRekening').append(newOption).trigger('change');
-
+            $('#comboRekening').prop('disabled', true);
             $('#inputTabungan').val(selectedTabunganId);
             $('#inputNasabah').val(selectedNasabahId);
         }

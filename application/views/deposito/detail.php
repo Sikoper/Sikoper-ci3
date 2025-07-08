@@ -105,9 +105,9 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                <?php if ($deposito->status === 'aktif'): ?>
-                    <button class="btn btn-danger" onclick="window.location='<?= base_url('pencairan/') . '?id=' . safe_base64_encode($deposito->id) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
-                <?php endif; ?>
+                
+                    <button class="btn btn-danger" <?php if ($deposito->status === 'nonaktif') {echo "disabled";} ?> onclick="window.location='<?= base_url('pencairan/') . '?id=' . safe_base64_encode($deposito->id) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+                
             </div>
             <div class="card-body">
                 <table class="table table-bordered table-striped" id="tabel_penarikan">
