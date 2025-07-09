@@ -122,6 +122,7 @@ $route['tabungan/fetchTabungan'] = 'tabungan/fetchTabungan';
 
 $route['deposito'] = 'deposito';
 $route['deposito/add'] = 'deposito/add';
+$route['setoran_deposito'] = 'deposito/add';
 $route['deposito/simpanData'] = 'deposito/simpanData';
 $route['deposito/updateData'] = 'deposito/updateData';
 $route['deposito/getJenisData'] = 'deposito/getJenisData';

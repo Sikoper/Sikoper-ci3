@@ -233,4 +233,52 @@ class Penarikan_model extends CI_Model
         $query = $this->db->get('tbdetail_penarikan');
         return $query->result();
     }
+
+    public function get_combo_rekening_nasabah($search = null)
+    {
+        $this->db->select('tbsimpanan.id, tbsimpanan.no_rekening');
+        $this->db->from('tbsimpanan');
+        $this->db->join('tbnasabah', 'tbsimpanan.nasabah_id = tbnasabah.id');
+        $this->db->join('tbjenistabungan', 'tbsimpanan.jenistabungan_id = tbjenistabungan.id');
+
+        if ($search) {
+            $this->db->group_start();
+            $this->db->like('tbsimpanan.no_rekening', $search);
+            $this->db->or_like('tbnasabah.nama_lengkap', $search);
+            $this->db->or_like('tbjenistabungan.nama', $search);
+            $this->db->group_end();
+        }
+
+        $this->db->limit(20);
+        $query = $this->db->get();
+
+        $result = [];
+        foreach ($query->result() as $row) {
+            $result[] = [
+                'id' => $row->id,
+                'text' => $row->no_rekening
+            ];
+        }
+        return $result;
+    }
+
+    public function get_rekening_nasabah_combo()
+    {
+        $this->db->select('ts.id as id_tabungan, ts.no_rekening, tn.id as id_nasabah, tn.nama_lengkap, jt.nama as jenis_tabungan');
+        $this->db->from('tbsimpanan ts');
+        $this->db->join('tbnasabah tn', 'ts.nasabah_id = tn.id');
+        $this->db->join('tbjenistabungan jt', 'ts.jenistabungan_id = jt.id');
+        return $this->db->get()->result();
+    }
+
+    public function get_simpanan_detail_by_id($id)
+{
+    $this->db->select('ts.jumlah_simpanan, tn.nama_lengkap, jt.nama as jenis_tabungan');
+    $this->db->from('tbsimpanan ts');
+    $this->db->join('tbnasabah tn', 'ts.nasabah_id = tn.id');
+    $this->db->join('tbjenistabungan jt', 'ts.jenistabungan_id = jt.id');
+    $this->db->where('ts.id', $id);
+    return $this->db->get()->row();
+}
+
 }

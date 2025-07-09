@@ -55,24 +55,35 @@
                         </li>
 
                         <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
-                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga', 'pencairan', 'bunga_deposito']) ? 'active' : '' ?>">
+                            <?php
+                            // Pastikan 'setoran_deposito' ada di dalam array ini
+                            $transaksi_segments = ['setoran', 'penarikan', 'bunga', 'pencairan', 'setoran_deposito', 'bunga_deposito'];
+                            ?>
+                            <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), $transaksi_segments) ? 'active' : '' ?>">
                                 <a href="#" class='sidebar-link'>
                                     <i class="bi bi-cash-stack"></i>
                                     <span>Transaksi</span>
                                 </a>
-                                <ul class="submenu <?= in_array($this->uri->segment(1), ['setoran', 'penarikan', 'bunga', 'pencairan', 'bunga_deposito']) ? 'active' : '' ?>">
+                                <ul class="submenu <?= in_array($this->uri->segment(1), $transaksi_segments) ? 'active' : '' ?>">
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'setoran' ? 'active' : '' ?>">
                                         <a href="<?= base_url('setoran') ?>">Setoran Tunai</a>
                                     </li>
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'penarikan' ? 'active' : '' ?>">
                                         <a href="<?= base_url('penarikan') ?>">Penarikan Tunai</a>
                                     </li>
+
+                                    <li class="submenu-item <?= $this->uri->segment(1) == 'setoran_deposito' ? 'active' : '' ?>">
+                                        <a href="<?= base_url('setoran_deposito') ?>">Setoran Deposito</a>
+                                    </li>
+
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'pencairan' ? 'active' : '' ?>">
                                         <a href="<?= base_url('pencairan') ?>">Pencairan Deposito</a>
                                     </li>
+                                    
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'bunga' ? 'active' : '' ?>">
                                         <a href="<?= base_url('bunga') ?>">Bunga Tabungan</a>
                                     </li>
+
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'bunga_deposito' ? 'active' : '' ?>">
                                         <a href="<?= base_url('bunga_deposito') ?>">Bunga Deposito</a>
                                     </li>
