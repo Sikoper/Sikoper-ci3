@@ -8,6 +8,9 @@ class Simpanan_model extends CI_Model
     var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbjenistabungan.nama');
     var $order = array('no_rekening' => 'ASC');
 
+    public $_table_detail_simpanan = 'tbdetail_simpanan';
+    public $_table_transaksi = 'tbtransaksi';
+
     private function _get_datatables_query()
     {
         $this->db->select('tbsimpanan.*, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah');
@@ -73,9 +76,34 @@ class Simpanan_model extends CI_Model
         return $this->db->insert('tbsimpanan', $data);
     }
 
+    public function hapus_simpanan_lengkap($id_simpanan)
+    {
+        if (empty($id_simpanan)) {
+            return false;
+        }
+        $this->db->trans_start();
+
+        $this->db->where('simpanan_id', $id_simpanan);
+        $this->db->delete($this->_table_detail_simpanan);
+
+        $this->db->where('simpanan_id', $id_simpanan);
+        $this->db->delete($this->_table_transaksi);
+
+        $this->db->where('id', $id_simpanan);
+        $this->db->delete($this->table);
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            log_message('error', 'Gagal menghapus data simpanan lengkap untuk ID: ' . $id_simpanan);
+            return false;
+        }
+        return true;
+    }
+
     public function delete_data($id)
     {
-        return $this->db->delete('tbsimpanan', ['id' => $id]);
+        return $this->hapus_simpanan_lengkap($id);
     }
 
     public function edit_data($id, $data)
@@ -164,5 +192,48 @@ class Simpanan_model extends CI_Model
 
         return $this->db->where('id', $simpanan_id)
             ->update('tbsimpanan', ['jumlah_simpanan' => $total]);
+    }
+
+    public function get_data_tabungan_full_by_norek($no_rekening)
+    {
+        return $this->db
+            ->select('tbsimpanan.*, tbnasabah.nama_lengkap, tbnasabah.id as nasabah_id, tbjenistabungan.nama as jenis_tabungan')
+            ->from('tbsimpanan')
+            ->join('tbnasabah', 'tbsimpanan.nasabah_id = tbnasabah.id')
+            ->join('tbjenistabungan', 'tbsimpanan.jenistabungan_id = tbjenistabungan.id')
+            ->where('tbsimpanan.no_rekening', $no_rekening)
+            ->get()
+            ->row();
+    }
+
+    public function cari_rekening_nasabah($search = '')
+    {
+        $this->db->select('s.id, s.no_rekening, n.nama_lengkap, k.nama AS jenis_tabungan');
+        $this->db->from('tbsimpanan s');
+        $this->db->join('tbnasabah n', 's.nasabah_id = n.id');
+        $this->db->join('tbjenistabungan k', 's.jenistabungan_id = k.id');
+
+        if (!empty($search)) {
+            $this->db->group_start();
+            $this->db->like('s.no_rekening', $search);
+            $this->db->or_like('n.nama_lengkap', $search);
+            $this->db->or_like('k.nama', $search);
+            $this->db->group_end();
+        }
+
+        $this->db->order_by('s.no_rekening', 'ASC');
+        return $this->db->get()->result();
+    }
+
+    public function get_detail_tabungan_by_id($id)
+    {
+        $this->db->select('s.id, s.no_rekening, s.nasabah_id, s.jumlah_simpanan, 
+                n.nama_lengkap, n.nik, n.alamat,
+                k.nama AS jenis_tabungan');
+        $this->db->from('tbsimpanan s');
+        $this->db->join('tbnasabah n', 's.nasabah_id = n.id');
+        $this->db->join('tbjenistabungan k', 's.jenistabungan_id = k.id');
+        $this->db->where('s.id', $id);
+        return $this->db->get()->row();
     }
 }

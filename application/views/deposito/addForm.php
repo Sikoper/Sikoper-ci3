@@ -13,12 +13,12 @@
                     <?= form_open('', ['id' => 'form_simpan']) ?>
 
                     <div class="form-group mb-3" style="height: 80px;">
-                        <label for="tanggal_deposito">Tanggal</label>
+                        <label for="tanggal_deposito">Tanggal Deposito</label>
                         <div class="input-group">
-                            <input type="date" name="tanggal_deposito" id="tanggal_deposito" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
+                            <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
+                            <input type="hidden" name="tanggal_deposito" value="<?= date('Y-m-d') ?>">
                         </div>
                         <div id="errorTanggalDeposito" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">

@@ -285,24 +285,19 @@ class Simpanan extends CI_Controller
     {
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
-            $data = $this->Simpanan_model->get_data_by_id($id);
+            $hasil = $this->Simpanan_model->delete_data($id);
 
-            $has_detail = $this->db->get_where('tbdetail_simpanan', ['simpanan_id' => $id])->num_rows();
-            $has_penarikan = $this->db->get_where('tbpenarikan', ['simpanan_id' => $id])->num_rows();
-
-            if ($has_detail > 0 || $has_penarikan > 0) {
+            if ($hasil) {
+                // Jika model mengembalikan true (berhasil)
                 $msg = [
-                    'error' => 'Data tidak bisa dihapus karena memiliki riwayat setoran atau penarikan.'
+                    'success' => 'Data simpanan dan seluruh riwayatnya berhasil dihapus.'
                 ];
-                echo json_encode($msg);
-                return;
+            } else {
+                // Jika model mengembalikan false (gagal)
+                $msg = [
+                    'error' => 'Gagal menghapus data. Terjadi kesalahan pada database.'
+                ];
             }
-
-            $this->Simpanan_model->delete_data($id);
-
-            $msg = [
-                'success' => 'Data berhasil dihapus'
-            ];
 
             echo json_encode($msg);
         }
