@@ -24,7 +24,7 @@
                         <div class="invalid-feedback" id="errorSimpanan"></div>
                     </div>
 
-                    <input type="hidden" name="deposito" id="inputDeposito">
+                    <input type="hidden" name="deposito_id" id="inputDeposito" <?php if (!empty($tabungan)) { echo "value='" . $tabungan->id . "'"; } ?>>
 
                     <div id="infoNasabah" style="display: none; margin-bottom: 15px;">
                         <p><strong>Nama Nasabah:</strong> <span id="infoNama"></span></p>
@@ -148,8 +148,9 @@
             $('#infoNama').text(selected.nama_nasabah);
             $('#infoJenisTabungan').text(selected.jenis_tabungan);
             $('#infoNasabah').slideDown();
-            // $('#comboRekening').prop('disabled', true);
             $('.is-invalid').removeClass('is-invalid');
+            $('#comboRekening').prop('disabled', true);
+
             
             $.ajax({
                 url: '<?= base_url("pencairan/fetchRekening") ?>',
@@ -244,6 +245,10 @@
                         complete: () => $('#tombol_simpan').prop('disabled', false).text('Tarik Keseluruhan Saldo'),
                         success: function(res) {
                             if (res.error) {
+                                if (res.error.errorTanggal) {
+                                    $('#tanggal_penarikan').next('.select2-container').addClass('is-invalid');
+                                    $('#errorTanggal').html(res.error.errorSimpanan).show();
+                                }
                                 if (res.error.errorSimpanan) {
                                     $('#comboRekening').next('.select2-container').addClass('is-invalid');
                                     $('#errorSimpanan').html(res.error.errorSimpanan).show();

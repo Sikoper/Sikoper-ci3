@@ -89,7 +89,6 @@ class Nasabah_Bunga_model extends CI_Model
         return $sql;
     }
 
-
     public function get_datatables($no_rekening = null, $tipe = null)
     {
         $sql = $this->_get_filtered_query($no_rekening, $tipe);
@@ -131,5 +130,29 @@ class Nasabah_Bunga_model extends CI_Model
     ";
 
         return $this->db->query($sql)->row()->total;
+    }
+
+    public function get_total_bunga_by_rekening($no_rekening, $tipe)
+    {
+        if ($tipe === 'Deposito') {
+            return $this->db
+                ->select_sum('jumlah_transaksi')
+                ->from('tbtransaksi_deposito')
+                ->join('tbdeposito', 'tbdeposito.id = tbtransaksi_deposito.deposito_id')
+                ->where('tbdeposito.no_rekening', $no_rekening)
+                ->get()
+                ->row()
+                ->jumlah_transaksi ?? 0;
+        } else if ($tipe === 'Simpanan') {
+            return $this->db
+                ->select_sum('jumlah_transaksi')
+                ->from('tbtransaksi')
+                ->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id')
+                ->where('tbsimpanan.no_rekening', $no_rekening)
+                ->get()
+                ->row()
+                ->jumlah_transaksi ?? 0;
+        }
+        return 0;
     }
 }

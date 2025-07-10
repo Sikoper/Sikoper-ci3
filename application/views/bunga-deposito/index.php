@@ -2,9 +2,9 @@
     <div class="card-header">
         <h4 class="card-title">
             <?php if ($level == 'Admin'): ?>
-                <button class="btn btn-primary" id="btnPembungaanTabungan">
+                <button class="btn btn-success" id="btnPembungaanDeposito">
                     <i class="fa fa-credit-card"></i>
-                    Hitung Bunga Tabungan
+                    Hitung Bunga Deposito
                 </button>
             <?php endif; ?>
         </h4>
@@ -22,7 +22,7 @@
                 <button id="filterBtn" class="btn btn-info form-control">Filter</button>
             </div>
             <div class="col-md-3 text-end">
-                <h5>Total Bunga Tabungan: <span id="total_bunga_display">Rp 0</span></h5>
+                <h5>Total Bunga Deposito: <span id="total_bunga_display">Rp 0</span></h5>
             </div>
         </div>
     </div>
@@ -61,6 +61,7 @@
         const today = new Date();
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
+        // Format to yyyy-mm-dd
         const formatDate = (date) => {
             let m = String(date.getMonth() + 1).padStart(2, '0');
             let d = String(date.getDate()).padStart(2, '0');
@@ -93,7 +94,8 @@
                 "type": "string"
             },
         ];
-        
+
+        // Add admin-only column
         if (userLevel === 'Admin') {
             columns.push({
                 "orderable": false
@@ -112,6 +114,7 @@
             }
         ];
 
+        // Add a columnDef for the last column if admin
         if (userLevel === 'admin') {
             columnDefs.push({
                 "targets": 7,
@@ -130,7 +133,7 @@
             autoWidth: false,
 
             ajax: {
-                url: "<?= site_url('bunga/fetchBungaTabungan') ?>",
+                url: "<?= site_url('bunga_deposito/fetchBungaDeposito') ?>",
                 type: "POST",
                 data: function(d) {
                     d.start_date = $('#start_date').val() || '';
@@ -165,29 +168,22 @@
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes!",
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            allowEnterKey: false
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
                     type: "POST",
-                    url: "<?= base_url('bunga/delete') ?>",
+                    url: "<?= base_url('bunga_deposito/delete') ?>",
                     data: {
-                        id: id,
+                        id: id
                     },
                     dataType: "json",
                     success: function(response) {
                         if (response.success) {
-                            Swal.fire({
-                                title: "Success!",
-                                text: response.success,
-                                icon: "success"
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.reload();
-                                }
+                            Swal.fire("Success!", response.success, "success").then(() => {
+                                window.location.reload();
                             });
+                        } else if (response.error) {
+                            Swal.fire("Gagal", response.error, "error");
                         }
                     },
                     error: function(xhr, thrownError) {
@@ -199,11 +195,10 @@
     }
 
     $(document).ready(function() {
-        $('#btnPembungaanTabungan').click(function(e) {
-            e.preventDefault();
+        $('#btnPembungaanDeposito').click(function() {
             $.ajax({
                 type: "POST",
-                url: "<?= base_url('bunga/run_bunga') ?>",
+                url: "<?= site_url('bunga_deposito/run_bunga_deposito') ?>",
                 dataType: "json",
                 success: function(response) {
                     if (response.success) {
@@ -216,7 +211,7 @@
                                 window.location.reload();
                             }
                         });
-                    } else {
+                    } else if (response.error) {
                         Swal.fire({
                             title: "Error!",
                             text: response.error,
@@ -224,10 +219,18 @@
                         }).then((result) => {
                             if (result.isConfirmed) {}
                         });
+                    } else {
+                        Swal.fire({
+                            title: "Tidak ada!",
+                            text: response.empty,
+                            icon: "warning"
+                        }).then((result) => {
+                            if (result.isConfirmed) {}
+                        });
                     }
                 },
-                error: function(xhr, thrownError) {
-                    alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                error: function(xhr, status, error) {
+                    alert("Error: " + xhr.responseText);
                 }
             });
         });

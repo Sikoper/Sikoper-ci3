@@ -16,7 +16,7 @@
                                 <i class="bi bi-dash-circle"></i> Penarikan Tunai
                             </a>
                             <a href="<?= base_url('pencairan') ?>" class="btn btn-warning mb-2 w-100">
-                                <i class="bi bi-cash-coin"></i> Pencairan Deposito
+                                <i class="fa fa-wallet"></i> Pencairan Deposito
                             </a>
                             <a href="<?= base_url('bunga') ?>" class="btn btn-primary mb-2 w-100">
                                 <i class="bi bi-percent"></i> Proses Bunga
@@ -33,7 +33,7 @@
                                 <i class="bi bi-wallet2"></i> Data Tabungan
                             </a>
                             <a href="<?= base_url('deposito') ?>" class="btn btn-outline-success mb-2 w-100">
-                                <i class="bi bi-bank"></i> Data Deposito
+                                <i class="fa fa-bank"></i> Data Deposito
                             </a>
                         </div>
                     </div>

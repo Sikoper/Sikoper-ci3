@@ -122,8 +122,8 @@ class Pencairan extends CI_Controller
 
     public function proses()
     {
-        // 1. VALIDASI INPUT FORM (Validasi 'nasabah' dihapus, validasi 'simpanan_id' diubah ke 'deposito_id')
-        $this->form_validation->set_rules('deposito', 'Rekening Deposito', 'required', ['required' => 'Rekening Deposito wajib dipilih.']);
+        // 1. VALIDASI INPUT FORM (Validasi 'nasabah' dihapus, validasi 'deposito_id' diubah ke 'deposito_id')
+        $this->form_validation->set_rules('deposito_id', 'Rekening Deposito', 'required', ['required' => 'Rekening Deposito wajib dipilih.']);
         $this->form_validation->set_rules('tanggal_penarikan', 'Tanggal Penarikan', 'required', ['required' => 'Tanggal penarikan wajib diisi.']);
 
         if ($this->session->userdata('level') == 'Admin') {
@@ -132,7 +132,7 @@ class Pencairan extends CI_Controller
 
         if ($this->form_validation->run() == FALSE) {
             $errors = [
-                'errorSimpanan'  => form_error('deposito'), // Diubah ke deposito_id
+                'errorSimpanan'  => form_error('deposito_id'), // Diubah ke deposito_id
                 'errorPegawai'   => form_error('pegawai_id') ?? '',
                 'errorTanggal'   => form_error('tanggal_penarikan')
             ];
@@ -141,8 +141,8 @@ class Pencairan extends CI_Controller
         }
 
         // 2. PENGAMBILAN DATA & PERHITUNGAN DENDA OLEH SERVER
-        $simpanan_id = $this->input->post('deposito'); // Diubah ke deposito_id
-        $simpanan_data = $this->Deposito_model->get_data_by_id($simpanan_id);
+        $deposito_id = $this->input->post('deposito_id'); // Diubah ke deposito_id
+        $simpanan_data = $this->Deposito_model->get_data_by_id($deposito_id);
 
         if (!$simpanan_data) {
             echo json_encode(['error_save' => 'Data simpanan deposito tidak ditemukan. Mohon muat ulang halaman.']);
@@ -194,15 +194,15 @@ class Pencairan extends CI_Controller
         $this->db->trans_start();
 
         $data_log = [
-            'deposito_id'       => $simpanan_id,
+            'deposito_id'       => $deposito_id,
             'pegawai_id'        => ($this->session->userdata('level') == 'Admin') ? $this->input->post('pegawai_id') : $this->session->userdata('pegawai_id'),
             'tanggal_penarikan' => $this->input->post('tanggal_penarikan') . ' ' . date('H:i:s'),
             'jumlah_penarikan'  => $jumlah_penarikan_diminta,
             'jumlah_denda'      => $penalty_rp_final
         ];
         $this->Deposito_model->simpan_log_penarikan($data_log);
-        $this->Deposito_model->kurangi_saldo($simpanan_id, $total_pengurangan);
-        $this->Deposito_model->ubah_status($simpanan_id, 'nonaktif');
+        $this->Deposito_model->kurangi_saldo($deposito_id, $total_pengurangan);
+        $this->Deposito_model->ubah_status($deposito_id, 'nonaktif');
 
         if ($this->db->trans_status() === FALSE) {
             $this->db->trans_rollback();
