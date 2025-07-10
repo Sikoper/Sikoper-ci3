@@ -146,3 +146,5 @@ $route['bunga_deposito'] = 'bunga_deposito';
 $route['bunga_deposito/run_bunga'] = 'bunga_deposito/run_bunga';
 
 $route['pencairan'] = 'pencairan';
+
+$route['rekapitulasi_tabungan'] = 'rekapitulasi_tabungan';
