@@ -4,17 +4,27 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Rekapitulasi_tabungan_model extends CI_Model
 {
     var $table = 'tbsimpanan';
-    var $column_order = array(null, 'tbsimpanan.no_rekening', 'tbnasabah.nama_lengkap', 'tbsimpanan.jumlah_simpanan', 'bunga', null);
+    var $column_order = array(null, 'tbsimpanan.no_rekening', 'tbnasabah.nama_lengkap', 'saldo_pokok', 'bunga', null);
     var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening');
     var $order = array('tbsimpanan.no_rekening' => 'ASC');
 
     private function _get_datatables_query($bulan, $tahun)
     {
+        // Define the last day of the selected month for historical filtering
+        $end_of_month = date('Y-m-t', strtotime("$tahun-$bulan-01"));
+
         $this->db->select(
             'tbsimpanan.id,
              tbsimpanan.no_rekening, 
              tbnasabah.nama_lengkap as nama_nasabah,
-             tbsimpanan.jumlah_simpanan as saldo_pokok,
+             
+             -- ✅ MODIFIED: Calculate principal balance from transaction details up to the end of the selected month
+             (SELECT SUM(tds.jumlah_setoran) 
+              FROM tbdetail_simpanan tds 
+              WHERE tds.simpanan_id = tbsimpanan.id 
+              AND tds.tanggal_setoran <= ' . $this->db->escape($end_of_month) . ') as saldo_pokok,
+
+             -- Interest calculation for the specific month (remains unchanged)
              (SELECT SUM(tbtransaksi.jumlah_transaksi) 
               FROM tbtransaksi 
               WHERE tbtransaksi.simpanan_id = tbsimpanan.id 
@@ -26,9 +36,7 @@ class Rekapitulasi_tabungan_model extends CI_Model
         $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
         $this->db->where('tbsimpanan.status', 'aktif');
 
-        // ✅ CORRECTED LOGIC: Show accounts that were created ON OR BEFORE the selected month.
-        // This creates a "snapshot" of the accounts that existed at that time.
-        $end_of_month = date('Y-m-t', strtotime("$tahun-$bulan-01"));
+        // Filter to only show accounts that were created ON OR BEFORE the report date
         $this->db->where('tbsimpanan.tanggal_simpanan <=', $end_of_month);
 
         // --- Standard DataTables search and order logic ---
@@ -48,6 +56,7 @@ class Rekapitulasi_tabungan_model extends CI_Model
         }
 
         if (isset($_POST['order'])) {
+            // Note: The column name for saldo_pokok is now an alias, so this might need adjustment in the future if sorting issues arise.
             $this->db->order_by($this->column_order[$_POST['order']['0']['column']], $_POST['order']['0']['dir']);
         } else if (isset($this->order)) {
             $order = $this->order;
@@ -80,18 +89,21 @@ class Rekapitulasi_tabungan_model extends CI_Model
 
     public function get_summary_data($bulan, $tahun)
     {
-        // ✅ CORRECTED LOGIC: Calculate end date for the filter
+        // Define the last day of the month for consistent filtering
         $end_of_month = date('Y-m-t', strtotime("$tahun-$bulan-01"));
 
-        // --- Query for Total Principal Balance ---
-        $this->db->select_sum('jumlah_simpanan', 'total_saldo_pokok');
-        $this->db->from($this->table);
-        $this->db->where('tbsimpanan.status', 'aktif');
-        // Filter summary total to only include accounts that existed at that time
-        $this->db->where('tbsimpanan.tanggal_simpanan <=', $end_of_month);
+        // --- ✅ MODIFIED: Query for Total Principal Balance from transaction details ---
+        $this->db->select_sum('tds.jumlah_setoran', 'total_saldo_pokok');
+        $this->db->from('tbdetail_simpanan as tds');
+        $this->db->join('tbsimpanan as ts', 'ts.id = tds.simpanan_id');
+        $this->db->where('ts.status', 'aktif');
+        // Sum deposits only up to the end of the report month
+        $this->db->where('tds.tanggal_setoran <=', $end_of_month);
+        // Ensure we only count deposits for accounts that existed in that period
+        $this->db->where('ts.tanggal_simpanan <=', $end_of_month);
         $saldo_pokok_result = $this->db->get()->row();
 
-        // --- Query for Total Interest (This part was already correct) ---
+        // --- Query for Total Interest (This logic is correct and remains unchanged) ---
         $this->db->select_sum('jumlah_transaksi', 'total_bunga');
         $this->db->from('tbtransaksi');
         // We only sum interest FROM that specific month

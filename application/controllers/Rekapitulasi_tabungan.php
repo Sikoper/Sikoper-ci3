@@ -18,14 +18,24 @@ class Rekapitulasi_tabungan extends CI_Controller
 
     public function index()
     {
-        // --- Dynamic Year and Month Generation ---
-        $years = [];
-        $start_year = 2023; // Or fetch the earliest year from your records
+        // --- ✅ DYNAMIC YEAR GENERATION ---
+
+        // 1. Query the database to find the earliest year from deposit records.
+        $this->db->select_min('YEAR(tanggal_simpanan)', 'start_year');
+        $query = $this->db->get('tbsimpanan');
+        $result = $query->row();
+
+        // 2. Determine the start year. Default to the current year if no records exist.
         $current_year = date('Y');
+        $start_year = $result && $result->start_year ? $result->start_year : $current_year;
+
+        // 3. Generate the array of years from the start year to the current year.
+        $years = [];
         for ($i = $current_year; $i >= $start_year; $i--) {
             $years[] = $i;
         }
 
+        // --- Prepare data for the view ---
         $data_view = [
             'selected_month' => date('n'), // 'n' for month number without leading zeros (1-12)
             'selected_year'  => $current_year,
@@ -45,13 +55,10 @@ class Rekapitulasi_tabungan extends CI_Controller
             exit('No direct script access allowed');
         }
 
-        // --- CRITICAL STEP 1: Receive the filter data from the AJAX request ---
         $bulan = $this->input->post('bulan');
         $tahun = $this->input->post('tahun');
 
-        // --- CRITICAL STEP 2: Pass the filter data to the model ---
         $list = $this->Rekapitulasi_tabungan_model->get_datatables($bulan, $tahun);
-
         $data = array();
         $no = $_POST['start'];
 
@@ -59,20 +66,21 @@ class Rekapitulasi_tabungan extends CI_Controller
             $no++;
             $row = array();
 
+            // Ensure saldo_pokok is not null before calculations
+            $saldo_pokok = $field->saldo_pokok ?? 0;
             $bunga = $field->bunga ?? 0;
-            $total_diterima = $field->saldo_pokok + $bunga;
+            $total_diterima = $saldo_pokok + $bunga;
 
             $row[] = "<div class='text-center'>$no</div>";
             $row[] = $field->no_rekening;
             $row[] = $field->nama_nasabah;
-            $row[] = "<div class='text-end'>Rp " . number_format($field->saldo_pokok, 0, ',', '.') . "</div>";
+            $row[] = "<div class='text-end'>Rp " . number_format($saldo_pokok, 0, ',', '.') . "</div>";
             $row[] = "<div class='text-end'>Rp " . number_format($bunga, 0, ',', '.') . "</div>";
             $row[] = "<div class='text-end fw-bold'>Rp " . number_format($total_diterima, 0, ',', '.') . "</div>";
 
             $data[] = $row;
         }
 
-        // --- CRITICAL STEP 3: Also pass filter data for the summary and counts ---
         $summary = $this->Rekapitulasi_tabungan_model->get_summary_data($bulan, $tahun);
         $recordsFiltered = $this->Rekapitulasi_tabungan_model->count_filtered($bulan, $tahun);
 
