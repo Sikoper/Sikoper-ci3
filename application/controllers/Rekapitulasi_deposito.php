@@ -1,13 +1,13 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Rekapitulasi_tabungan extends CI_Controller
+class Rekapitulasi_deposito extends CI_Controller
 {
     public function __construct()
     {
         parent::__construct();
         // The model name should match the file name
-        $this->load->model('Rekapitulasi_tabungan_model');
+        $this->load->model('Rekapitulasi_deposito_model');
 
         // Your role-based access control
         $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
@@ -21,8 +21,8 @@ class Rekapitulasi_tabungan extends CI_Controller
         // --- ✅ DYNAMIC YEAR GENERATION ---
 
         // 1. Query the database to find the earliest year from deposit records.
-        $this->db->select_min('YEAR(tanggal_simpanan)', 'start_year');
-        $query = $this->db->get('tbsimpanan');
+        $this->db->select_min('YEAR(tanggal_deposito)', 'start_year');
+        $query = $this->db->get('tbdeposito');
         $result = $query->row();
 
         // 2. Determine the start year. Default to the current year if no records exist.
@@ -43,22 +43,22 @@ class Rekapitulasi_tabungan extends CI_Controller
         ];
 
         $parser = [
-            'judul' => "Rekapitulasi Tabungan",
-            'isi'   => $this->load->view('rekapitulasi_tabungan/index', $data_view, TRUE)
+            'judul' => "Rekapitulasi Deposito",
+            'isi'   => $this->load->view('rekapitulasi_deposito/index', $data_view, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
 
     public function fetch_rekapitulasi()
     {
-        // if (!$this->input->is_ajax_request()) {
-        //     exit('No direct script access allowed');
-        // }
+        if (!$this->input->is_ajax_request()) {
+            exit('No direct script access allowed');
+        }
 
         $bulan = $this->input->post('bulan');
         $tahun = $this->input->post('tahun');
 
-        $list = $this->Rekapitulasi_tabungan_model->get_datatables($bulan, $tahun);
+        $list = $this->Rekapitulasi_deposito_model->get_datatables($bulan, $tahun);
         $data = array();
         $no = $_POST['start'];
 
@@ -66,31 +66,31 @@ class Rekapitulasi_tabungan extends CI_Controller
             $no++;
             $row = array();
 
-            // Ensure saldo_pokok is not null before calculations
-            $saldo_pokok = $field->saldo_pokok ?? 0;
-            $bunga = $field->bunga ?? 0;
-            $total_diterima = $saldo_pokok + $bunga;
+            // Ensure values are not null before calculations
+            $saldo_awal_bulan = $field->saldo_awal_bulan ?? 0;
+            $bunga_bulan_ini = $field->bunga_bulan_ini ?? 0;
+            $total_diterima = $saldo_awal_bulan + $bunga_bulan_ini;
 
             $row[] = "<div class='text-center'>$no</div>";
             $row[] = $field->no_rekening;
             $row[] = $field->nama_nasabah;
-            $row[] = "<div class='text-end'>Rp " . number_format($saldo_pokok, 0, ',', '.') . "</div>";
-            $row[] = "<div class='text-end'>Rp " . number_format($bunga, 0, ',', '.') . "</div>";
+            $row[] = "<div class='text-end'>Rp " . number_format($saldo_awal_bulan, 0, ',', '.') . "</div>";
+            $row[] = "<div class='text-end'>Rp " . number_format($bunga_bulan_ini, 0, ',', '.') . "</div>";
             $row[] = "<div class='text-end fw-bold'>Rp " . number_format($total_diterima, 0, ',', '.') . "</div>";
 
             $data[] = $row;
         }
 
-        $summary = $this->Rekapitulasi_tabungan_model->get_summary_data($bulan, $tahun);
-        $recordsFiltered = $this->Rekapitulasi_tabungan_model->count_filtered($bulan, $tahun);
+        $summary = $this->Rekapitulasi_deposito_model->get_summary_data($bulan, $tahun);
+        $recordsFiltered = $this->Rekapitulasi_deposito_model->count_filtered($bulan, $tahun);
 
         $output = array(
-            "draw"              => $_POST['draw'],
-            "recordsTotal"      => $this->Rekapitulasi_tabungan_model->count_all(),
-            "recordsFiltered"   => $recordsFiltered,
-            "data"              => $data,
-            "total_saldo_pokok" => "Rp " . number_format($summary['total_saldo_pokok'], 0, ',', '.'),
-            "total_bunga"       => "Rp " . number_format($summary['total_bunga'], 0, ',', '.'),
+            "draw"            => $_POST['draw'],
+            "recordsTotal"    => $this->Rekapitulasi_deposito_model->count_all(),
+            "recordsFiltered" => $recordsFiltered,
+            "data"            => $data,
+            "total_saldo_awal" => "Rp " . number_format($summary['total_saldo_awal'], 0, ',', '.'),
+            "total_bunga_bulan_ini"  => "Rp " . number_format($summary['total_bunga_bulan_ini'], 0, ',', '.'),
         );
 
         header('Content-Type: application/json');

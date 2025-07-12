@@ -109,9 +109,11 @@ class Bunga_deposito_model extends CI_Model
 
     public function bunga_proses()
     {
+        // Get current date and the date for one month ago
         $today = date('Y-m-d');
         $lastMonth = date('Y-m-d', strtotime('-1 month'));
 
+        // Select all active deposits made over a month ago that have an interest rate
         $this->db->select('tbdeposito.id, tbdeposito.nasabah_id, tbdeposito.jumlah_simpanan, tbdeposito.tanggal_simpanan, tbjenistabungan.bunga as bunga');
         $this->db->from('tbdeposito');
         $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
@@ -120,30 +122,34 @@ class Bunga_deposito_model extends CI_Model
         $this->db->where('tbjenistabungan.bunga >', '0');
         $simpananList = $this->db->get()->result();
 
+        // Loop through each eligible deposit
         foreach ($simpananList as $simpanan) {
             $bungaRate = (float) $simpanan->bunga;
             $saldo = (float) $simpanan->jumlah_simpanan;
 
-            if ($saldo <= 0) continue;
+            // Skip if there is no balance
+            if ($saldo <= 0) {
+                continue;
+            }
 
+            // Calculate the raw interest amount
             $bungaAmountRaw = ($bungaRate / 100) * $saldo;
 
-            // Round up to nearest 100
+            // Round the interest up to the nearest 100
             $bungaAmount = ceil($bungaAmountRaw / 100) * 100;
 
-            // Check if bunga already processed this month
-            $alreadyGiven = $this->db
-                ->where('deposito_id', $simpanan->id)
-                ->where('MONTH(tanggal_transaksi)', date('m'))
-                ->where('YEAR(tanggal_transaksi)', date('Y'))
-                ->get('tbtransaksi_deposito')
-                ->num_rows();
+            // Check if interest has already been processed for the current month and year
+            $this->db->where('deposito_id', $simpanan->id);
+            $this->db->where('MONTH(tanggal_transaksi)', date('m'));
+            $this->db->where('YEAR(tanggal_transaksi)', date('Y'));
+            $alreadyGiven = $this->db->get('tbtransaksi_deposito')->num_rows();
 
+            // If interest was already given this month, skip to the next deposit
             if ($alreadyGiven > 0) {
                 continue;
             }
 
-            // Insert bunga transaction
+            // 1. Insert the interest transaction record
             $this->db->insert('tbtransaksi_deposito', [
                 'deposito_id'       => $simpanan->id,
                 'tanggal_transaksi' => $today,
@@ -151,7 +157,8 @@ class Bunga_deposito_model extends CI_Model
                 'rate_bunga'        => $bungaRate
             ]);
 
-            // Update saldo
+            // 2. Add the calculated interest amount to the total deposit balance
+            // This is the function you requested. It updates the 'jumlah_simpanan' field.
             $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaAmount, false);
             $this->db->where('id', $simpanan->id);
             $this->db->update('tbdeposito');
@@ -174,7 +181,7 @@ class Bunga_deposito_model extends CI_Model
             $saldo = (float) $deposito->jumlah_deposito;
             $tanggalDeposito = $deposito->tanggal_deposito;
 
-            if ($saldo <= 0) continue;
+            if ($saldo < 0) continue;
 
             $daysDiff = (strtotime($today) - strtotime($tanggalDeposito)) / (60 * 60 * 24);
             if ($daysDiff < 30) continue;
@@ -194,7 +201,7 @@ class Bunga_deposito_model extends CI_Model
             $bungaAmountRaw = ($bungaRate / 100) * $saldo;
             $bungaAmount = round($bungaAmountRaw / 100) * 100;
 
-            $this->db->insert('tbtransaksi_deposito_deposito', [
+            $this->db->insert('tbtransaksi_deposito', [
                 'deposito_id' => $deposito->id,
                 'tanggal_transaksi' => $today,
                 'jumlah_transaksi' => $bungaAmount,
