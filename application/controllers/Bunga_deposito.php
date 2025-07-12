@@ -159,9 +159,9 @@ class Bunga_deposito extends CI_Controller
 
     public function run_bunga_deposito()
     {
-        if (!$this->input->is_ajax_request()) {
-            redirect('unauthorized_403');
-        }
+        // if (!$this->input->is_ajax_request()) {
+        //     redirect('unauthorized_403');
+        // }
 
         if ($this->Bunga_deposito_model->is_bunga_deposito_done_today()) {
             $msg = ['error' => 'Semua bunga deposito sudah diproses hari ini.'];

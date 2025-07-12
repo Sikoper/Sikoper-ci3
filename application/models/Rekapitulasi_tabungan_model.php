@@ -10,21 +10,31 @@ class Rekapitulasi_tabungan_model extends CI_Model
 
     private function _get_datatables_query($bulan, $tahun)
     {
-        // Define the last day of the selected month for historical filtering
-        $end_of_month = date('Y-m-t', strtotime("$tahun-$bulan-01"));
+        // Define the date range for the selected reporting period
+        $start_of_month = date('Y-m-01', strtotime("$tahun-$bulan-01"));
+        $end_of_month = date('Y-m-t', strtotime($start_of_month));
+
+        // ✅ MODIFIED: Subquery to calculate the final principal balance.
+        // This includes all deposits up to the end of the month PLUS all interest from BEFORE the current month.
+        $saldo_pokok_subquery = "
+            COALESCE((SELECT SUM(tds.jumlah_setoran) 
+                       FROM tbdetail_simpanan tds 
+                       WHERE tds.simpanan_id = tbsimpanan.id 
+                       AND tds.tanggal_setoran <= " . $this->db->escape($end_of_month) . "), 0)
+            + 
+            COALESCE((SELECT SUM(tbt.jumlah_transaksi) 
+                       FROM tbtransaksi tbt 
+                       WHERE tbt.simpanan_id = tbsimpanan.id 
+                       AND tbt.tanggal_transaksi < " . $this->db->escape($start_of_month) . "), 0)
+        ";
 
         $this->db->select(
             'tbsimpanan.id,
              tbsimpanan.no_rekening, 
              tbnasabah.nama_lengkap as nama_nasabah,
+             (' . $saldo_pokok_subquery . ') as saldo_pokok,
              
-             -- ✅ MODIFIED: Calculate principal balance from transaction details up to the end of the selected month
-             (SELECT SUM(tds.jumlah_setoran) 
-              FROM tbdetail_simpanan tds 
-              WHERE tds.simpanan_id = tbsimpanan.id 
-              AND tds.tanggal_setoran <= ' . $this->db->escape($end_of_month) . ') as saldo_pokok,
-
-             -- Interest calculation for the specific month (remains unchanged)
+             -- Interest calculation for ONLY the specific reporting month (unchanged)
              (SELECT SUM(tbtransaksi.jumlah_transaksi) 
               FROM tbtransaksi 
               WHERE tbtransaksi.simpanan_id = tbsimpanan.id 
@@ -35,11 +45,8 @@ class Rekapitulasi_tabungan_model extends CI_Model
         $this->db->from($this->table);
         $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
         $this->db->where('tbsimpanan.status', 'aktif');
-
-        // Filter to only show accounts that were created ON OR BEFORE the report date
         $this->db->where('tbsimpanan.tanggal_simpanan <=', $end_of_month);
 
-        // --- Standard DataTables search and order logic ---
         $i = 0;
         foreach ($this->column_search as $item) {
             if ($_POST['search']['value']) {
@@ -56,7 +63,6 @@ class Rekapitulasi_tabungan_model extends CI_Model
         }
 
         if (isset($_POST['order'])) {
-            // Note: The column name for saldo_pokok is now an alias, so this might need adjustment in the future if sorting issues arise.
             $this->db->order_by($this->column_order[$_POST['order']['0']['column']], $_POST['order']['0']['dir']);
         } else if (isset($this->order)) {
             $order = $this->order;
@@ -89,30 +95,45 @@ class Rekapitulasi_tabungan_model extends CI_Model
 
     public function get_summary_data($bulan, $tahun)
     {
-        // Define the last day of the month for consistent filtering
-        $end_of_month = date('Y-m-t', strtotime("$tahun-$bulan-01"));
+        // Define the date range for consistent filtering
+        $start_of_month = date('Y-m-01', strtotime("$tahun-$bulan-01"));
+        $end_of_month = date('Y-m-t', strtotime($start_of_month));
 
-        // --- ✅ MODIFIED: Query for Total Principal Balance from transaction details ---
-        $this->db->select_sum('tds.jumlah_setoran', 'total_saldo_pokok');
+        // --- Query for Total Deposits ---
+        $this->db->select_sum('tds.jumlah_setoran', 'total_deposits');
         $this->db->from('tbdetail_simpanan as tds');
         $this->db->join('tbsimpanan as ts', 'ts.id = tds.simpanan_id');
         $this->db->where('ts.status', 'aktif');
-        // Sum deposits only up to the end of the report month
         $this->db->where('tds.tanggal_setoran <=', $end_of_month);
-        // Ensure we only count deposits for accounts that existed in that period
         $this->db->where('ts.tanggal_simpanan <=', $end_of_month);
-        $saldo_pokok_result = $this->db->get()->row();
+        $total_deposits_result = $this->db->get()->row();
+        $total_deposits = $total_deposits_result->total_deposits ?? 0;
 
-        // --- Query for Total Interest (This logic is correct and remains unchanged) ---
+        // --- ✅ MODIFIED: Query for Total Interest from PRIOR months ---
+        $this->db->select_sum('tbt.jumlah_transaksi', 'total_prior_interest');
+        $this->db->from('tbtransaksi as tbt');
+        $this->db->join('tbsimpanan as ts', 'ts.id = tbt.simpanan_id');
+        $this->db->where('ts.status', 'aktif');
+        $this->db->where('ts.tanggal_simpanan <=', $end_of_month);
+        $this->db->where('tbt.tanggal_transaksi <', $start_of_month); // Only interest BEFORE this month
+        $prior_interest_result = $this->db->get()->row();
+        $total_prior_interest = $prior_interest_result->total_prior_interest ?? 0;
+
+        // --- Query for Total Interest for the CURRENT month (unchanged) ---
         $this->db->select_sum('jumlah_transaksi', 'total_bunga');
         $this->db->from('tbtransaksi');
-        // We only sum interest FROM that specific month
+        $this->db->join('tbsimpanan as ts', 'ts.id = simpanan_id');
+        $this->db->where('ts.status', 'aktif');
+        $this->db->where('ts.tanggal_simpanan <=', $end_of_month);
         $this->db->where('MONTH(tanggal_transaksi)', $bulan);
         $this->db->where('YEAR(tanggal_transaksi)', $tahun);
         $bunga_result = $this->db->get()->row();
+        
+        // Final calculation combines deposits and prior interest
+        $total_saldo_pokok = $total_deposits + $total_prior_interest;
 
         return [
-            'total_saldo_pokok' => $saldo_pokok_result->total_saldo_pokok ?? 0,
+            'total_saldo_pokok' => $total_saldo_pokok,
             'total_bunga'       => $bunga_result->total_bunga ?? 0,
         ];
     }
