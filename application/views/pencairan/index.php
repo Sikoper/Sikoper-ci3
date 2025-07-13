@@ -19,12 +19,13 @@
                     </div>
                     <div class="form-group mb-3">
                         <label for="comboRekening">Pilih No. Rekening</label>
-                        <select id="comboRekening" name="deposito_id" class="form-control select2" style="width: 100%;"></select>
+                        <select id="comboRekening" name="comboRekening" class="form-control select2" style="width: 100%;"
+                            <?= !empty($tabungan) ? 'readonly' : '' ?>></select>
                         <input type="hidden" name="nasabah_id" id="nasabah_id">
                         <div class="invalid-feedback" id="errorSimpanan"></div>
                     </div>
 
-                    <input type="hidden" name="deposito_id" id="inputDeposito" <?php if (!empty($tabungan)) { echo "value='" . $tabungan->id . "'"; } ?>>
+                    <input type="hidden" name="deposito_id" id="inputDepositoHidden" value="<?= !empty($tabungan) ? $tabungan->id : '' ?>">
 
                     <div id="infoNasabah" style="display: none; margin-bottom: 15px;">
                         <p><strong>Nama Nasabah:</strong> <span id="infoNama"></span></p>
@@ -103,6 +104,8 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
+        const isFromDetail = <?= !empty($tabungan) ? 'true' : 'false' ?>;
+
         const autoNumericOpts = {
             digitGroupSeparator: '.',
             decimalCharacter: ',',
@@ -115,7 +118,9 @@
         const dendaAN = new AutoNumeric('#denda', autoNumericOpts);
         const totalAN = new AutoNumeric('#total_yang_ditarik_display', autoNumericOpts);
 
-        $('#comboRekening').select2({
+        const $comboRekening = $('#comboRekening');
+
+        $comboRekening.select2({
             placeholder: 'Cari no rekening...',
             ajax: {
                 url: '<?= base_url("pencairan/get_combo_rekening_nasabah") ?>',
@@ -141,17 +146,22 @@
             }
         });
 
+        // Prevent changing Select2 if from detail
+        if (isFromDetail) {
+            $comboRekening.on('select2:opening select2:unselecting', function(e) {
+                e.preventDefault();
+            });
+        }
 
-        $('#comboRekening').on('select2:select', function(e) {
+        $comboRekening.on('select2:select', function(e) {
             const selected = e.params.data;
             $('#nasabah_id').val(selected.nasabah_id);
             $('#infoNama').text(selected.nama_nasabah);
             $('#infoJenisTabungan').text(selected.jenis_tabungan);
             $('#infoNasabah').slideDown();
             $('.is-invalid').removeClass('is-invalid');
-            $('#comboRekening').prop('disabled', true);
+            $('#inputDepositoHidden').val(selected.id);
 
-            
             $.ajax({
                 url: '<?= base_url("pencairan/fetchRekening") ?>',
                 method: 'POST',
@@ -172,7 +182,7 @@
                         $('#jenis_tabungan').slideDown();
 
                         if (response.calculated_penalty_rp > 0) {
-                            const rekeningInfoText = $('#comboRekening option:selected').text().trim();
+                            const rekeningInfoText = $comboRekening.find('option:selected').text().trim();
                             const saldoInfo = response.saldo;
                             const dendaInfo = response.calculated_penalty_rp;
                             const diterimaInfo = saldoInfo - dendaInfo;
@@ -203,7 +213,7 @@
             e.preventDefault();
             $('.is-invalid').removeClass('is-invalid');
 
-            const rekeningNasabahText = $('#comboRekening option:selected').text().trim() || 'Rekening belum dipilih';
+            const rekeningNasabahText = $comboRekening.find('option:selected').text().trim() || 'Rekening belum dipilih';
             const saldoSaatIniNum = saldoAN.getNumber() || 0;
             const jumlahDendaNum = dendaAN.getNumber() || 0;
 
@@ -212,7 +222,6 @@
                 return;
             }
 
-            // --- KONFIRMASI AKHIR (SWAL #2) DENGAN LAYOUT BARU ---
             Swal.fire({
                 title: 'Konfirmasi Penarikan Penuh',
                 icon: 'question',
@@ -250,7 +259,7 @@
                                     $('#errorTanggal').html(res.error.errorSimpanan).show();
                                 }
                                 if (res.error.errorSimpanan) {
-                                    $('#comboRekening').next('.select2-container').addClass('is-invalid');
+                                    $comboRekening.next('.select2-container').addClass('is-invalid');
                                     $('#errorSimpanan').html(res.error.errorSimpanan).show();
                                 }
                                 if (res.error.errorPegawai) {
@@ -276,13 +285,11 @@
                 }
             });
         });
-    });
-</script>
-<?php if (!empty($tabungan)) : ?>
-    <script>
-        $(document).ready(function() {
-            const newOption = new Option('<?= $tabungan->no_rekening ?>', '<?= $tabungan->id ?>', true, true);
-            $('#comboRekening').append(newOption).trigger('change');
+
+        // Jika akses dari halaman detail nasabah, set default dan trigger select2
+        <?php if (!empty($tabungan)) : ?>
+            const defaultOption = new Option('<?= $tabungan->no_rekening ?>', '<?= $tabungan->id ?>', true, true);
+            $comboRekening.append(defaultOption).trigger('change');
 
             $.ajax({
                 url: '<?= base_url("pencairan/get_combo_rekening_nasabah") ?>',
@@ -293,7 +300,7 @@
                 success: function(data) {
                     const found = data.find(item => item.id == '<?= $tabungan->id ?>');
                     if (found) {
-                        $('#comboRekening').trigger({
+                        $comboRekening.trigger({
                             type: 'select2:select',
                             params: {
                                 data: found
@@ -302,6 +309,6 @@
                     }
                 }
             });
-        });
-    </script>
-<?php endif; ?>
+        <?php endif; ?>
+    });
+</script>
