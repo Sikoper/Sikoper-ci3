@@ -225,7 +225,7 @@ class Nasabah extends CI_Controller
 
     public function delete()
     {
-        // if ($this->input->is_ajax_request()) {
+        if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
 
             // The model now handles the complex validation check for related records.
@@ -241,7 +241,9 @@ class Nasabah extends CI_Controller
             }
 
             echo json_encode($msg);
-        // }
+        } else {
+            redirect('unauthorized_403');
+        }
     }
 
     public function edit($encoded_nik = null)
