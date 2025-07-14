@@ -116,7 +116,6 @@
                                 icon: "error"
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    window.location = '<?= base_url('nasabah') ?>';
                                 }
                             });
                         }
