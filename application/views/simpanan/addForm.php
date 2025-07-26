@@ -15,7 +15,7 @@
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_simpanan">Tanggal</label>
                         <div class="input-group">
-                            <input type="date" name="tanggal_simpanan" id="tanggal_simpanan" class="form-control" value="<?= date('Y-m-d') ?>" readonly>
+                            <input type="date" name="tanggal_simpanan" id="tanggal_simpanan" class="form-control" value="<?= date('Y-m-d') ?>">
                         </div>
                         <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>

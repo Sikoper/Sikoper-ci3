@@ -56,6 +56,8 @@ class Simpanan extends CI_Controller
                 $row[] = $field->no_rekening;
                 $row[] = $field->telp_nasabah;
                 $row[] = number_format($field->jumlah_simpanan, 0, ',', '.');
+                $row[] = number_format($field->jumlah_bunga, 0, ',', '.');
+                $row[] = number_format($field->akumulasi_saldo, 0, ',', '.');
                 if ($level == 'Admin') {
                     $row[] = '<button type="button" class="btn btn-success" onclick="window.location=\'simpanan/edit/' . safe_base64_encode($field->no_rekening) . '\'">
                                     <i class="fa fa-edit fa-fw"></i>
@@ -136,10 +138,6 @@ class Simpanan extends CI_Controller
             $jenis_tabungan = $this->input->post('jenis_tabungan');
             $pegawai = $this->input->post('pegawai_id');
             $jumlah_simpanan = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_simpanan'));
-            // $durasi = $this->input->post('durasi');
-            // $nama_ahli_waris = $this->input->post('nama_ahli_waris');
-            // $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
-            // $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
             $no_rekening = $this->session->userdata('temp_no_rekening');
 
             $this->form_validation->set_rules('tanggal_simpanan', 'Tanggal Simpanan', 'required', [
@@ -192,14 +190,6 @@ class Simpanan extends CI_Controller
                 'required' => 'Pengendapan harus diisi.'
             ]);
 
-            // $this->form_validation->set_rules('jenis_denda', 'Jenis Denda', 'required', [
-            //     'required' => 'Jenis denda harus diisi.'
-            // ]);
-
-            // $this->form_validation->set_rules('jumlah_denda', 'Jumlah Denda', 'required', [
-            //     'required' => 'Jumlah denda harus diisi.'
-            // ]);
-
             $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
                 'required' => 'Pegawai sebagai penanggung jawab wajib dipilih.',
             ]);
@@ -220,8 +210,6 @@ class Simpanan extends CI_Controller
                         'errorSimpananAwal'     => form_error('simpanan_awal'),
                         'errorPengendapan'      => form_error('pengendapan'),
                         'errorPegawai'          => form_error('pegawai_id'),
-                        // 'errorJenisDenda'       => form_error('jenis_denda'),
-                        // 'errorJumlahDenda'      => form_error('jumlah_denda'),
                         'errorJumlahSimpanan'   => form_error('jumlah_simpanan'),
                         'errorNoRekening'       => form_error('nomor_rekening'),
                         'errorDurasi'           => form_error('durasi'),
@@ -236,10 +224,6 @@ class Simpanan extends CI_Controller
                     'pegawai_id' => $pegawai,
                     'jenistabungan_id' => $jenis_tabungan,
                     'jumlah_simpanan' => $jumlah_simpanan,
-                    // 'durasi' => $durasi,
-                    // 'nama_ahli_waris' => $nama_ahli_waris,
-                    // 'telp_ahli_waris' => $kontak_ahli_waris,
-                    // 'hubungan_ahli_waris' => $hubungan_ahli_waris,
                 ];
 
                 // echo '<pre>';

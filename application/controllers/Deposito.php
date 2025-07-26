@@ -119,7 +119,7 @@ class Deposito extends CI_Controller
 
     public function simpanData()
     {
-        if ($this->input->is_ajax_request()) {
+        // if ($this->input->is_ajax_request()) {
             $allowed_roles = ['Admin', 'Direktur', 'Pegawai'];
             $level = $this->session->userdata('level');
 
@@ -137,6 +137,7 @@ class Deposito extends CI_Controller
             $pegawai = $this->input->post('pegawai_id');
             $jumlah_deposito = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_deposito'));
             $durasi = $this->input->post('durasi');
+            $rate_bunga = $this->input->post('bunga');
             $nama_ahli_waris = $this->input->post('nama_ahli_waris');
             $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
             $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
@@ -237,6 +238,7 @@ class Deposito extends CI_Controller
                     'jenistabungan_id' => $jenis_tabungan,
                     'jumlah_deposito' => $jumlah_deposito,
                     'durasi' => $durasi,
+                    'rate_bunga' => $rate_bunga,
                     'nama_ahli_waris' => $nama_ahli_waris,
                     'telp_ahli_waris' => $kontak_ahli_waris,
                     'hubungan_ahli_waris' => $hubungan_ahli_waris,
@@ -262,9 +264,9 @@ class Deposito extends CI_Controller
             }
 
             echo json_encode($msg);
-        } else {
-            redirect('unauthorized_403');
-        }
+        // } else {
+        //     redirect('unauthorized_403');
+        // }
     }
 
     public function delete()

@@ -57,9 +57,6 @@
                     </div>
                     <button class="btn btn-primary btn-block btn-lg shadow-lg mt-5" id="tombol_login">Log in</button>
                     <?= form_close() ?>
-                    <div class="text-center mt-5 text-lg fs-4">
-                        <p><a class="font-bold" href="auth-forgot-password.html">Forgot password?</a>.</p>
-                    </div>
                 </div>
             </div>
             <div class="col-lg-7 d-none d-lg-block">

@@ -15,8 +15,7 @@
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_deposito">Tanggal Deposito</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
-                            <input type="hidden" name="tanggal_deposito" value="<?= date('Y-m-d') ?>">
+                            <input type="date"  class="form-control" name="tanggal_deposito" value="<?= date('Y-m-d') ?>">
                         </div>
                         <div id="errorTanggalDeposito" class="invalid-feedback" style="display: none;"></div>
                     </div>

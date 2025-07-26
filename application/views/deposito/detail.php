@@ -33,6 +33,18 @@
                         <td>: Rp <?= number_format($deposito->jumlah_deposito, 2, ',', '.') ?></td>
                     </tr>
                     <tr>
+                        <th>Presentase Bunga</th>
+                        <td>: <?= number_format($deposito->rate_bunga, 2, ',', '.') ?>%</td>
+                    </tr>
+                    <tr>
+                        <th>Akumulasi Bunga</th>
+                        <td>: Rp <?= number_format($deposito->jumlah_bunga, 2, ',', '.') ?></td>
+                    </tr>
+                    <tr>
+                        <th>Total Bunga</th>
+                        <td>: Rp <?= number_format($deposito->total_bunga, 2, ',', '.') ?></td>
+                    </tr>
+                    <tr>
                         <th>Total Penarikan Keseluruhan</th>
                         <td id="totalPenarikanValue">:
                             <span id="akumulasi_penarikan">Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?></span>
