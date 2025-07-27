@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="assets/css/bootstrap.css">
     <link rel="stylesheet" href="assets/vendors/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
     <link rel="stylesheet" href="assets/css/pages/auth.css">
 </head>
 

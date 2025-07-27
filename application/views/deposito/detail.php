@@ -37,8 +37,8 @@
                         <td>: <?= number_format($deposito->rate_bunga, 2, ',', '.') ?>%</td>
                     </tr>
                     <tr>
-                        <th>Akumulasi Bunga</th>
-                        <td>: Rp <?= number_format($deposito->jumlah_bunga, 2, ',', '.') ?></td>
+                        <th>Hutang Bunga</th>
+                        <td>: Rp <?= number_format($deposito->hutang_bunga, 2, ',', '.') ?></td>
                     </tr>
                     <tr>
                         <th>Total Bunga</th>

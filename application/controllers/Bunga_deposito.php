@@ -147,7 +147,8 @@ class Bunga_deposito extends CI_Controller
             if ($delete) {
                 // Update saldo deposito
                 $this->Deposito_model->edit_data($transaksi->deposito_id, [
-                    'jumlah_deposito' => $selisih
+                    'hutang_bunga' => $selisih,
+                    'total_bunga' => $selisih
                 ]);
 
                 echo json_encode(['success' => 'Bunga deposito berhasil dihapus.']);

@@ -141,7 +141,7 @@ class Deposito extends CI_Controller
             $nama_ahli_waris = $this->input->post('nama_ahli_waris');
             $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
             $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
-            $no_rekening = $this->session->userdata('temp_no_rekening_deposito');
+            $no_rekening = $this->input->post('nomor_rekening');
 
             $this->form_validation->set_rules('tanggal_deposito', 'Tanggal Deposito', 'required', [
                 'required'   => 'Tanggal deposito wajib diisi.'
@@ -253,7 +253,6 @@ class Deposito extends CI_Controller
                 $this->Deposito_model->insert_data($data);
 
                 $this->db->trans_complete();
-                $this->session->unset_userdata('temp_no_rekening_deposito');
 
                 if ($this->db->trans_status() === FALSE) {
                     $msg = ['error' => 'Gagal menyimpan data deposito.'];
@@ -599,24 +598,6 @@ class Deposito extends CI_Controller
             echo json_encode($data);
         } else {
             show_custom_404();
-        }
-    }
-
-    public function create_nomer_rekening()
-    {
-        if ($this->input->is_ajax_request()) {
-            if (!$this->session->userdata('temp_no_rekening_deposito')) {
-                $this->db->set(null, false)->insert('tbrekening_deposito');
-                $no_rekening = $this->db->insert_id();
-
-                $this->db->where('id <', $no_rekening)->delete('tbrekening_deposito');
-
-                $this->session->set_userdata('temp_no_rekening_deposito', $no_rekening);
-            }
-
-            echo json_encode(['no_rekening' => $this->session->userdata('temp_no_rekening_deposito')]);
-        } else {
-            redirect('unauthorized_403');
         }
     }
 

@@ -15,7 +15,7 @@
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_simpanan">Tanggal</label>
                         <div class="input-group">
-                            <input type="date" name="tanggal_simpanan" id="tanggal_simpanan" class="form-control" value="<?= $simpanan->tanggal_simpanan ?>" readonly>
+                            <input type="date" name="tanggal_simpanan" id="tanggal_simpanan" class="form-control" value="<?= $simpanan->tanggal_simpanan ?>">
                         </div>
                         <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -31,6 +31,15 @@
                             <input type="hidden" name="nasabah" id="nasabah" value="<?= $nasabah->id ?>">
                         </div>
                         <div id="errorNasabah" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group" style="height: 80px;">
+                        <label for="nomor_rekening">Nomor Rekening</label>
+                        <div class="input-group">
+                            <input type="text" name="nomor_rekening" value="<?= $simpanan->no_rekening ?>" id="nomor_rekening" class="form-control" readonly>
+                        </div>
+                        <div id="errorNoRekening" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
@@ -133,15 +142,6 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-5" style="height: 80px;">
-                        <label for="nomor_rekening">Nomor Rekening</label>
-                        <div class="input-group">
-                            <input type="text" name="nomor_rekening" value="<?= $simpanan->no_rekening ?>" id="nomor_rekening" class="form-control" readonly>
-                        </div>
-                        <div id="errorNoRekening" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
                     <div class="text-center mb-3">
                         <button type="submit" id="tombol_simpan" class="btn btn-success">Simpan</button>
                         <button type="button" onclick="window.location='<?= base_url('simpanan') ?>'" class="btn btn-danger">Batal</button>
@@ -157,7 +157,6 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
-
         $('#bunga').autoNumeric('init', {
             aSep: ',',
             aDec: '.',
@@ -407,20 +406,4 @@
             });
         });
     });
-
-    function createNomerRekening() {
-        $.ajax({
-            type: "POST",
-            url: "<?= base_url('simpanan/create_nomer_rekening') ?>",
-            dataType: "json",
-            success: function(response) {
-                if (response.no_rekening) {
-                    $('#nomor_rekening').val(response.no_rekening)
-                }
-            },
-            error: function(xhr, thrownError) {
-                alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-            }
-        });
-    }
 </script>

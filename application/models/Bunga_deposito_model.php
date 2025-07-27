@@ -132,7 +132,7 @@ class Bunga_deposito_model extends CI_Model
                 'tanggal_bunga' => $today
             ]);
 
-            $this->db->set('jumlah_bunga', 'jumlah_bunga + ' . $bungaAmount, false);
+            $this->db->set('hutang_bunga', 'hutang_bunga + ' . $bungaAmount, false);
             $this->db->set('total_bunga', 'total_bunga + ' . $bungaAmount, false);
             $this->db->where('id', $deposito->id);
             $this->db->update('tbdeposito');

@@ -34,6 +34,15 @@
                     </div>
 
                     <div class="form-group" style="height: 80px;">
+                        <label for="nomor_rekening">Nomor Rekening</label>
+                        <div class="input-group">
+                            <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control text-end" autocomplete="off">
+                        </div>
+                        <div id="errorNoRekening" class="invalid-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group" style="height: 80px;">
                         <label for="jenis_tabungan_display">Jenis Rekening</label>
                         <input type="text" class="form-control" id="jenis_tabungan_display" value="<?= $jenis->nama ?>" name="jenis_tabungan_display" readonly>
                         </input>
@@ -178,15 +187,6 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group mb-5" style="height: 80px;">
-                        <label for="nomor_rekening">Nomor Rekening</label>
-                        <div class="input-group">
-                            <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control text-end" readonly>
-                        </div>
-                        <div id="errorNoRekening" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
                     <div class="text-center mb-3">
                         <button type="submit" id="tombol_simpan" class="btn btn-success">Simpan</button>
                         <button type="button" onclick="window.location='<?= base_url('simpanan') ?>'" class="btn btn-danger">Batal</button>
@@ -202,7 +202,6 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
-        createNomerRekening();
         $('#bunga').autoNumeric('init', {
             aSep: ',',
             aDec: '.',
@@ -448,28 +447,4 @@
         let id = e.params.data.id;
         $('#nasabah_id').val(id);
     });
-
-    let norekGenerated = false;
-
-    function createNomerRekening() {
-        if (norekGenerated) return;
-        norekGenerated = true;
-
-        $.ajax({
-            type: "POST",
-            url: "<?= base_url('simpanan/create_nomer_rekening') ?>",
-            data: {
-                trigger: true
-            },
-            dataType: "json",
-            success: function(response) {
-                if (response.no_rekening) {
-                    $('#nomor_rekening').val(response.no_rekening)
-                }
-            },
-            error: function(xhr, thrownError) {
-                alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-            }
-        });
-    }
 </script>

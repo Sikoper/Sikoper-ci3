@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/css/app.css">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/css/pages/error.css">
+    <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
 </head>
 
 <body>

@@ -138,7 +138,7 @@ class Simpanan extends CI_Controller
             $jenis_tabungan = $this->input->post('jenis_tabungan');
             $pegawai = $this->input->post('pegawai_id');
             $jumlah_simpanan = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_simpanan'));
-            $no_rekening = $this->session->userdata('temp_no_rekening');
+            $no_rekening = $this->input->post('nomor_rekening');
 
             $this->form_validation->set_rules('tanggal_simpanan', 'Tanggal Simpanan', 'required', [
                 'required'   => 'Tanggal simpanan wajib diisi.'
@@ -249,7 +249,6 @@ class Simpanan extends CI_Controller
                 }
 
                 $this->db->trans_complete();
-                $this->session->unset_userdata('temp_no_rekening');
 
                 if ($this->db->trans_status() === FALSE) {
                     $msg = ['error' => 'Gagal menyimpan data tabungan simpanan dan detail.'];
@@ -603,24 +602,6 @@ class Simpanan extends CI_Controller
             echo json_encode($data);
         } else {
             show_custom_404();
-        }
-    }
-
-    public function create_nomer_rekening()
-    {
-        if ($this->input->is_ajax_request()) {
-            if (!$this->session->userdata('temp_no_rekening')) {
-                $this->db->set(null, false)->insert('tbrekening_tabungan');
-                $no_rekening = $this->db->insert_id();
-
-                $this->db->where('id <', $no_rekening)->delete('tbrekening_tabungan');
-
-                $this->session->set_userdata('temp_no_rekening', $no_rekening);
-            }
-
-            echo json_encode(['no_rekening' => $this->session->userdata('temp_no_rekening')]);
-        } else {
-            redirect('unauthorized_403');
         }
     }
 
