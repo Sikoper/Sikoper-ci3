@@ -10,7 +10,7 @@
             <div class="card-header">
                 <h5 class="mb-0"><i class="fa fa-id-card"></i> Informasi Deposito</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body" id="data_deposito">
                 <table class="table table-borderless">
                     <tr>
                         <th>No. Rekening</th>
@@ -305,13 +305,14 @@
             allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
-                $.post("<?= base_url('bunga/delete') ?>", {
+                $.post("<?= base_url('bunga_deposito/delete') ?>", {
                     id: id,
                     tipe: tipe
                 }, function(response) {
                     if (response.success) {
                         Swal.fire("Berhasil!", response.success, "success");
                         tabel_bunga.ajax.reload(null, false);
+                        location.reload();
                     } else {
                         Swal.fire("Gagal!", response.error || "Terjadi kesalahan.", "error");
                     }

@@ -162,6 +162,7 @@
             padding: 7px;
         }
     </style>
+    <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
 </head>
 <?php
     $formatter = new \IntlDateFormatter('id_ID', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);

@@ -97,7 +97,7 @@ class Bunga_deposito extends CI_Controller
             $no++;
             $row = array();
             $row[] = "<div class=\"text-center\">$no</div>";
-            $row[] = $field->tanggal_transaksi;
+            $row[] = $field->tanggal_transaksi . $field->source_id;
             $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
             $row[] = ((float)$field->rate_bunga) . " %";
             $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
@@ -120,42 +120,43 @@ class Bunga_deposito extends CI_Controller
 
     public function delete()
     {
-        if ($this->input->is_ajax_request()) {
-            $id = $this->input->post('id');
+        // if ($this->input->is_ajax_request()) {
+        $id = $this->input->post('id');
 
-            // Get the bunga deposito transaction
-            $transaksi = $this->Bunga_deposito_model->get_data_by_id($id);
+        // Get the bunga deposito transaction
+        $transaksi = $this->Bunga_deposito_model->get_data_by_id($id);
 
-            if (!$transaksi) {
-                echo json_encode(['error' => 'Transaksi tidak ditemukan.']);
-                return;
-            }
-
-            // Get related deposito record
-            $deposito = $this->Deposito_model->get_data_by_id($transaksi->deposito_id);
-
-            if (!$deposito) {
-                echo json_encode(['error' => 'Data deposito tidak ditemukan.']);
-                return;
-            }
-
-            // Recalculate saldo
-            $selisih = $deposito->jumlah_deposito - $transaksi->jumlah_transaksi;
-
-            // Delete bunga deposito
-            $delete = $this->Bunga_deposito_model->delete_data($id);
-            if ($delete) {
-                // Update saldo deposito
-                $this->Deposito_model->edit_data($transaksi->deposito_id, [
-                    'hutang_bunga' => $selisih,
-                    'total_bunga' => $selisih
-                ]);
-
-                echo json_encode(['success' => 'Bunga deposito berhasil dihapus.']);
-            } else {
-                echo json_encode(['error' => 'Gagal menghapus bunga deposito.']);
-            }
+        if (!$transaksi) {
+            echo json_encode(['error' => 'Transaksi tidak ditemukan.']);
+            return;
         }
+
+        // Get related deposito record
+        $deposito = $this->Deposito_model->get_data_by_id($transaksi->deposito_id);
+
+        if (!$deposito) {
+            echo json_encode(['error' => 'Data deposito tidak ditemukan.']);
+            return;
+        }
+
+        // Recalculate saldo
+        $selisih_hutang = $deposito->hutang_bunga - $transaksi->jumlah_transaksi;
+        $selisih_total = $deposito->total_bunga - $transaksi->jumlah_transaksi;
+
+        // Delete bunga deposito
+        $delete = $this->Bunga_deposito_model->delete_data($id);
+        if ($delete) {
+            // Update saldo deposito
+            $this->Deposito_model->edit_data($transaksi->deposito_id, [
+                'hutang_bunga' => $selisih_hutang,
+                'total_bunga' => $selisih_total
+            ]);
+
+            echo json_encode(['success' => 'Bunga deposito berhasil dihapus.']);
+        } else {
+            echo json_encode(['error' => 'Gagal menghapus bunga deposito.']);
+        }
+        // }
     }
 
     public function run_bunga_deposito()
@@ -167,13 +168,13 @@ class Bunga_deposito extends CI_Controller
         // if ($this->Bunga_deposito_model->is_bunga_deposito_done_today()) {
         //     $msg = ['error' => 'Semua bunga deposito sudah diproses hari ini.'];
         // } else {
-            $processed = $this->Bunga_deposito_model->bunga_proses_deposito();
+        $processed = $this->Bunga_deposito_model->bunga_proses_deposito();
 
-            if ($processed) {
-                $msg = ['success' => 'Bunga deposito berhasil dihitung dan disimpan.'];
-            } else {
-                $msg = ['empty' => 'Tidak ada bunga deposito yang valid untuk diproses hari ini.'];
-            }
+        if ($processed) {
+            $msg = ['success' => 'Bunga deposito berhasil dihitung dan disimpan.'];
+        } else {
+            $msg = ['empty' => 'Tidak ada bunga deposito yang valid untuk diproses hari ini.'];
+        }
         // }
 
         header('Content-Type: application/json');
