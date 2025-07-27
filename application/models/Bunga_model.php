@@ -152,92 +152,10 @@ class Bunga_model extends CI_Model
             ]);
 
             // Update saldo
-            $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaAmount, false);
+            $this->db->set('jumlah_bunga', 'jumlah_bunga + ' . $bungaAmount, false);
             $this->db->where('id', $simpanan->id);
             $this->db->update('tbsimpanan');
         }
-    }
-
-
-    public function bunga_proses_deposito()
-    {
-        $today = date('Y-m-d');
-        $processedAny = false;
-
-        $this->db->select('tbdeposito.id, tbdeposito.nasabah_id, tbdeposito.jumlah_deposito, tbdeposito.tanggal_deposito, tbjenistabungan.bunga');
-        $this->db->from('tbdeposito');
-        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
-        $this->db->where('tbdeposito.status', 'aktif');
-        $depositoList = $this->db->get()->result();
-
-        foreach ($depositoList as $deposito) {
-            $bungaRate = (float) $deposito->bunga;
-            $saldo = (float) $deposito->jumlah_deposito;
-            $tanggalDeposito = $deposito->tanggal_deposito;
-
-            if ($saldo <= 0) continue;
-
-            $daysDiff = (strtotime($today) - strtotime($tanggalDeposito)) / (60 * 60 * 24);
-            if ($daysDiff < 30) continue;
-
-            if (date('d') != date('d', strtotime($tanggalDeposito))) {
-                continue;
-            }
-
-            $bungaExists = $this->db->where('deposito_id', $deposito->id)
-                ->where('MONTH(tanggal_bunga)', date('m'))
-                ->where('YEAR(tanggal_bunga)', date('Y'))
-                ->get('tbdeposito_bunga_log')->num_rows();
-
-            if ($bungaExists > 0) continue;
-
-            // Hitung bunga dan bulatkan ke kelipatan 100 terdekat
-            $bungaAmountRaw = ($bungaRate / 100) * $saldo;
-            $bungaAmount = round($bungaAmountRaw / 100) * 100;
-
-            $this->db->insert('tbtransaksi_deposito', [
-                'deposito_id' => $deposito->id,
-                'tanggal_transaksi' => $today,
-                'jumlah_transaksi' => $bungaAmount,
-                'rate_bunga'        => $bungaRate
-            ]);
-
-            $this->db->insert('tbdeposito_bunga_log', [
-                'deposito_id' => $deposito->id,
-                'tanggal_bunga' => $today
-            ]);
-
-            $processedAny = true;
-        }
-
-        return $processedAny;
-    }
-
-    public function is_bunga_deposito_done_today()
-    {
-        $today = date('Y-m-d');
-        $tanggalHariIni = date('d');
-
-        $this->db->select('tbdeposito.id');
-        $this->db->from('tbdeposito');
-        $this->db->where('tbdeposito.status', 'aktif');
-        $this->db->where('DAY(tbdeposito.tanggal_deposito)', $tanggalHariIni);
-        $this->db->where('DATEDIFF(?, tbdeposito.tanggal_deposito) >=', 30);
-        $eligibleDeposito = $this->db->get_compiled_select();
-
-        $sql = "
-        SELECT COUNT(*) AS belum_proses FROM (
-            {$eligibleDeposito}
-        ) AS eligible
-        WHERE NOT EXISTS (
-            SELECT 1 FROM tbdeposito_bunga_log
-            WHERE tbdeposito_bunga_log.deposito_id = eligible.id
-            AND tanggal_bunga = ?
-        )
-    ";
-
-        $query = $this->db->query($sql, [$today, $today]);
-        return $query->row()->belum_proses == 0;
     }
 
     public function get_data_by_id($id)

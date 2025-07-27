@@ -1,3 +1,9 @@
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:transparent; z-index:9999; pointer-events:all;">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; backdrop-filter:blur(3px); padding:1rem 2rem; border-radius:1rem;">
+        <i class="fa fa-spinner fa-spin fa-3x text-primary"></i>
+        <p style="margin-top: 1rem; color:#333;">Memproses perhitungan bunga deposito...</p>
+    </div>
+</div>
 <div class="card">
     <div class="card-header">
         <h4 class="card-title">
@@ -205,6 +211,17 @@
                 type: "POST",
                 url: "<?= base_url('bunga/run_bunga') ?>",
                 dataType: "json",
+                processData: false,
+                contentType: false,
+                cache: false,
+                beforeSend: function() {
+                    $('#btnPembungaanTabungan').prop('disabled', true).html('<i class="fa fa-spin fa-spinner"></i>');
+                    $('#loadingOverlay').fadeIn();
+                },
+                complete: function() {
+                    $('#btnPembungaanTabungan').prop('disabled', false).html('Hitung Bunga Deposito');
+                    $('#loadingOverlay').fadeOut();
+                },
                 success: function(response) {
                     if (response.success) {
                         Swal.fire({

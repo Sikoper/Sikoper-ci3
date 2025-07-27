@@ -229,9 +229,9 @@ class Pencairan extends CI_Controller
 
     public function fetch_detail_penarikan_by_deposito()
     {
-        if (!$this->input->is_ajax_request()) {
-            redirect('unauthorized_403');
-        }
+        // if (!$this->input->is_ajax_request()) {
+        //     redirect('unauthorized_403');
+        // }
 
         $deposito_id = $this->input->post('deposito_id');
 

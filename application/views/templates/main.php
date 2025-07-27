@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="<?= base_url('assets') ?>/css/app.css">
     <link rel="shortcut icon" href="<?= base_url('assets') ?>/images/favicon.svg" type="image/x-icon">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/datatables/datatables.min.css">
+    <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.min.css">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/select2/css/select2.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -36,7 +37,7 @@
                 <div class="sidebar-header">
                     <div class="d-flex justify-content-between">
                         <div class="logo">
-                            <a href="index.html">Sikoper</a>
+                            <a href="<?= base_url() ?>">Sikoper</a>
                         </div>
                         <div class="toggler">
                             <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
