@@ -109,12 +109,12 @@ class Bunga_deposito_model extends CI_Model
                 continue;
             }
 
-            // $bungaExists = $this->db->where('deposito_id', $deposito->id)
-            //     ->where('MONTH(tanggal_bunga)', date('m'))
-            //     ->where('YEAR(tanggal_bunga)', date('Y'))
-            //     ->get('tbdeposito_bunga_log')->num_rows();
+            $bungaExists = $this->db->where('deposito_id', $deposito->id)
+                ->where('MONTH(tanggal_bunga)', date('m'))
+                ->where('YEAR(tanggal_bunga)', date('Y'))
+                ->get('tbdeposito_bunga_log')->num_rows();
 
-            // if ($bungaExists > 0) continue;
+            if ($bungaExists > 0) continue;
 
             // Hitung bunga dan bulatkan ke kelipatan 100 terdekat
             $bungaAmountRaw = ($bungaRate / 100) * $saldo;
@@ -143,32 +143,32 @@ class Bunga_deposito_model extends CI_Model
         return $processedAny;
     }
 
-    // public function is_bunga_deposito_done_today()
-    // {
-    //     $today = date('Y-m-d');
-    //     $tanggalHariIni = date('d');
+    public function is_bunga_deposito_done_today()
+    {
+        $today = date('Y-m-d');
+        $tanggalHariIni = date('d');
 
-    //     $this->db->select('tbdeposito.id');
-    //     $this->db->from('tbdeposito');
-    //     $this->db->where('tbdeposito.status', 'aktif');
-    //     $this->db->where('DAY(tbdeposito.tanggal_deposito)', $tanggalHariIni);
-    //     $this->db->where('DATEDIFF(?, tbdeposito.tanggal_deposito) >=', 30);
-    //     $eligibleDeposito = $this->db->get_compiled_select();
+        $this->db->select('tbdeposito.id');
+        $this->db->from('tbdeposito');
+        $this->db->where('tbdeposito.status', 'aktif');
+        $this->db->where('DAY(tbdeposito.tanggal_deposito)', $tanggalHariIni);
+        $this->db->where('DATEDIFF(?, tbdeposito.tanggal_deposito) >=', 30);
+        $eligibleDeposito = $this->db->get_compiled_select();
 
-    //     $sql = "
-    //     SELECT COUNT(*) AS belum_proses FROM (
-    //         {$eligibleDeposito}
-    //     ) AS eligible
-    //     WHERE NOT EXISTS (
-    //         SELECT 1 FROM tbdeposito_bunga_log
-    //         WHERE tbdeposito_bunga_log.deposito_id = eligible.id
-    //         AND tanggal_bunga = ?
-    //     )
-    // ";
+        $sql = "
+        SELECT COUNT(*) AS belum_proses FROM (
+            {$eligibleDeposito}
+        ) AS eligible
+        WHERE NOT EXISTS (
+            SELECT 1 FROM tbdeposito_bunga_log
+            WHERE tbdeposito_bunga_log.deposito_id = eligible.id
+            AND tanggal_bunga = ?
+        )
+    ";
 
-    //     $query = $this->db->query($sql, [$today, $today]);
-    //     return $query->row()->belum_proses == 0;
-    // }
+        $query = $this->db->query($sql, [$today, $today]);
+        return $query->row()->belum_proses == 0;
+    }
 
     public function get_data_by_id($id)
     {
