@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
     <meta charset="UTF-8">
     <title>Laporan Rekening Koran</title>
     <style>

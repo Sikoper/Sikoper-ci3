@@ -162,8 +162,12 @@
             padding: 7px;
         }
     </style>
+    <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
 </head>
-
+<?php
+    $formatter = new \IntlDateFormatter('id_ID', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);
+    $formatter->setPattern('d MMMM yyyy');
+?>
 <body>
     <div class="content-wrapper">
         <div id="halaman-depan" class="page-container">
@@ -197,14 +201,17 @@
                         <td style="font-style: italic; white-space: pre-wrap;"><?= $terbilang ?></td>
                     </tr>
                 </table>
-                <p style="margin-top: 15px; line-height: 1.6;">Untuk Simpanan Berjangka dalam waktu <?= $durasi ?> bulan, mulai tanggal <?= date('d F Y', strtotime($tanggal_deposito)) ?> sampai dengan tanggal <?= date('d F Y', strtotime($tanggal_jatuh_tempo)) ?>, bunga <?= $suku_bunga ?>% perbulan, dengan syarat-syarat yang telah ditentukan oleh <b>Usaha Simpan Pinjam Bali Sejahtera Desa Adat Culik.</b></p>
+                <p style="margin-top: 15px; line-height: 1.6;">Untuk Simpanan Berjangka dalam waktu <?= $durasi ?> bulan, 
+                mulai tanggal <?= $formatter->format(new DateTime($tanggal_deposito)) ?> sampai dengan tanggal 
+                <?= $formatter->format(new DateTime($tanggal_jatuh_tempo)) ?>, bunga <?= $suku_bunga ?>% perbulan, 
+                dengan syarat-syarat yang telah ditentukan oleh <b>Usaha Simpan Pinjam Bali Sejahtera Desa Adat Culik.</b></p>
             </div>
             <div class="tanda-tangan-area">
                 <div class="tanda-tangan-box" style="float: right;">
                     <div class="tanda-tangan-box" style="float: right;">
                         <p class="tanggal">Culik, <?= date('d F Y') ?></p>
                         <p class="jabatan">Usaha Simpan Pinjam Bali Sejahtera
-                            <br/> KEPALA
+                            <br /> KEPALA
                         </p>
                         <div class="materai-box">MATERAI TEMPEL</div>
                         <p class="nama"><?= $nama_pimpinan ?></p>
@@ -220,9 +227,9 @@
             <div class="tanda-tangan-area">
                 <div class="tanda-tangan-box" style="float: right;">
                     <div class="tanda-tangan-box" style="float: right;">
-                        <p class="tanggal">Culik, <?= date('d F Y') ?></p>
-                        <br/>
-                        <br/>
+                        <p class="tanggal">Culik, <?= $formatter->format(new DateTime()); ?></p>
+                        <br />
+                        <br />
                         <p class="nama"><?= $nama_nasabah ?></p>
                     </div>
                 </div>
@@ -269,9 +276,9 @@
                                     <td><?= $nik_nasabah ?></td>
                                 </tr>
                                 <tr>
-                                    <td>Tempat Tanggal Lahir</td>
+                                    <td>Tempat, Tanggal Lahir</td>
                                     <td>:</td>
-                                    <td><?= $tempat_lahir ?>, <?= date('d F Y', strtotime($tanggal_lahir)) ?></td>
+                                    <td><?= $tempat_lahir ?>, <?= $formatter->format(new DateTime($tanggal_lahir)); ?></td>
                                 </tr>
                                 <tr>
                                     <td>Alamat</td>
@@ -287,7 +294,7 @@
                             <p style="margin-top: 10px; line-height: 1.5;">Dalam hal ini bertindak untuk dan atas nama Pemegang Simpanan Berjangka Nomor Seri <?= $nomor_sertifikat ?>, menyatakan telah menyetujui / menerima baik syarat-syarat yang telah ditetapkan oleh Usaha Simpan Pinjam Bali Sejahtera Desa Adat Culik.</p>
                             <div style="clear:both;"></div>
                             <div class="tanda-tangan-nasabah" style="width: 250px; margin-left: auto; margin-right: 0; text-align: center;">
-                                <p>Culik, <?= date('d F Y', strtotime($tanggal_deposito)) ?></p>
+                                <p>Culik, <?= $formatter->format(new DateTime($tanggal_deposito)); ?></p>
                                 <p>Yang tersebut di atas</p>
                                 <div class="materai-box">MATERAI TEMPEL</div>
                                 <p class="nama"><?= $nama_nasabah ?></p>

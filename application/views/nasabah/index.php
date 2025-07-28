@@ -115,6 +115,19 @@
                                     window.location.reload();
                                 }
                             });
+                        } else {
+                            Swal.fire({
+                                title: "Error!",
+                                text: response.error,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                allowEnterKey: false,
+                                icon: "error"
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    
+                                }
+                            });
                         }
                     },
                     error: function(xhr, thrownError) {

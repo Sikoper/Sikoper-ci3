@@ -228,13 +228,21 @@ class Nasabah extends CI_Controller
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
 
-            $this->Nasabah_model->delete_data($id);
-
-            $msg = [
-                'success' => 'Data berhasil dihapus'
-            ];
+            // The model now handles the complex validation check for related records.
+            if ($this->Nasabah_model->delete_data($id)) {
+                $msg = [
+                    'success' => 'Data Nasabah berhasil dihapus'
+                ];
+            } else {
+                // This error message is now triggered if records exist in tbsimpanan or tbdeposito.
+                $msg = [
+                    'error' => 'Data Nasabah gagal dihapus karena memiliki record simpanan atau deposito'
+                ];
+            }
 
             echo json_encode($msg);
+        } else {
+            redirect('unauthorized_403');
         }
     }
 

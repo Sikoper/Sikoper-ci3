@@ -66,13 +66,29 @@ class Nasabah_model extends CI_Model
         return $this->db->count_all('tbnasabah');
     }
 
-        public function insert_data($data)
+    public function insert_data($data)
     {
         return $this->db->insert('tbnasabah', $data);
     }
 
-        public function delete_data($id)
+    public function delete_data($id)
     {
+        // Check if the customer has any records in the 'tbsimpanan' (savings) table.
+        // We assume the foreign key column is 'id_nasabah'.
+        $this->db->where('nasabah_id', $id);
+        $simpanan_exists = $this->db->get('tbsimpanan')->num_rows() > 0;
+
+        // Check if the customer has any records in the 'tbdeposito' (deposits) table.
+        $this->db->where('nasabah_id', $id);
+        $deposito_exists = $this->db->get('tbdeposito')->num_rows() > 0;
+
+        // If a record exists in EITHER the savings or deposits table, block the deletion.
+        if ($simpanan_exists || $deposito_exists) {
+            // Return false to indicate the deletion failed because of existing related records.
+            return false;
+        }
+
+        // If no related records are found, it's safe to delete the customer.
         return $this->db->delete('tbnasabah', ['id' => $id]);
     }
 
