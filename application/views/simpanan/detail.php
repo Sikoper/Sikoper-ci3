@@ -33,18 +33,6 @@
                         <td>: Rp <?= number_format($simpanan->jumlah_simpanan, 2, ',', '.') ?></td>
                     </tr>
                     <tr>
-                        <th>Akumulasi Bunga</th>
-                        <td>: Rp <?= number_format($simpanan->jumlah_bunga, 2, ',', '.') ?></td>
-                    </tr>
-                    <tr>
-                        <th>Total Penarikan Keseluruhan</th>
-                        <td id="totalPenarikanValue">: Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?>
-                            <?php if ($total_akumulasi_denda > 0): ?>
-                                (Denda: Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?>)
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <tr>
                         <th>Tanggal Simpanan</th>
                         <td>: <?= date('d-m-Y', strtotime($simpanan->tanggal_simpanan)) ?></td>
                     </tr>

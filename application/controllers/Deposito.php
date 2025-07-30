@@ -119,7 +119,7 @@ class Deposito extends CI_Controller
 
     public function simpanData()
     {
-        // if ($this->input->is_ajax_request()) {
+        if ($this->input->is_ajax_request()) {
         $allowed_roles = ['Admin', 'Direktur', 'Pegawai'];
         $level = $this->session->userdata('level');
 
@@ -263,9 +263,9 @@ class Deposito extends CI_Controller
         }
 
         echo json_encode($msg);
-        // } else {
-        //     redirect('unauthorized_403');
-        // }
+        } else {
+            redirect('unauthorized_403');
+        }
     }
 
     public function delete()

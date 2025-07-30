@@ -41,7 +41,7 @@ class Simpanan extends CI_Controller
             return strtr(base64_encode($string), '+/=', '-_?');
         }
 
-        if ($this->input->is_ajax_request() == true) {
+        // if ($this->input->is_ajax_request() == true) {
             $list = $this->Simpanan_model->get_datatables();
             $data = array();
             $no = $_POST['start'];
@@ -56,8 +56,6 @@ class Simpanan extends CI_Controller
                 $row[] = $field->no_rekening;
                 $row[] = $field->telp_nasabah;
                 $row[] = number_format($field->jumlah_simpanan, 0, ',', '.');
-                $row[] = number_format($field->jumlah_bunga, 0, ',', '.');
-                $row[] = number_format($field->akumulasi_saldo, 0, ',', '.');
                 if ($level == 'Admin') {
                     $row[] = '<button type="button" class="btn btn-success" onclick="window.location=\'simpanan/edit/' . safe_base64_encode($field->no_rekening) . '\'">
                                     <i class="fa fa-edit fa-fw"></i>
@@ -91,9 +89,9 @@ class Simpanan extends CI_Controller
             );
 
             echo json_encode($output);
-        } else {
-            exit('Maaf data tidak bisa ditampilkan');
-        }
+        // } else {
+        //     exit('Maaf data tidak bisa ditampilkan');
+        // }
     }
 
     public function add()

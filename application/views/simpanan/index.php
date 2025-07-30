@@ -17,19 +17,15 @@
                             <th>Nomer Rekening</th>
                             <th>Nomer Telepon</th>
                             <th>Jumlah Saldo</th>
-                            <th>Jumlah Bunga</th>
-                            <th>Total Saldo</th>
                             <th>#</th>
                         </tr>
                     </thead>
                     <tbody>
-
                     </tbody>
                 </table>
             </div>
             <div class="dataTable-bottom">
                 <ul class="pagination pagination-primary float-end dataTable-pagination">
-
                 </ul>
             </div>
         </div>
@@ -66,12 +62,6 @@
                 "type": "string"
             },
             {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
                 "orderable": false
             }
         ],
@@ -87,7 +77,7 @@
                 "width": "10%"
             },
             {
-                "targets": 7,
+                "targets": 5,
                 "orderable": false,
                 "width": "15%"
             }
