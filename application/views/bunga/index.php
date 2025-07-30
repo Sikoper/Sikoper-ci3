@@ -42,7 +42,8 @@
                             <th>Nasabah</th>
                             <th>No. Rekening</th>
                             <th>Tanggal bunga</th>
-                            <th>Jumlah bunga</th>
+                            <th>Bunga</th>
+                            <th>Bunga Riil</th>
                             <th>Presentase Bunga</th>
                             <?php if ($level == 'Admin'): ?>
                                 <th>#</th>
@@ -98,6 +99,9 @@
             {
                 "type": "string"
             },
+            {
+                "type": "string"
+            },
         ];
         
         if (userLevel === 'Admin') {
@@ -112,7 +116,7 @@
                 "width": "5%"
             },
             {
-                "targets": 5,
+                "targets": 6,
                 "orderable": false,
                 "width": "15%"
             }
