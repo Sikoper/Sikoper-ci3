@@ -6,14 +6,10 @@ class Penarikan_bunga extends CI_Controller
     public function __construct()
     {
         parent::__construct();
-        // Load model tetap di sini
         $this->load->model('Deposito_model');
         $this->load->model('Pegawai_model');
-
-        // Pindahkan atau ubah pengecekan role dari sini
     }
 
-    // Fungsi untuk MENGAMANKAN akses halaman
     private function _secure_page()
     {
         $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
@@ -22,10 +18,9 @@ class Penarikan_bunga extends CI_Controller
         }
     }
 
-    // Panggil fungsi keamanan HANYA di fungsi yang menampilkan halaman
     public function index()
     {
-        $this->_secure_page(); // Amankan halaman ini
+        $this->_secure_page();
 
         $data = [
             'level'   => $this->session->userdata('level'),
@@ -33,16 +28,13 @@ class Penarikan_bunga extends CI_Controller
         ];
         $parser = [
             'judul' => "Formulir Penarikan Bunga Deposito",
-            // INILAH PENYEBAB MASALAHNYA
             'isi'   => $this->load->view('penarikan_bunga/form', $data, TRUE)
         ];
-        // Perintah ini memuat template LENGKAP (header, sidebar, footer)
         $this->parser->parse('templates/main', $parser);
     }
 
     public function get_combo_rekening_nasabah()
     {
-        // Pastikan header adalah JSON
         header('Content-Type: application/json');
 
         if (!$this->session->userdata('level')) {
@@ -65,43 +57,43 @@ class Penarikan_bunga extends CI_Controller
         }
 
         echo json_encode($result);
-        exit(); // TAMBAHKAN exit() DI SINI
+        exit();
     }
 
     public function fetch_detail_rekening()
     {
-        // Pastikan header adalah JSON
         header('Content-Type: application/json');
 
         if (!$this->session->userdata('level')) {
             echo json_encode(['status' => 'error', 'message' => 'Sesi Anda berakhir.']);
-            exit(); // TAMBAHKAN exit() DI SINI
+            exit();
         }
 
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
+            // Pastikan model Deposito_model->get_detail_deposito_by_id() sudah diubah
+            // untuk me-return `bunga_tersedia`
             $rekening = $this->Deposito_model->get_detail_deposito_by_id($id);
 
             if ($rekening) {
                 $response = [
                     'status'         => 'success',
                     'nama_nasabah'   => $rekening->nama_nasabah,
-                    'bunga_tersedia' => $rekening->hutang_bunga
+                    // 🔥 PERBAIKAN: Ambil dari `bunga_tersedia` (hasil dari model yg sudah diubah), bukan `hutang_bunga`
+                    'bunga_tersedia' => $rekening->bunga_tersedia
                 ];
                 echo json_encode($response);
             } else {
                 echo json_encode(['status' => 'error', 'message' => 'Rekening tidak ditemukan.']);
             }
-            exit(); // TAMBAHKAN exit() DI SINI
+            exit();
         }
     }
 
-    // Fungsi untuk memproses penarikan bunga
     public function proses_penarikan()
     {
         header('Content-Type: application/json');
         if ($this->input->is_ajax_request()) {
-            // Validasi form
             $this->form_validation->set_rules('deposito_id', 'Rekening Deposito', 'required');
             $this->form_validation->set_rules('jumlah_penarikan', 'Jumlah Penarikan', 'required|trim|greater_than[0]');
             if ($this->session->userdata('level') == 'Admin') {
@@ -110,7 +102,6 @@ class Penarikan_bunga extends CI_Controller
 
             if ($this->form_validation->run() == FALSE) {
                 echo json_encode(['error_validation' => validation_errors()]);
-                // return;
                 exit();
             }
 
@@ -122,16 +113,16 @@ class Penarikan_bunga extends CI_Controller
 
             if (!$deposito) {
                 echo json_encode(['error_save' => 'Gagal! Data rekening tidak ditemukan.']);
-                return;
+                exit();
             }
 
-            // Cek apakah bunga yang tersedia mencukupi
-            if ($jumlah_penarikan > (float)$deposito->hutang_bunga) {
-                echo json_encode(['error_save' => 'Gagal! Jumlah penarikan melebihi bunga yang tersedia (Rp ' . number_format($deposito->hutang_bunga, 0, ',', '.') . ').']);
-                return;
+            // 🔥 PERBAIKAN: Validasi jumlah penarikan terhadap `bunga_tersedia`, bukan `hutang_bunga`
+            if ($jumlah_penarikan > (float)$deposito->bunga_tersedia) {
+                echo json_encode(['error_save' => 'Gagal! Jumlah penarikan melebihi bunga yang tersedia (Rp ' . number_format($deposito->bunga_tersedia, 0, ',', '.') . ').']);
+                exit();
             }
 
-            // Panggil fungsi di model untuk proses transaksi
+            // Panggil fungsi di model yang sudah diperbaiki logikanya
             $is_success = $this->Deposito_model->tarik_bunga($deposito_id, $jumlah_penarikan, $pegawai_id);
 
             if ($is_success) {

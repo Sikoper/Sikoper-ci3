@@ -268,11 +268,11 @@ class Deposito_model extends CI_Model
     public function get_detail_deposito_by_id($id)
     {
         $this->db->select('
-            d.id, 
-            d.no_rekening, 
-            d.hutang_bunga, 
-            n.nama_lengkap as nama_nasabah
-        ');
+        d.id, 
+        d.no_rekening, 
+        d.bunga_tersedia,
+        n.nama_lengkap as nama_nasabah
+    ');
         $this->db->from('tbdeposito d');
         $this->db->join('tbnasabah n', 'd.nasabah_id = n.id');
         $this->db->where('d.id', $id);
@@ -284,6 +284,9 @@ class Deposito_model extends CI_Model
         $this->db->trans_start();
 
         $this->db->set('hutang_bunga', 'hutang_bunga - ' . (float)$jumlah_penarikan, FALSE);
+        $this->db->set('bunga_tersedia', 'bunga_tersedia - ' . (float)$jumlah_penarikan, FALSE);
+        $this->db->set('total_bunga', 'total_bunga + ' . (float)$jumlah_penarikan, FALSE);
+
         $this->db->where('id', $deposito_id);
         $this->db->update('tbdeposito');
 
@@ -291,14 +294,13 @@ class Deposito_model extends CI_Model
             'deposito_id'       => $deposito_id,
             'pegawai_id'        => $pegawai_id,
             'tanggal_penarikan' => date('Y-m-d H:i:s'),
-            'jumlah_penarikan'  => $jumlah_penarikan, // Jumlah bunga yang ditarik
-            'jumlah_denda'      => 0,                // Tidak ada denda untuk penarikan bunga
-            'total_penarikan'   => $jumlah_penarikan  // Total sama dengan jumlah penarikan karena denda 0
+            'jumlah_penarikan'  => $jumlah_penarikan,
+            'jumlah_denda'      => 0,
+            'total_penarikan'   => $jumlah_penarikan
         ];
         $this->db->insert($this->_table_penarikan_deposito, $log_data);
 
         $this->db->trans_complete();
-
         return $this->db->trans_status();
     }
 }

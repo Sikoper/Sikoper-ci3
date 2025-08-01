@@ -165,16 +165,16 @@ class Bunga_deposito extends CI_Controller
             redirect('unauthorized_403');
         }
 
-        if ($this->Bunga_deposito_model->is_bunga_deposito_done_today()) {
-            $msg = ['error' => 'Semua bunga deposito sudah diproses hari ini.'];
-        } else {
-            $processed = $this->Bunga_deposito_model->bunga_proses_deposito();
+        // Langsung panggil fungsi utama untuk memproses bunga
+        $processed = $this->Bunga_deposito_model->bunga_proses_deposito();
 
-            if ($processed) {
-                $msg = ['success' => 'Bunga deposito berhasil dihitung dan disimpan.'];
-            } else {
-                $msg = ['empty' => 'Tidak ada bunga deposito yang valid untuk diproses hari ini.'];
-            }
+        // Beri respon berdasarkan hasil dari fungsi tersebut
+        if ($processed) {
+            $msg = ['success' => 'Bunga deposito berhasil dihitung dan disimpan.'];
+        } else {
+            // Ini akan muncul jika tidak ada deposito yang jatuh tempo pada hari ini,
+            // atau semua yang jatuh tempo hari ini sudah diproses.
+            $msg = ['empty' => 'Tidak ada bunga deposito yang perlu diproses hari ini.'];
         }
 
         header('Content-Type: application/json');

@@ -44,7 +44,6 @@
                         <th>Hutang Bunga</th>
                         <td>: <span style="color: red;">- Rp <?= number_format($deposito->hutang_bunga, 2, ',', '.') ?></span></td>
                     </tr>
-
                     <tr>
                         <th>Bunga Yang Sudah Dibayar</th>
                         <td>: Rp <?= number_format($deposito->total_bunga, 2, ',', '.') ?></td>
