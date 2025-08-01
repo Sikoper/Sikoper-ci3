@@ -245,4 +245,60 @@ class Deposito_model extends CI_Model
         $this->db->where('tbdeposito.id', $id);
         return $this->db->get()->row();
     }
+
+    public function cari_rekening_deposito_nasabah($search = '')
+    {
+        $this->db->select('d.id, CONCAT(d.no_rekening, " - ", n.nama_lengkap) as text');
+        $this->db->from('tbdeposito d');
+        $this->db->join('tbnasabah n', 'd.nasabah_id = n.id');
+        $this->db->where('d.status', 'aktif');
+        $this->db->where('d.hutang_bunga >', 0);
+
+        if (!empty($search)) {
+            $this->db->group_start();
+            $this->db->like('d.no_rekening', $search);
+            $this->db->or_like('n.nama_lengkap', $search);
+            $this->db->group_end();
+        }
+
+        $this->db->order_by('d.no_rekening', 'ASC');
+        return $this->db->get()->result();
+    }
+
+    public function get_detail_deposito_by_id($id)
+    {
+        $this->db->select('
+            d.id, 
+            d.no_rekening, 
+            d.hutang_bunga, 
+            n.nama_lengkap as nama_nasabah
+        ');
+        $this->db->from('tbdeposito d');
+        $this->db->join('tbnasabah n', 'd.nasabah_id = n.id');
+        $this->db->where('d.id', $id);
+        return $this->db->get()->row();
+    }
+
+    public function tarik_bunga($deposito_id, $jumlah_penarikan, $pegawai_id)
+    {
+        $this->db->trans_start();
+
+        $this->db->set('hutang_bunga', 'hutang_bunga - ' . (float)$jumlah_penarikan, FALSE);
+        $this->db->where('id', $deposito_id);
+        $this->db->update('tbdeposito');
+
+        $log_data = [
+            'deposito_id'       => $deposito_id,
+            'pegawai_id'        => $pegawai_id,
+            'tanggal_penarikan' => date('Y-m-d H:i:s'),
+            'jumlah_penarikan'  => $jumlah_penarikan, // Jumlah bunga yang ditarik
+            'jumlah_denda'      => 0,                // Tidak ada denda untuk penarikan bunga
+            'total_penarikan'   => $jumlah_penarikan  // Total sama dengan jumlah penarikan karena denda 0
+        ];
+        $this->db->insert($this->_table_penarikan_deposito, $log_data);
+
+        $this->db->trans_complete();
+
+        return $this->db->trans_status();
+    }
 }

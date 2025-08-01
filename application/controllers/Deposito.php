@@ -230,6 +230,13 @@ class Deposito extends CI_Controller
             ];
         } else {
 
+            $total_bunga_didapat = ($jumlah_deposito * ($rate_bunga / 100)) * $durasi;
+            $hutang_bunga = $total_bunga_didapat;
+
+            // echo '<pre>';
+            // print_r($total_bunga_didapat);
+            // exit;
+
             $data = [
                 'tanggal_deposito' => $tanggal_deposito,
                 'no_rekening' => $no_rekening,
@@ -242,6 +249,7 @@ class Deposito extends CI_Controller
                 'nama_ahli_waris' => $nama_ahli_waris,
                 'telp_ahli_waris' => $kontak_ahli_waris,
                 'hubungan_ahli_waris' => $hubungan_ahli_waris,
+                'hutang_bunga'        => $hutang_bunga,
             ];
 
             // echo '<pre>';

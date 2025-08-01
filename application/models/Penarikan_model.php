@@ -116,8 +116,9 @@ class Penarikan_model extends CI_Model
         return $this->db->insert('tbpenarikan', $data);
     }
 
-    public function kurangi_saldo_simpanan($id, $jumlah)
+    public function kurangi_saldo_pokok($id, $jumlah)
     {
+        if ($jumlah <= 0) return true; // Tidak ada yang perlu dikurangi
         $this->db->set('jumlah_simpanan', 'jumlah_simpanan - ' . (float)$jumlah, false);
         $this->db->where('id', $id);
         $this->db->update('tbsimpanan');
@@ -189,8 +190,9 @@ class Penarikan_model extends CI_Model
         return $this->db->delete($this->_table_penarikan_header);
     }
 
-    public function tambah_saldo_simpanan($simpanan_id, $jumlah)
+    public function tambah_saldo_pokok($simpanan_id, $jumlah)
     {
+        if ($jumlah <= 0) return true; // Tidak ada yang perlu ditambah
         $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . (float)$jumlah, false);
         $this->db->where('id', $simpanan_id);
         return $this->db->update('tbsimpanan');
@@ -272,13 +274,57 @@ class Penarikan_model extends CI_Model
     }
 
     public function get_simpanan_detail_by_id($id)
-{
-    $this->db->select('ts.jumlah_simpanan, tn.nama_lengkap, jt.nama as jenis_tabungan');
-    $this->db->from('tbsimpanan ts');
-    $this->db->join('tbnasabah tn', 'ts.nasabah_id = tn.id');
-    $this->db->join('tbjenistabungan jt', 'ts.jenistabungan_id = jt.id');
-    $this->db->where('ts.id', $id);
-    return $this->db->get()->row();
-}
+    {
+        $this->db->select('ts.*, tn.nama_lengkap, jt.nama as jenis_tabungan');
+        $this->db->from('tbsimpanan ts');
+        $this->db->join('tbnasabah tn', 'ts.nasabah_id = tn.id');
+        $this->db->join('tbjenistabungan jt', 'ts.jenistabungan_id = jt.id');
+        $this->db->where('ts.id', $id);
+        return $this->db->get()->row();
+    }
 
+    // BARU: Fungsi untuk menghitung total bunga yang masih tersedia
+    public function get_total_bunga_tersedia($simpanan_id)
+    {
+        $this->db->select_sum('jumlah_transaksi', 'total_bunga');
+        $this->db->from('tbtransaksi');
+        $this->db->where('simpanan_id', $simpanan_id);
+        $this->db->where('penarikan_id IS NULL', null, false); // Hanya yang belum ditarik
+        $query = $this->db->get();
+        $result = $query->row();
+        return ($result && $result->total_bunga) ? (float)$result->total_bunga : 0;
+    }
+
+
+    // BARU: Fungsi untuk menandai bunga sebagai "sudah ditarik"
+    public function tandai_bunga_sebagai_ditarik($simpanan_id, $jumlah_penarikan_bunga, $id_penarikan_baru)
+    {
+        // Ambil transaksi bunga tertua yang belum ditarik
+        $this->db->where('simpanan_id', $simpanan_id);
+        $this->db->where('penarikan_id IS NULL', null, false);
+        $this->db->order_by('tanggal_transaksi', 'ASC');
+        $bunga_tersedia = $this->db->get('tbtransaksi')->result();
+
+        $sisa_penarikan_bunga = $jumlah_penarikan_bunga;
+
+        foreach ($bunga_tersedia as $bunga) {
+            if ($sisa_penarikan_bunga <= 0) break;
+
+            // Update baris bunga ini dengan ID penarikan
+            $this->db->where('id', $bunga->id);
+            $this->db->update('tbtransaksi', ['penarikan_id' => $id_penarikan_baru]);
+
+            $sisa_penarikan_bunga -= (float)$bunga->jumlah_transaksi;
+        }
+
+        return true;
+    }
+
+    // BARU: Fungsi untuk mengembalikan status bunga saat penarikan dihapus
+    public function kembalikan_status_bunga($penarikan_id)
+    {
+        $this->db->where('penarikan_id', $penarikan_id);
+        $this->db->update('tbtransaksi', ['penarikan_id' => NULL]);
+        return $this->db->affected_rows() > 0;
+    }
 }
