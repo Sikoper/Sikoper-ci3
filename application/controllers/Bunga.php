@@ -58,6 +58,7 @@ class Bunga extends CI_Controller
             $row[] = $field->no_rekening;
             $row[] = date('d-m-Y', strtotime($field->tanggal_transaksi));
             $row[] = number_format($field->jumlah_transaksi, 0, ',', '.');
+            $row[] = number_format($field->bunga_riil, 0, ',', '.');
             $row[] = $field->rate_bunga . " %";
 
             if ($level == 'Admin') {
@@ -69,7 +70,6 @@ class Bunga extends CI_Controller
             $data[] = $row;
         }
 
-        // 🔥 Get full-month total bunga regardless of page
         $total_bunga = $this->Bunga_model->get_total_bunga_filtered($start, $end);
 
         $output = [
@@ -84,9 +84,9 @@ class Bunga extends CI_Controller
 
     public function fetchNasabahTabunganBunga()
     {
-        // if (!$this->input->is_ajax_request()) {
-        //     exit('Maaf data tidak bisa ditampilkan');
-        // }
+        if (!$this->input->is_ajax_request()) {
+            exit('Maaf data tidak bisa ditampilkan');
+        }
 
         $no_rekening = $this->input->post('no_rekening');
         $list = $this->Nasabah_bunga_model->get_datatables($no_rekening, 'Simpanan');
@@ -99,6 +99,7 @@ class Bunga extends CI_Controller
             $row[] = "<div class=\"text-center\">$no</div>";
             $row[] = $field->tanggal_transaksi;
             $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
+            $row[] = "Rp " . number_format($field->bunga_riil, 2, ',', '.');
             $row[] = ((float)$field->rate_bunga) . " %";
             $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
 

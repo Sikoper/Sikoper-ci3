@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Simpanan_model extends CI_Model
 {
     var $table = 'tbsimpanan';
-    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_simpanan', 'jumlah_bunga', 'akumulasi_saldo',  null);
+    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_simpanan',  null);
     var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbjenistabungan.nama');
     var $order = array('no_rekening' => 'ASC');
 
@@ -13,7 +13,7 @@ class Simpanan_model extends CI_Model
 
     private function _get_datatables_query()
     {
-        $this->db->select('tbsimpanan.*, SUM(jumlah_simpanan + jumlah_bunga) AS akumulasi_saldo, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah');
+        $this->db->select('tbsimpanan.*, tbnasabah.nama_lengkap as nama_nasabah, tbnasabah.telp as telp_nasabah');
         $this->db->from($this->table);
         $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
         $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');

@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Bunga_model extends CI_Model
 {
     var $table = 'tbtransaksi';
-    var $column_order = array(null, 'nama_lengkap', 'no_rekening', 'tanggal_transaksi', 'jumlah_transaksi', 'rate_bunga', null);
+    var $column_order = array(null, 'nama_lengkap', 'no_rekening', 'tanggal_transaksi', 'jumlah_transaksi', 'bunga_riil','rate_bunga', null);
     var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbtransaksi.tanggal_transaksi');
     var $order = array('created_at' => 'ASC');
 
@@ -126,10 +126,8 @@ class Bunga_model extends CI_Model
 
             if ($saldo <= 0) continue;
 
-            $bungaAmountRaw = ($bungaRate / 100) * $saldo;
-
-            // Round up to nearest 100
-            $bungaAmount = ceil($bungaAmountRaw / 100) * 100;
+            $bungaAmount = ($bungaRate / 100) * $saldo;
+            $bungaRiil = $this->round_to_nearest_hundred($bungaAmount);
 
             // Check if bunga already processed this month
             $alreadyGiven = $this->db
@@ -148,11 +146,12 @@ class Bunga_model extends CI_Model
                 'simpanan_id'       => $simpanan->id,
                 'tanggal_transaksi' => $today,
                 'jumlah_transaksi'  => $bungaAmount,
+                'bunga_riil'        => $bungaRiil,
                 'rate_bunga'        => $bungaRate
             ]);
 
             // Update saldo
-            $this->db->set('jumlah_bunga', 'jumlah_bunga + ' . $bungaAmount, false);
+            $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaAmount, false);
             $this->db->where('id', $simpanan->id);
             $this->db->update('tbsimpanan');
         }
@@ -174,6 +173,6 @@ class Bunga_model extends CI_Model
 
     function round_to_nearest_hundred($value)
     {
-        return round($value / 100) * 100;
+        return floor($value / 100) * 100;
     }
 }
