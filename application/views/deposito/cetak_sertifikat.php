@@ -22,6 +22,22 @@
             box-sizing: border-box;
         }
 
+        .logo-desa {
+            position: absolute;
+            width: 80px;
+            left: 150px;
+            top: 50px;
+            height: 80px;
+        }
+
+        .logo-koperasi {
+            position: absolute;
+            right: 150px;
+            top: 50px;
+            width: 80px;
+            height: 80px;
+        }
+
         .page-container {
             width: 100%;
             box-sizing: border-box;
@@ -165,12 +181,15 @@
     <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
 </head>
 <?php
-    $formatter = new \IntlDateFormatter('id_ID', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);
-    $formatter->setPattern('d MMMM yyyy');
+$formatter = new \IntlDateFormatter('id_ID', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);
+$formatter->setPattern('d MMMM yyyy');
 ?>
+
 <body>
     <div class="content-wrapper">
         <div id="halaman-depan" class="page-container">
+            <img class="logo-desa" src="<?= base_url('assets') ?>/images/logo/desa-culik.jpg" alt="logo-desa">
+            <img class="logo-koperasi" src="<?= base_url('assets') ?>/images/logo/koperasi.jpg" alt="logo-koperasi">
             <p class="nomor-seri">No Seri: <?= $nomor_sertifikat ?></p>
             <div class="kop">
                 <h2>SURAT SIMPANAN BERJANGKA</h2>
@@ -201,10 +220,10 @@
                         <td style="font-style: italic; white-space: pre-wrap;"><?= $terbilang ?></td>
                     </tr>
                 </table>
-                <p style="margin-top: 15px; line-height: 1.6;">Untuk Simpanan Berjangka dalam waktu <?= $durasi ?> bulan, 
-                mulai tanggal <?= $formatter->format(new DateTime($tanggal_deposito)) ?> sampai dengan tanggal 
-                <?= $formatter->format(new DateTime($tanggal_jatuh_tempo)) ?>, bunga <?= $suku_bunga ?>% perbulan, 
-                dengan syarat-syarat yang telah ditentukan oleh <b>Usaha Simpan Pinjam Bali Sejahtera Desa Adat Culik.</b></p>
+                <p style="margin-top: 15px; line-height: 1.6;">Untuk Simpanan Berjangka dalam waktu <?= $durasi ?> bulan,
+                    mulai tanggal <?= $formatter->format(new DateTime($tanggal_deposito)) ?> sampai dengan tanggal
+                    <?= $formatter->format(new DateTime($tanggal_jatuh_tempo)) ?>, bunga <?= $suku_bunga ?>% perbulan,
+                    dengan syarat-syarat yang telah ditentukan oleh <b>Usaha Simpan Pinjam Bali Sejahtera Desa Adat Culik.</b></p>
             </div>
             <div class="tanda-tangan-area">
                 <div class="tanda-tangan-box" style="float: right;">
