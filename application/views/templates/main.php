@@ -57,8 +57,7 @@
 
                         <?php if ($level == 'Admin' || $level == 'Pegawai' || $level == 'Direktur'): ?>
                             <?php
-                            // Pastikan 'setoran_deposito' ada di dalam array ini
-                            $transaksi_segments = ['setoran', 'penarikan', 'bunga', 'pencairan', 'setoran_deposito', 'bunga_deposito'];
+                            $transaksi_segments = ['setoran', 'penarikan', 'bunga', 'pencairan', 'setoran_deposito', 'bunga_deposito', 'penarikan_bunga' ];
                             ?>
                             <li class="sidebar-item has-sub <?= in_array($this->uri->segment(1), $transaksi_segments) ? 'active' : '' ?>">
                                 <a href="#" class='sidebar-link'>
@@ -79,6 +78,10 @@
 
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'pencairan' ? 'active' : '' ?>">
                                         <a href="<?= base_url('pencairan') ?>">Pencairan Deposito</a>
+                                    </li>
+
+                                    <li class="submenu-item <?= $this->uri->segment(1) == 'penarikan_bunga' ? 'active' : '' ?>">
+                                        <a href="<?= base_url('penarikan_bunga') ?>">Pencairan Bunga Deposito</a>
                                     </li>
 
                                     <li class="submenu-item <?= $this->uri->segment(1) == 'bunga' ? 'active' : '' ?>">

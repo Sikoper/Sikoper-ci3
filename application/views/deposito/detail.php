@@ -37,11 +37,15 @@
                         <td>: <?= number_format($deposito->rate_bunga, 2, ',', '.') ?>%</td>
                     </tr>
                     <tr>
-                        <th>Hutang Bunga</th>
-                        <td>: Rp <?= number_format($deposito->hutang_bunga, 2, ',', '.') ?></td>
+                        <th>Bunga Sampai Jatuh Tempo</th>
+                        <td>: Rp <?= number_format(($deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $deposito->durasi), 2, ',', '.') ?></td>
                     </tr>
                     <tr>
-                        <th>Total Bunga</th>
+                        <th>Hutang Bunga</th>
+                        <td>: <span style="color: red;">- Rp <?= number_format($deposito->hutang_bunga, 2, ',', '.') ?></span></td>
+                    </tr>
+                    <tr>
+                        <th>Bunga Yang Sudah Dibayar</th>
                         <td>: Rp <?= number_format($deposito->total_bunga, 2, ',', '.') ?></td>
                     </tr>
                     <tr>
@@ -120,9 +124,11 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
-                
-                    <button class="btn btn-danger" <?php if ($deposito->status === 'nonaktif') {echo "disabled";} ?> onclick="window.location='<?= base_url('pencairan/') . '?id=' . safe_base64_encode($deposito->id) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
-                
+
+                <button class="btn btn-danger" <?php if ($deposito->status === 'nonaktif') {
+                                                    echo "disabled";
+                                                } ?> onclick="window.location='<?= base_url('pencairan/') . '?id=' . safe_base64_encode($deposito->id) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+
             </div>
             <div class="card-body">
                 <table class="table table-bordered table-striped" id="tabel_penarikan">

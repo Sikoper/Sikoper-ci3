@@ -198,6 +198,7 @@
                             $('#infoJenisTabungan').text(response.jenis_tabungan || '-');
 
                             saldoAN.set(response.saldo || 0);
+
                             updateTotalYangAkanDitarik();
                         }
                     },
