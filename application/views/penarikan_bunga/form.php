@@ -1,8 +1,5 @@
 <section class="section">
     <div class="card">
-        <div class="card-header">
-            <h4 class="card-title">Formulir Penarikan Bunga Deposito</h4>
-        </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3"></div>

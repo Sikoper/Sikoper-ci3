@@ -12,8 +12,7 @@
                         <div class="form-group mb-3" style="height: 80px;">
                             <label for="tanggal_setoran">Tanggal Penarikan</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
-                                <input type="hidden" name="tanggal_setoran" value="<?= date('Y-m-d') ?>">
+                                <input type="date" class="form-control" id="tanggal_setoran" name="tanggal_setoran" value="<?= date('Y-m-d') ?>">
                             </div>
                             <div id="errorTanggalSetoran" class="invalid-feedback" style="display: none;"></div>
                         </div>
