@@ -38,22 +38,29 @@
                     </tr>
                     <tr>
                         <th>Bunga Sampai Jatuh Tempo</th>
-                        <td>: Rp <?= number_format(($deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $deposito->durasi), 2, ',', '.') ?></td>
+                        <td>: Rp <?= number_format($bunga_sampai_jatuh_tempo, 2, ',', '.') ?></td>
                     </tr>
                     <tr>
                         <th>Hutang Bunga</th>
-                        <td>: <span style="color: red;">- Rp <?= number_format($deposito->hutang_bunga, 2, ',', '.') ?></span></td>
+                        <td>: <span style="color: red; font-weight: bold;"> - Rp <?= number_format($hutang_bunga, 2, ',', '.') ?></span></td>
+                    </tr>
+                    <tr>
+                        <th>Bunga Tersedia Saat Ini (Bisa Ditarik)</th>
+                        <td>: <strong>Rp <?= number_format($bunga_tersedia, 2, ',', '.') ?></strong></td>
                     </tr>
                     <tr>
                         <th>Bunga Yang Sudah Dibayar</th>
-                        <td>: Rp <?= number_format($deposito->total_bunga, 2, ',', '.') ?></td>
+                        <td>: Rp <?= number_format($bunga_sudah_dibayar, 2, ',', '.') ?></td>
                     </tr>
                     <tr>
-                        <th>Total Penarikan Keseluruhan</th>
-                        <td id="totalPenarikanValue">:
-                            <span id="akumulasi_penarikan">Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?></span>
+                        <th class="align-top">Total Diterima Nasabah</th>
+                        <td id="totalPenarikanValue" class="align-top">:
+                            <span class="fw-bold text-success" style="font-size: 1.1rem;">
+                                Rp <?= number_format($total_akumulasi_penarikan - $total_akumulasi_denda, 2, ',', '.') ?>
+                            </span>
                             <?php if ($total_akumulasi_denda > 0): ?>
-                                (Denda: <span id="akumulasi_denda">Rp <?= number_format($total_akumulasi_denda, 2, ',', '.') ?></span>)
+                                <br>
+                                <small class="text-muted">(Total Bruto Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?> dikurangi Denda)</small>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -125,10 +132,20 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
 
-                <button class="btn btn-danger" <?php if ($deposito->status === 'nonaktif') {
-                                                    echo "disabled";
-                                                } ?> onclick="window.location='<?= base_url('pencairan/') . '?id=' . safe_base64_encode($deposito->id) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+                <?php
+                if (!function_exists('safe_base64_encode')) {
+                    function safe_base64_encode($string)
+                    {
+                        return strtr(base64_encode($string), '+/=', '-_?');
+                    }
+                }
+                ?>
 
+                <a href="<?= base_url('pencairan?id=' . safe_base64_encode($deposito->id)) ?>"
+                    class="btn btn-danger <?= ($deposito->status !== 'aktif') ? 'disabled' : '' ?>">
+                    <i class="fa fa-credit-card"></i>
+                    Cairkan Deposito
+                </a>
             </div>
             <div class="card-body">
                 <table class="table table-bordered table-striped" id="tabel_penarikan">
@@ -176,7 +193,7 @@
             url: "<?= site_url('bunga_deposito/fetchNasabahDepositoBunga') ?>",
             type: "POST",
             data: {
-                no_rekening: noRekening
+                "deposito_id": depositoId
             },
             dataSrc: function(json) {
                 $('#total_bunga').text('Rp ' + json.total_bunga);
