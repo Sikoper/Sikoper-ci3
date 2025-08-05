@@ -9,8 +9,7 @@
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="tanggal_penarikan">Tanggal Penarikan</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" value="<?= date('d/m/Y') ?>" readonly>
-                            <input type="hidden" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
+                            <input type="date" class="form-control" id="tanggal_penarikan" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
                         </div>
                         <div id="errorTanggal" class="invalid-feedback" style="display: none;"></div>
                     </div>
@@ -202,9 +201,10 @@
                             updateTotalYangAkanDitarik();
                         }
                     },
-                    error: function() {
+                    error: function(xhr, thrownError) {
                         saldoAN.set(0);
                         updateTotalYangAkanDitarik();
+                        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });
             }
