@@ -39,7 +39,7 @@ class Pencairan_model extends CI_Model
             $this->db->where('p.deposito_id', $deposito_id);
         }
 
-        $this->db->select('p.id, p.deposito_id, p.tanggal_penarikan, p.jumlah_penarikan, p.jumlah_denda, pg.nama_lengkap as nama_pegawai');
+        $this->db->select('p.id, p.deposito_id, p.tanggal_penarikan, p.total_penarikan as jumlah_penarikan, p.jumlah_denda, pg.nama_lengkap as nama_pegawai');
         $this->db->from($this->_table_penarikan . ' p');
         $this->db->join('tbpegawai pg', 'p.pegawai_id = pg.id', 'left');
 
@@ -97,8 +97,6 @@ class Pencairan_model extends CI_Model
         return $this->db->count_all_results();
     }
 
-    // --- END DATATABLES ---
-
     public function simpan_penarikan($data)
     {
         return $this->db->insert($this->_table_penarikan, $data);
@@ -120,11 +118,6 @@ class Pencairan_model extends CI_Model
     {
         return $this->db->get_where($this->_table_penarikan, ['id' => $id])->row();
     }
-
-    /**
-     * The functions below are related to 'tbdeposito', 'tbjenistabungan' etc.
-     * They have been updated from 'simpanan' to 'deposito'.
-     */
 
     public function kurangi_saldo_deposito($id, $jumlah)
     {
@@ -208,5 +201,61 @@ class Pencairan_model extends CI_Model
         $this->db->where('deposito_id', $deposito_id);
         $query = $this->db->get($this->_table_penarikan);
         return $query->result();
+    }
+
+    public function proses_pencairan_penuh($deposito_id, $pegawai_id)
+    {
+        $deposito = $this->db->get_where('tbdeposito', ['id' => $deposito_id])->row();
+        if (!$deposito || $deposito->status !== 'aktif') {
+            return ['status' => false, 'message' => 'Rekening tidak valid atau sudah tidak aktif.'];
+        }
+
+        $this->load->model(['Deposito_model', 'Kategori_model']);
+        $bunga_tersedia = $this->Deposito_model->get_bunga_tersedia_from_log($deposito_id);
+        $jenis_tabungan = $this->Kategori_model->get_data_by_id($deposito->jenistabungan_id);
+
+        $denda = 0;
+        $tanggal_jatuh_tempo = new DateTime($deposito->tanggal_deposito);
+        $tanggal_jatuh_tempo->add(new DateInterval('P' . $deposito->durasi . 'M'));
+        if (new DateTime() < $tanggal_jatuh_tempo) {
+            $penalty_rate = (float)($jenis_tabungan->jumlah_denda ?? 0);
+            $denda = round(($penalty_rate / 100) * $deposito->jumlah_deposito);
+        }
+
+        $this->db->trans_start();
+
+        $data_penarikan = [
+            'deposito_id'            => $deposito_id,
+            'pegawai_id'             => $pegawai_id,
+            'tanggal_penarikan'      => date('Y-m-d H:i:s'),
+            'jumlah_penarikan'       => (float)$deposito->jumlah_deposito + (float)$bunga_tersedia,
+            'jumlah_penarikan_pokok' => (float)$deposito->jumlah_deposito,
+            'jumlah_penarikan_bunga' => (float)$bunga_tersedia,
+            'jumlah_denda'           => (float)$denda,
+            'total_penarikan'        => ((float)$deposito->jumlah_deposito + (float)$bunga_tersedia) - (float)$denda,
+        ];
+        $this->db->insert('tbpenarikan_deposito', $data_penarikan);
+        $penarikan_id = $this->db->insert_id();
+
+        if ($bunga_tersedia > 0) {
+            $this->db->set('status_penarikan', 'sudah_ditarik')
+                ->set('penarikan_id', $penarikan_id)
+                ->where('deposito_id', $deposito_id)
+                ->where('status_penarikan', 'belum_ditarik')
+                ->update('tb_bunga_deposito_log');
+        }
+
+        $this->db->set('jumlah_deposito', 0)
+            ->set('status', 'ditutup')
+            ->where('id', $deposito_id)
+            ->update('tbdeposito');
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            return ['status' => false, 'message' => 'Terjadi kesalahan pada database.'];
+        } else {
+            return ['status' => true, 'message' => 'Pencairan penuh berhasil. Rekening telah ditutup.'];
+        }
     }
 }

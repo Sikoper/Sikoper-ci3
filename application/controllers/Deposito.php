@@ -120,157 +120,156 @@ class Deposito extends CI_Controller
     public function simpanData()
     {
         if ($this->input->is_ajax_request()) {
-        $allowed_roles = ['Admin', 'Direktur', 'Pegawai'];
-        $level = $this->session->userdata('level');
+            $allowed_roles = ['Admin', 'Direktur', 'Pegawai'];
+            $level = $this->session->userdata('level');
 
-        if (!in_array($level, $allowed_roles)) {
-            $msg = [
-                'error' => 'Unauthorized 403'
-            ];
-            echo json_encode($msg);
-            return;
-        }
+            if (!in_array($level, $allowed_roles)) {
+                $msg = [
+                    'error' => 'Unauthorized 403'
+                ];
+                echo json_encode($msg);
+                return;
+            }
 
-        $tanggal_deposito = $this->input->post('tanggal_deposito');
-        $nasabah = $this->input->post('nasabah');
-        $jenis_tabungan = $this->input->post('jenis_tabungan');
-        $pegawai = $this->input->post('pegawai_id');
-        $jumlah_deposito = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_deposito'));
-        $durasi = $this->input->post('durasi');
-        $rate_bunga = $this->input->post('bunga');
-        $nama_ahli_waris = $this->input->post('nama_ahli_waris');
-        $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
-        $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
-        $no_rekening = $this->input->post('nomor_rekening');
+            $tanggal_deposito = $this->input->post('tanggal_deposito');
+            $nasabah = $this->input->post('nasabah');
+            $jenis_tabungan = $this->input->post('jenis_tabungan');
+            $pegawai = $this->input->post('pegawai_id');
+            $jumlah_deposito = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_deposito'));
+            $durasi = $this->input->post('durasi');
+            $rate_bunga = $this->input->post('bunga');
+            $nama_ahli_waris = $this->input->post('nama_ahli_waris');
+            $kontak_ahli_waris = $this->input->post('kontak_ahli_waris');
+            $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
+            $no_rekening = $this->input->post('nomor_rekening');
 
-        $this->form_validation->set_rules('tanggal_deposito', 'Tanggal Deposito', 'required', [
-            'required'   => 'Tanggal deposito wajib diisi.'
-        ]);
+            $this->form_validation->set_rules('tanggal_deposito', 'Tanggal Deposito', 'required', [
+                'required'   => 'Tanggal deposito wajib diisi.'
+            ]);
 
-        $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
-            'required'     => 'Nasabah tidak boleh kosong.'
-        ]);
+            $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
+                'required'     => 'Nasabah tidak boleh kosong.'
+            ]);
 
-        $this->form_validation->set_rules('jenis_tabungan', 'Jenis Tabungan', 'required', [
-            'required'     => 'Jenis tabungan harus diisi.',
-        ]);
+            $this->form_validation->set_rules('jenis_tabungan', 'Jenis Tabungan', 'required', [
+                'required'     => 'Jenis tabungan harus diisi.',
+            ]);
 
-        $this->form_validation->set_rules('bunga', 'Bunga', 'required', [
-            'required' => 'Bunga harus diisi.'
-        ]);
+            $this->form_validation->set_rules('bunga', 'Bunga', 'required', [
+                'required' => 'Bunga harus diisi.'
+            ]);
 
-        $this->form_validation->set_rules('biaya_registrasi', 'Biaya Registrasi', 'required', [
-            'required' => 'Biaya Registrasi wajib diisi'
-        ]);
+            $this->form_validation->set_rules('biaya_registrasi', 'Biaya Registrasi', 'required', [
+                'required' => 'Biaya Registrasi wajib diisi'
+            ]);
 
-        $jenis_data = $this->Kategori_model->get_data_by_id($jenis_tabungan);
+            $jenis_data = $this->Kategori_model->get_data_by_id($jenis_tabungan);
 
-        if (!empty($jenis_data)) {
-            $validasi_deposito = $jenis_data->nama;
+            if (!empty($jenis_data)) {
+                $validasi_deposito = $jenis_data->nama;
 
-            if ($validasi_deposito == 'Deposito') {
-                $this->form_validation->set_rules('durasi', 'Jangka waktu', 'required', [
-                    'required' => 'Jangka waktu deposito wajib diisi'
+                if ($validasi_deposito == 'Deposito') {
+                    $this->form_validation->set_rules('durasi', 'Jangka waktu', 'required', [
+                        'required' => 'Jangka waktu deposito wajib diisi'
+                    ]);
+                }
+
+                $minimum_jumlah = $jenis_data->simpanan_awal;
+
+                $this->form_validation->set_rules('jumlah_deposito', 'Jumlah Deposito', 'required|callback_check_minimum[' . $minimum_jumlah . ']', [
+                    'required' => 'Jumlah deposito harus diisi.',
+                ]);
+            } else if (empty($jenis_data)) {
+                $this->form_validation->set_rules('jumlah_deposito', 'Jumlah Deposito', 'required', [
+                    'required' => 'Jumlah deposito harus diisi.',
                 ]);
             }
 
-            $minimum_jumlah = $jenis_data->simpanan_awal;
-
-            $this->form_validation->set_rules('jumlah_deposito', 'Jumlah Deposito', 'required|callback_check_minimum[' . $minimum_jumlah . ']', [
-                'required' => 'Jumlah deposito harus diisi.',
+            $this->form_validation->set_rules('simpanan_awal', 'Simpanan awal', 'required', [
+                'required' => 'Simpanan awal harus diisi.'
             ]);
-        } else if (empty($jenis_data)) {
-            $this->form_validation->set_rules('jumlah_deposito', 'Jumlah Deposito', 'required', [
-                'required' => 'Jumlah deposito harus diisi.',
+
+            $this->form_validation->set_rules('pengendapan', 'Pengendapan', 'required', [
+                'required' => 'Pengendapan harus diisi.'
             ]);
-        }
 
-        $this->form_validation->set_rules('simpanan_awal', 'Simpanan awal', 'required', [
-            'required' => 'Simpanan awal harus diisi.'
-        ]);
+            $this->form_validation->set_rules('jenis_denda', 'Jenis Denda', 'required', [
+                'required' => 'Jenis denda harus diisi.'
+            ]);
 
-        $this->form_validation->set_rules('pengendapan', 'Pengendapan', 'required', [
-            'required' => 'Pengendapan harus diisi.'
-        ]);
+            $this->form_validation->set_rules('jumlah_denda', 'Jumlah Denda', 'required', [
+                'required' => 'Jumlah denda harus diisi.'
+            ]);
 
-        $this->form_validation->set_rules('jenis_denda', 'Jenis Denda', 'required', [
-            'required' => 'Jenis denda harus diisi.'
-        ]);
+            $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
+                'required' => 'Pegawai sebagai penanggung jawab wajib dipilih.',
+            ]);
 
-        $this->form_validation->set_rules('jumlah_denda', 'Jumlah Denda', 'required', [
-            'required' => 'Jumlah denda harus diisi.'
-        ]);
+            $this->form_validation->set_rules('nomor_rekening', 'Nomer Rekening', 'required|is_unique[tbdeposito.no_rekening]', [
+                'required' => 'Nomer rekening harus diisi.',
+                'is_unique' => 'Nomer rekening sudah terdaftar.'
+            ]);
 
-        $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
-            'required' => 'Pegawai sebagai penanggung jawab wajib dipilih.',
-        ]);
-
-        $this->form_validation->set_rules('nomor_rekening', 'Nomer Rekening', 'required|is_unique[tbdeposito.no_rekening]', [
-            'required' => 'Nomer rekening harus diisi.',
-            'is_unique' => 'Nomer rekening sudah terdaftar.'
-        ]);
-
-        if ($this->form_validation->run() == FALSE) {
-            $msg = [
-                'error' => [
-                    'errorTanggalSimpanan'  => form_error('tanggal_deposito'),
-                    'errorNasabah'          => form_error('nasabah'),
-                    'errorJenisTabungan'    => form_error('jenis_tabungan'),
-                    'errorBunga'            => form_error('bunga'),
-                    'errorBiayaRegistrasi'  => form_error('biaya_registrasi'),
-                    'errorSimpananAwal'     => form_error('simpanan_awal'),
-                    'errorPengendapan'      => form_error('pengendapan'),
-                    'errorPegawai'          => form_error('pegawai_id'),
-                    'errorJenisDenda'       => form_error('jenis_denda'),
-                    'errorJumlahDenda'      => form_error('jumlah_denda'),
-                    'errorJumlahSimpanan'   => form_error('jumlah_deposito'),
-                    'errorNoRekening'       => form_error('nomor_rekening'),
-                    'errorDurasi'           => form_error('durasi'),
-                ]
-            ];
-        } else {
-
-            $total_bunga_didapat = ($jumlah_deposito * ($rate_bunga / 100)) * $durasi;
-            $hutang_bunga = $total_bunga_didapat;
-
-            // echo '<pre>';
-            // print_r($total_bunga_didapat);
-            // exit;
-
-            $data = [
-                'tanggal_deposito' => $tanggal_deposito,
-                'no_rekening' => $no_rekening,
-                'nasabah_id' => $nasabah,
-                'pegawai_id' => $pegawai,
-                'jenistabungan_id' => $jenis_tabungan,
-                'jumlah_deposito' => $jumlah_deposito,
-                'durasi' => $durasi,
-                'rate_bunga' => $rate_bunga,
-                'nama_ahli_waris' => $nama_ahli_waris,
-                'telp_ahli_waris' => $kontak_ahli_waris,
-                'hubungan_ahli_waris' => $hubungan_ahli_waris,
-                'hutang_bunga'        => $hutang_bunga,
-            ];
-
-            // echo '<pre>';
-            // print_r($data);
-            // exit;
-
-            $this->db->trans_start();
-
-            $this->Deposito_model->insert_data($data);
-
-            $this->db->trans_complete();
-
-            if ($this->db->trans_status() === FALSE) {
-                $msg = ['error' => 'Gagal menyimpan data deposito.'];
+            if ($this->form_validation->run() == FALSE) {
+                $msg = [
+                    'error' => [
+                        'errorTanggalSimpanan'  => form_error('tanggal_deposito'),
+                        'errorNasabah'          => form_error('nasabah'),
+                        'errorJenisTabungan'    => form_error('jenis_tabungan'),
+                        'errorBunga'            => form_error('bunga'),
+                        'errorBiayaRegistrasi'  => form_error('biaya_registrasi'),
+                        'errorSimpananAwal'     => form_error('simpanan_awal'),
+                        'errorPengendapan'      => form_error('pengendapan'),
+                        'errorPegawai'          => form_error('pegawai_id'),
+                        'errorJenisDenda'       => form_error('jenis_denda'),
+                        'errorJumlahDenda'      => form_error('jumlah_denda'),
+                        'errorJumlahSimpanan'   => form_error('jumlah_deposito'),
+                        'errorNoRekening'       => form_error('nomor_rekening'),
+                        'errorDurasi'           => form_error('durasi'),
+                    ]
+                ];
             } else {
-                $msg = ['success' => 'Data deposito berhasil ditambahkan.'];
-                push_event('deposito-channel', 'deposito-event', ['message' => 'Deposito baru ditambahkan!']);
-            }
-        }
 
-        echo json_encode($msg);
+                $total_bunga_didapat = ($jumlah_deposito * ($rate_bunga / 100)) * $durasi;
+                $hutang_bunga = $total_bunga_didapat;
+
+                // echo '<pre>';
+                // print_r($total_bunga_didapat);
+                // exit;
+
+                $data = [
+                    'tanggal_deposito' => $this->input->post('tanggal_deposito'),
+                    'no_rekening' => $this->input->post('nomor_rekening'),
+                    'nasabah_id' => $this->input->post('nasabah'),
+                    'pegawai_id' => $this->input->post('pegawai_id'),
+                    'jenistabungan_id' => $this->input->post('jenis_tabungan'),
+                    'jumlah_deposito' => str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_deposito')),
+                    'durasi' => $this->input->post('durasi'),
+                    'rate_bunga' => $this->input->post('bunga'),
+                    'nama_ahli_waris' => $this->input->post('nama_ahli_waris'),
+                    'telp_ahli_waris' => $this->input->post('kontak_ahli_waris'),
+                    'hubungan_ahli_waris' => $this->input->post('hubungan_ahli_waris'),
+                ];
+
+                // echo '<pre>';
+                // print_r($data);
+                // exit;
+
+                $this->db->trans_start();
+
+                $this->Deposito_model->insert_data($data);
+
+                $this->db->trans_complete();
+
+                if ($this->db->trans_status() === FALSE) {
+                    $msg = ['error' => 'Gagal menyimpan data deposito.'];
+                } else {
+                    $msg = ['success' => 'Data deposito berhasil ditambahkan.'];
+                    push_event('deposito-channel', 'deposito-event', ['message' => 'Deposito baru ditambahkan!']);
+                }
+            }
+
+            echo json_encode($msg);
         } else {
             redirect('unauthorized_403');
         }
@@ -538,8 +537,8 @@ class Deposito extends CI_Controller
         $jenis_tabungan = $this->Kategori_model->get_data_by_id($deposito->jenistabungan_id);
         $pegawai = $this->Pegawai_model->get_data_by_id($deposito->pegawai_id);
 
-        $this->load->model('Penarikan_model');
-        $akumulasi_data_penarikan = $this->Penarikan_model->get_akumulasi_penarikan_by_simpanan($deposito->id);
+        $this->load->model('Pencairan_model');
+        $akumulasi_data_penarikan = $this->Pencairan_model->get_akumulasi_penarikan_by_deposito($deposito->id);
 
         if (!function_exists('format_durasi')) {
             function format_durasi($bulan)
@@ -550,7 +549,6 @@ class Deposito extends CI_Controller
                 $bulan_int = intval($bulan);
                 $tahun = floor($bulan_int / 12);
                 $sisa_bulan = $bulan_int % 12;
-
                 $output_parts = [];
                 if ($tahun > 0) {
                     $output_parts[] = "{$tahun} tahun";
@@ -558,11 +556,9 @@ class Deposito extends CI_Controller
                 if ($sisa_bulan > 0) {
                     $output_parts[] = "{$sisa_bulan} bulan";
                 }
-
                 if (empty($output_parts)) {
                     return "{$bulan_int} bulan";
                 }
-
                 $output_str = implode(' ', $output_parts);
                 if ($bulan_int >= 12) {
                     $output_str .= " (Total: {$bulan_int} bulan)";
@@ -571,22 +567,40 @@ class Deposito extends CI_Controller
             }
         }
 
+        $bunga_tersedia = $this->Deposito_model->get_bunga_tersedia_from_log($deposito->id);
+        $bunga_sudah_dibayar = $this->Deposito_model->get_bunga_sudah_dibayar_from_log($deposito->id);
+        if ($deposito->status == 'ditutup') {
+            $hutang_bunga_saat_ini = 0;
+            $bunga_sampai_jatuh_tempo = $bunga_sudah_dibayar;
+        } else {
+            $bunga_sampai_jatuh_tempo = ($deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $deposito->durasi);
+            $hutang_bunga_saat_ini = $bunga_sampai_jatuh_tempo - $bunga_sudah_dibayar;
+        }
+
         $data = [
-            'deposito'        => $deposito,
-            'nasabah'         => $nasabah,
-            'jenis'           => $jenis_tabungan,
-            'pegawai'         => $pegawai,
-            'level'           => $this->session->userdata('level'),
-            'formatted_durasi' => format_durasi($deposito->durasi ?? null),
+            'deposito'                  => $deposito,
+            'nasabah'                   => $nasabah,
+            'jenis'                     => $jenis_tabungan,
+            'pegawai'                   => $pegawai,
+            'level'                     => $this->session->userdata('level'),
+            'formatted_durasi'          => format_durasi($deposito->durasi ?? null),
             'total_akumulasi_penarikan' => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_penarikan ?? 0) : 0,
             'total_akumulasi_denda'     => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_denda ?? 0) : 0,
+            'bunga_tersedia'            => $bunga_tersedia,
+            'bunga_sudah_dibayar'       => $bunga_sudah_dibayar,
+            'hutang_bunga'              => $hutang_bunga_saat_ini,
+            'bunga_sampai_jatuh_tempo'  => $bunga_sampai_jatuh_tempo,
         ];
+
+        // print_r($data);
+        // echo "</pre>";
+        // die();
+
 
         $parser = [
             'judul' => "<a href=\"" . base_url('deposito') . "\" class=\"btn btn-warning\">
                         <i class=\"fa fa-backward\"></i> Kembali
-                    </a> 
-                    ",
+                    </a>",
             'isi'   => $this->load->view('deposito/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
@@ -854,5 +868,73 @@ class Deposito extends CI_Controller
         }
 
         return $terbilang_rupiah;
+    }
+
+    public function get_combo_rekening_nasabah()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        $search = $this->input->get('q');
+        $data = $this->Deposito_model->cari_rekening_deposito_nasabah($search);
+
+        echo json_encode($data);
+    }
+
+    public function fetch_detail_rekening()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        $deposito_id = $this->input->post('id');
+        $response = ['status' => 'error', 'message' => 'Data tidak ditemukan.'];
+
+        if ($deposito_id) {
+            $deposito = $this->Deposito_model->get_detail_deposito_by_id($deposito_id);
+            $bunga_tersedia = $this->Deposito_model->get_bunga_tersedia_from_log($deposito_id);
+
+            if ($deposito) {
+                $response = [
+                    'status'         => 'success',
+                    'nama_nasabah'   => $deposito->nama_nasabah,
+                    'bunga_tersedia' => $bunga_tersedia
+                ];
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($response);
+    }
+
+    public function proses_penarikan_bunga()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        $deposito_id = $this->input->post('deposito_id');
+        $pegawai_id  = $this->input->post('pegawai_id');
+
+        if (empty($deposito_id) || empty($pegawai_id)) {
+            $msg = ['error_validation' => 'Rekening dan Pegawai tidak boleh kosong.'];
+            echo json_encode($msg);
+            return;
+        }
+
+        $is_success = $this->Deposito_model->tarik_bunga_deposito($deposito_id, $pegawai_id);
+
+        if ($is_success) {
+            $msg = ['success' => 'Penarikan seluruh bunga yang tersedia berhasil diproses.'];
+        } else {
+            $msg = ['error_save' => 'Gagal memproses penarikan. Kemungkinan tidak ada bunga yang tersedia untuk ditarik.'];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($msg);
     }
 }

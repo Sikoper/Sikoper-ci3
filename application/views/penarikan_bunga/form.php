@@ -4,11 +4,11 @@
             <div class="row">
                 <div class="col-md-3"></div>
                 <div class="col-md-6">
-                    <?= form_open('penarikan_bunga/proses_penarikan', ['id' => 'form_penarikan_bunga']) ?>
+                    <?= form_open('deposito/proses_penarikan_bunga', ['id' => 'form_penarikan_bunga']) ?>
 
                     <div class="form-group mb-3">
-                        <label>Tanggal Penarikan</label>
-                        <input type="text" class="form-control" value="<?= date('d F Y') ?>" readonly>
+                        <label for="tanggal_penarikan">Tanggal Penarikan</label>
+                        <input type="date" id="tanggal_penarikan" class="form-control" name="tanggal_penarikan" value="<?= date('Y-m-d') ?>">
                     </div>
 
                     <div class="form-group mb-3">
@@ -32,7 +32,7 @@
                         <label for="jumlah_penarikan">Jumlah Bunga Ditarik</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" name="jumlah_penarikan" id="jumlah_penarikan" class="form-control text-end" autocomplete="off" />
+                            <input type="text" name="jumlah_penarikan" id="jumlah_penarikan" class="form-control text-end" readonly />
                         </div>
                     </div>
 
@@ -40,7 +40,7 @@
                         <label for="perkiraan_sisa_bunga">Perkiraan Sisa Bunga</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="perkiraan_sisa_bunga" class="form-control text-end" readonly style="font-weight: bold; background-color: #e9ecef;" />
+                            <input type="text" id="perkiraan_sisa_bunga" class="form-control text-end" value="0,00" readonly style="font-weight: bold; background-color: #e9ecef;" />
                         </div>
                     </div>
 
@@ -59,7 +59,7 @@
                     <?php endif; ?>
 
                     <div class="text-center mb-3">
-                        <button type="submit" id="tombol_simpan" class="btn btn-success">Tarik Bunga</button>
+                        <button type="submit" id="tombol_simpan" class="btn btn-success">Tarik Semua Bunga</button>
                         <a href="<?= base_url('dashboard') ?>" class="btn btn-danger">Batal</a>
                     </div>
 
@@ -92,12 +92,10 @@
             readOnly: true
         });
 
-        const $comboRekening = $('#comboRekening');
-
-        $comboRekening.select2({
+        $('#comboRekening').select2({
             placeholder: 'Cari no rekening...',
             ajax: {
-                url: '<?= base_url("penarikan_bunga/get_combo_rekening_nasabah") ?>',
+                url: '<?= base_url("deposito/get_combo_rekening_nasabah") ?>',
                 dataType: 'json',
                 delay: 250,
                 data: function(params) {
@@ -107,13 +105,7 @@
                 },
                 processResults: function(data) {
                     return {
-                        results: data.map(item => ({
-                            id: item.id,
-                            text: item.text,
-                            nama_nasabah: item.nama_nasabah,
-                            jenis_tabungan: item.jenis_tabungan,
-                            nasabah_id: item.nasabah_id
-                        }))
+                        results: data
                     };
                 },
                 cache: true
@@ -139,7 +131,7 @@
 
             if (idDeposito) {
                 $.ajax({
-                    url: '<?= base_url('penarikan_bunga/fetch_detail_rekening') ?>',
+                    url: '<?= base_url("deposito/fetch_detail_rekening") ?>', // <-- URL Sudah Benar
                     method: 'POST',
                     data: {
                         id: idDeposito
@@ -150,19 +142,19 @@
                             $('#infoNasabah').show();
                             $('#infoNama').text(response.nama_nasabah || '-');
                             anBungaTersedia.set(response.bunga_tersedia || 0);
-                            // Otomatis isi jumlah penarikan dengan semua bunga yang tersedia
                             anJumlah.set(response.bunga_tersedia || 0);
                             hitungSisaBunga();
+                        } else {
+                            Swal.fire('Gagal!', response.message || 'Gagal mengambil detail rekening.', 'error');
                         }
-                    }
+                    },
+                    error: () => Swal.fire('Error!', 'Terjadi kesalahan sistem saat mengambil data.', 'error')
                 });
             }
         });
 
         $('#form_penarikan_bunga').submit(function(e) {
             e.preventDefault();
-
-            // Set nilai real ke input form agar serialize menghasilkan angka
             $('#jumlah_penarikan').val(anJumlah.getNumber());
 
             Swal.fire({
@@ -177,12 +169,12 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: $(this).attr('action') || '<?= base_url("penarikan_bunga/proses_penarikan") ?>',
+                        url: $(this).attr('action'),
                         type: 'POST',
                         data: $(this).serialize(),
                         dataType: 'json',
                         beforeSend: () => $('#tombol_simpan').prop('disabled', true).html('<i class="fa fa-spin fa-spinner"></i> Memproses...'),
-                        complete: () => $('#tombol_simpan').prop('disabled', false).html('Tarik Bunga'),
+                        complete: () => $('#tombol_simpan').prop('disabled', false).html('Tarik Semua Bunga'),
                         success: function(response) {
                             if (response.success) {
                                 Swal.fire('Berhasil!', response.success, 'success').then(() => window.location.reload());
@@ -195,6 +187,5 @@
                 }
             });
         });
-
     });
 </script>

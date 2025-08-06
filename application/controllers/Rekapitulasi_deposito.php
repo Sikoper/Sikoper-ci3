@@ -49,51 +49,58 @@ class Rekapitulasi_deposito extends CI_Controller
         $this->parser->parse('templates/main', $parser);
     }
 
-    public function fetch_rekapitulasi()
-    {
-        if (!$this->input->is_ajax_request()) {
-            exit('No direct script access allowed');
-        }
+public function fetch_rekapitulasi()
+{
+    // if (!$this->input->is_ajax_request()) {
+    //     exit('No direct script access allowed');
+    // }
 
-        $bulan = $this->input->post('bulan');
-        $tahun = $this->input->post('tahun');
+    // Beri nilai default jika POST kosong (penting untuk debugging dan data awal)
+    $bulan = $this->input->post('bulan') ? $this->input->post('bulan') : date('n');
+    $tahun = $this->input->post('tahun') ? $this->input->post('tahun') : date('Y');
 
-        $list = $this->Rekapitulasi_deposito_model->get_datatables($bulan, $tahun);
-        $data = array();
-        $no = $_POST['start'];
-
-        foreach ($list as $field) {
-            $no++;
-            $row = array();
-
-            // Ensure values are not null before calculations
-            $saldo_awal_bulan = $field->saldo_awal_bulan ?? 0;
-            $bunga_bulan_ini = $field->bunga_bulan_ini ?? 0;
-            $total_diterima = $saldo_awal_bulan + $bunga_bulan_ini;
-
-            $row[] = "<div class='text-center'>$no</div>";
-            $row[] = $field->no_rekening;
-            $row[] = $field->nama_nasabah;
-            $row[] = "<div class='text-end'>Rp " . number_format($saldo_awal_bulan, 0, ',', '.') . "</div>";
-            $row[] = "<div class='text-end'>Rp " . number_format($bunga_bulan_ini, 0, ',', '.') . "</div>";
-            $row[] = "<div class='text-end fw-bold'>Rp " . number_format($total_diterima, 0, ',', '.') . "</div>";
-
-            $data[] = $row;
-        }
-
-        $summary = $this->Rekapitulasi_deposito_model->get_summary_data($bulan, $tahun);
-        $recordsFiltered = $this->Rekapitulasi_deposito_model->count_filtered($bulan, $tahun);
-
-        $output = array(
-            "draw"            => $_POST['draw'],
-            "recordsTotal"    => $this->Rekapitulasi_deposito_model->count_all(),
-            "recordsFiltered" => $recordsFiltered,
-            "data"            => $data,
-            "total_saldo_awal" => "Rp " . number_format($summary['total_saldo_awal'], 0, ',', '.'),
-            "total_bunga_bulan_ini"  => "Rp " . number_format($summary['total_bunga_bulan_ini'], 0, ',', '.'),
-        );
-
-        header('Content-Type: application/json');
-        echo json_encode($output);
+    $list = $this->Rekapitulasi_deposito_model->get_datatables($bulan, $tahun);
+    
+    // Jika query gagal (karena model mengembalikan false), kirim response error
+    if ($list === false) {
+        echo json_encode(["error" => "Terjadi kesalahan pada query database."]);
+        return;
     }
+
+    $data = array();
+    $no = isset($_POST['start']) ? $_POST['start'] : 0;
+
+    foreach ($list as $field) {
+        $no++;
+        $row = array();
+
+        $saldo_awal_bulan = $field->saldo_awal_bulan ?? 0;
+        $bunga_bulan_ini = $field->bunga_bulan_ini ?? 0;
+        $total_diterima = $saldo_awal_bulan + $bunga_bulan_ini;
+
+        $row[] = "<div class='text-center'>$no</div>";
+        $row[] = $field->no_rekening;
+        $row[] = $field->nama_nasabah;
+        $row[] = "<div class='text-end'>Rp " . number_format($saldo_awal_bulan, 0, ',', '.') . "</div>";
+        $row[] = "<div class='text-end'>Rp " . number_format($bunga_bulan_ini, 0, ',', '.') . "</div>";
+        $row[] = "<div class='text-end fw-bold'>Rp " . number_format($total_diterima, 0, ',', '.') . "</div>";
+
+        $data[] = $row;
+    }
+
+    $summary = $this->Rekapitulasi_deposito_model->get_summary_data($bulan, $tahun);
+    $recordsFiltered = $this->Rekapitulasi_deposito_model->count_filtered($bulan, $tahun);
+
+    $output = array(
+        "draw"                  => isset($_POST['draw']) ? (int)$_POST['draw'] : 1,
+        "recordsTotal"          => $this->Rekapitulasi_deposito_model->count_all(),
+        "recordsFiltered"       => $recordsFiltered,
+        "data"                  => $data,
+        "total_saldo_awal"      => "Rp " . number_format($summary['total_saldo_awal'], 0, ',', '.'),
+        "total_bunga_bulan_ini" => "Rp " . number_format($summary['total_bunga_bulan_ini'], 0, ',', '.'),
+    );
+
+    header('Content-Type: application/json');
+    echo json_encode($output);
+}
 }

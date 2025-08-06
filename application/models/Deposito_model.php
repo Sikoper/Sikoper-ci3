@@ -234,15 +234,12 @@ class Deposito_model extends CI_Model
     public function get_by_id($id)
     {
         $this->db->select('
-        tbdeposito.*, 
-        tbnasabah.nama_lengkap, 
-        tbnasabah.id as nasabah_id,
-        tbjenistabungan.nama as jenis_tabungan
+        d.*, 
+        n.nama_lengkap
     ');
-        $this->db->from('tbdeposito');
-        $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
-        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id', 'left');
-        $this->db->where('tbdeposito.id', $id);
+        $this->db->from('tbdeposito as d');
+        $this->db->join('tbnasabah as n', 'n.id = d.nasabah_id', 'left');
+        $this->db->where('d.id', $id);
         return $this->db->get()->row();
     }
 
@@ -251,8 +248,9 @@ class Deposito_model extends CI_Model
         $this->db->select('d.id, CONCAT(d.no_rekening, " - ", n.nama_lengkap) as text');
         $this->db->from('tbdeposito d');
         $this->db->join('tbnasabah n', 'd.nasabah_id = n.id');
+        $this->db->join('tb_bunga_deposito_log bl', 'd.id = bl.deposito_id');
         $this->db->where('d.status', 'aktif');
-        $this->db->where('d.hutang_bunga >', 0);
+        $this->db->where('bl.status_penarikan', 'belum_ditarik');
 
         if (!empty($search)) {
             $this->db->group_start();
@@ -261,6 +259,7 @@ class Deposito_model extends CI_Model
             $this->db->group_end();
         }
 
+        $this->db->group_by('d.id');
         $this->db->order_by('d.no_rekening', 'ASC');
         return $this->db->get()->result();
     }
@@ -270,7 +269,6 @@ class Deposito_model extends CI_Model
         $this->db->select('
         d.id, 
         d.no_rekening, 
-        d.bunga_tersedia,
         n.nama_lengkap as nama_nasabah
     ');
         $this->db->from('tbdeposito d');
@@ -279,28 +277,91 @@ class Deposito_model extends CI_Model
         return $this->db->get()->row();
     }
 
-    public function tarik_bunga($deposito_id, $jumlah_penarikan, $pegawai_id)
+    public function tarik_bunga_deposito($deposito_id, $pegawai_id)
     {
         $this->db->trans_start();
 
-        $this->db->set('hutang_bunga', 'hutang_bunga - ' . (float)$jumlah_penarikan, FALSE);
-        $this->db->set('bunga_tersedia', 'bunga_tersedia - ' . (float)$jumlah_penarikan, FALSE);
-        $this->db->set('total_bunga', 'total_bunga + ' . (float)$jumlah_penarikan, FALSE);
+        $this->db->select_sum('jumlah_bunga');
+        $this->db->where('deposito_id', $deposito_id);
+        $this->db->where('status_penarikan', 'belum_ditarik');
+        $total = $this->db->get('tb_bunga_deposito_log')->row()->jumlah_bunga ?? 0;
 
-        $this->db->where('id', $deposito_id);
-        $this->db->update('tbdeposito');
+        if ($total <= 0) {
+            $this->db->trans_complete();
+            return false;
+        }
 
-        $log_data = [
-            'deposito_id'       => $deposito_id,
-            'pegawai_id'        => $pegawai_id,
-            'tanggal_penarikan' => date('Y-m-d H:i:s'),
-            'jumlah_penarikan'  => $jumlah_penarikan,
-            'jumlah_denda'      => 0,
-            'total_penarikan'   => $jumlah_penarikan
+        $dataP = [
+            'deposito_id'            => $deposito_id,
+            'pegawai_id'             => $pegawai_id,
+            'tanggal_penarikan'      => date('Y-m-d H:i:s'),
+            'jumlah_penarikan'       => $total,
+            'jumlah_penarikan_pokok' => 0,
+            'jumlah_penarikan_bunga' => $total,
+            'jumlah_denda'           => 0,
+            'total_penarikan'        => $total
         ];
-        $this->db->insert($this->_table_penarikan_deposito, $log_data);
+        $this->db->insert('tbpenarikan_deposito', $dataP);
+        $penarikan_id = $this->db->insert_id();
+
+        $this->db->set('status_penarikan', 'sudah_ditarik');
+        $this->db->set('penarikan_id', $penarikan_id);
+        $this->db->where('deposito_id', $deposito_id);
+        $this->db->where('status_penarikan', 'belum_ditarik');
+        $this->db->update('tb_bunga_deposito_log');
 
         $this->db->trans_complete();
         return $this->db->trans_status();
+    }
+
+
+    public function get_bunga_tersedia_from_log($deposito_id)
+    {
+        $this->db->select_sum('jumlah_bunga');
+        $this->db->from('tb_bunga_deposito_log');
+        $this->db->where('deposito_id', $deposito_id);
+        $this->db->where('status_penarikan', 'belum_ditarik');
+
+        $result = $this->db->get()->row();
+
+        return $result->jumlah_bunga ?? 0;
+    }
+
+
+    public function get_bunga_sudah_dibayar_from_log($deposito_id)
+    {
+        $this->db->select_sum('jumlah_bunga', 'total_bunga');
+        $this->db->from('tb_bunga_deposito_log');
+        $this->db->where('deposito_id', $deposito_id);
+        $this->db->where('status_penarikan', 'sudah_ditarik'); // Hanya hitung yang sudah ditarik
+        $result = $this->db->get()->row();
+        return (float)($result->total_bunga ?? 0);
+    }
+
+    public function get_detail_bunga_by_id($deposito_id)
+    {
+        if (!$deposito_id) return null;
+
+        // Ambil total bunga dari log
+        $this->db->select_sum('jumlah_bunga', 'total_bunga');
+        $this->db->where('deposito_id', $deposito_id);
+        $this->db->where('status_penarikan', 'belum_ditarik');
+        $result = $this->db->get('tb_bunga_deposito_log')->row();
+
+        // Cek kalau memang ada bunga
+        $total_bunga = $result && $result->total_bunga ? $result->total_bunga : 0;
+
+        // Ambil nama nasabah
+        $nasabah = $this->db->select('n.nama_nasabah')
+            ->from('tbdeposito d')
+            ->join('tbnasabah n', 'n.id = d.nasabah_id')
+            ->where('d.id', $deposito_id)
+            ->get()
+            ->row();
+
+        return (object)[
+            'nama_nasabah' => $nasabah->nama_nasabah ?? 'Tidak ditemukan',
+            'bunga_tersedia' => floatval($total_bunga)
+        ];
     }
 }
