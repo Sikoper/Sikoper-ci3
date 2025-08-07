@@ -4,41 +4,71 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Rekapitulasi_deposito_model extends CI_Model
 {
     var $table = 'tbdeposito';
-    var $column_order = array(null, 'd.no_rekening', 'n.nama_lengkap', 'saldo_awal_bulan', 'bunga_bulan_ini', null);
+    // ✅ MODIFIED: Renamed aliases for clarity
+    var $column_order = array(null, 'd.no_rekening', 'n.nama_lengkap', 'saldo_awal', 'bunga_periode', null);
     var $column_search = array('n.nama_lengkap', 'd.no_rekening');
     var $order = array('d.no_rekening' => 'ASC');
 
     private function _get_datatables_query($bulan, $tahun)
     {
-        $first_day_of_month = date('Y-m-01', strtotime("$tahun-$bulan-01"));
-        $end_of_selected_month = date('Y-m-t', strtotime("$tahun-$bulan-01"));
+        // ✅ NEW: Dynamic date range logic
+        if ($bulan == 'all') {
+            $start_of_period = date('Y-01-01', strtotime("$tahun-01-01"));
+            if ($tahun == date('Y')) {
+                // For the current year, use today's date
+                $end_of_period = date('Y-m-d');
+            } else {
+                // For past years, use the end of that year
+                $end_of_period = date('Y-12-31', strtotime("$tahun-12-31"));
+            }
+        } else {
+            $start_of_period = date('Y-m-01', strtotime("$tahun-$bulan-01"));
+            $end_of_period = date('Y-m-t', strtotime($start_of_period));
+        }
+
+        // Subquery for starting balance. The logic works for both month/year views.
+        $saldo_awal_subquery = "
+            d.jumlah_deposito + 
+            COALESCE((SELECT SUM(bl.jumlah_bunga) 
+                      FROM tb_bunga_deposito_log bl 
+                      WHERE bl.deposito_id = d.id 
+                      AND bl.tanggal_perhitungan < " . $this->db->escape($start_of_period) . "), 0)
+        ";
+
+        // ✅ MODIFIED: Subquery for interest gained during the period
+        if ($bulan == 'all') {
+            $bunga_periode_subquery = "
+                (SELECT SUM(bl.jumlah_bunga) 
+                 FROM tb_bunga_deposito_log bl 
+                 WHERE bl.deposito_id = d.id 
+                 AND YEAR(bl.tanggal_perhitungan) = " . $this->db->escape($tahun) . "
+                 AND bl.tanggal_perhitungan <= " . $this->db->escape($end_of_period) . ")
+            ";
+        } else {
+            $bunga_periode_subquery = "
+                (SELECT SUM(bl.jumlah_bunga) 
+                 FROM tb_bunga_deposito_log bl 
+                 WHERE bl.deposito_id = d.id 
+                 AND MONTH(bl.tanggal_perhitungan) = " . $this->db->escape($bulan) . "
+                 AND YEAR(bl.tanggal_perhitungan) = " . $this->db->escape($tahun) . ")
+            ";
+        }
 
         $this->db->select(
             'd.id,
-         d.no_rekening, 
-         n.nama_lengkap as nama_nasabah,
-         (
-             d.jumlah_deposito + 
-             COALESCE((SELECT SUM(bl.jumlah_bunga) 
-                       FROM tb_bunga_deposito_log bl 
-                       WHERE bl.deposito_id = d.id 
-                       AND bl.tanggal_perhitungan < ' . $this->db->escape($first_day_of_month) . '), 0)
-         ) as saldo_awal_bulan,
-         (SELECT SUM(bl.jumlah_bunga) 
-          FROM tb_bunga_deposito_log bl 
-          WHERE bl.deposito_id = d.id 
-          AND MONTH(bl.tanggal_perhitungan) = ' . $this->db->escape($bulan) . '
-          AND YEAR(bl.tanggal_perhitungan) = ' . $this->db->escape($tahun) . ') as bunga_bulan_ini'
+             d.no_rekening, 
+             n.nama_lengkap as nama_nasabah,
+             (' . $saldo_awal_subquery . ') as saldo_awal,
+             (' . $bunga_periode_subquery . ') as bunga_periode'
         );
 
         $this->db->from('tbdeposito as d');
         $this->db->join('tbnasabah as n', 'n.id = d.nasabah_id');
         $this->db->where('d.status', 'aktif');
-        $this->db->where('d.tanggal_deposito <=', $end_of_selected_month);
+        $this->db->where('d.tanggal_deposito <=', $end_of_period);
 
+        // Search and Order logic remains the same
         $i = 0;
-        // Perbaikan kecil: sesuaikan nama kolom search dengan alias tabel (d dan n)
-        $this->column_search = array('n.nama_lengkap', 'd.no_rekening');
         foreach ($this->column_search as $item) {
             if (isset($_POST['search']['value']) && $_POST['search']['value'] != '') {
                 if ($i === 0) {
@@ -60,78 +90,72 @@ class Rekapitulasi_deposito_model extends CI_Model
         }
     }
 
-    // GANTI SELURUH FUNGSI get_datatables() DENGAN INI
     function get_datatables($bulan, $tahun)
     {
         $this->_get_datatables_query($bulan, $tahun);
-
         if (isset($_POST['length']) && $_POST['length'] != -1) {
             $this->db->limit($_POST['length'], (isset($_POST['start']) ? $_POST['start'] : 0));
         }
-
         $query = $this->db->get();
-
-        // Tambahkan pengecekan jika query gagal
-        if (!$query) {
-            return []; // Kembalikan array kosong jika query error
-        }
-
-        return $query->result(); // Kembalikan hasil query
+        return $query ? $query->result() : [];
     }
 
     function count_filtered($bulan, $tahun)
     {
         $this->_get_datatables_query($bulan, $tahun);
         $query = $this->db->get();
-        return $query->num_rows();
+        return $query ? $query->num_rows() : 0;
     }
 
     public function count_all()
     {
-        $this->db->from($this->table);
-        $this->db->where('status', 'aktif');
+        $this->db->from($this->table)->where('status', 'aktif');
         return $this->db->count_all_results();
     }
 
-// GANTI SELURUH FUNGSI get_summary_data() DENGAN INI
-public function get_summary_data($bulan, $tahun)
-{
-    $first_day_of_month = date('Y-m-01', strtotime("$tahun-$bulan-01"));
-    $end_of_selected_month = date('Y-m-t', strtotime("$tahun-$bulan-01"));
+    public function get_summary_data($bulan, $tahun)
+    {
+        // ✅ NEW: Dynamic date range logic, same as above
+        if ($bulan == 'all') {
+            $start_of_period = date('Y-01-01', strtotime("$tahun-01-01"));
+            if ($tahun == date('Y')) {
+                $end_of_period = date('Y-m-d');
+            } else {
+                $end_of_period = date('Y-12-31', strtotime("$tahun-12-31"));
+            }
+        } else {
+            $start_of_period = date('Y-m-01', strtotime("$tahun-$bulan-01"));
+            $end_of_period = date('Y-m-t', strtotime($start_of_period));
+        }
 
-    // Query untuk Total Saldo Awal (Pokok + Bunga Sebelumnya)
-    $this->db->select_sum('d.jumlah_deposito', 'total_pokok');
-    $this->db->from('tbdeposito d');
-    $this->db->where('d.status', 'aktif');
-    $this->db->where('d.tanggal_deposito <=', $end_of_selected_month);
-    $query1 = $this->db->get();
-    $total_pokok = $query1 ? ($query1->row()->total_pokok ?? 0) : 0;
+        // Total Initial Deposits
+        $this->db->select_sum('d.jumlah_deposito', 'total_pokok');
+        $this->db->from('tbdeposito d')->where('d.status', 'aktif')->where('d.tanggal_deposito <=', $end_of_period);
+        $total_pokok = ($this->db->get()->row()->total_pokok ?? 0);
 
-    $this->db->select_sum('bl.jumlah_bunga', 'total_bunga_sebelumnya');
-    $this->db->from('tb_bunga_deposito_log bl');
-    $this->db->join('tbdeposito d', 'd.id = bl.deposito_id');
-    $this->db->where('d.status', 'aktif');
-    $this->db->where('d.tanggal_deposito <=', $end_of_selected_month);
-    $this->db->where('bl.tanggal_perhitungan <', $first_day_of_month);
-    $query2 = $this->db->get();
-    $total_bunga_sebelumnya = $query2 ? ($query2->row()->total_bunga_sebelumnya ?? 0) : 0;
+        // Total Prior Interest
+        $this->db->select_sum('bl.jumlah_bunga', 'total_bunga_sebelumnya');
+        $this->db->from('tb_bunga_deposito_log bl')->join('tbdeposito d', 'd.id = bl.deposito_id');
+        $this->db->where('d.status', 'aktif')->where('d.tanggal_deposito <=', $end_of_period)->where('bl.tanggal_perhitungan <', $start_of_period);
+        $total_bunga_sebelumnya = ($this->db->get()->row()->total_bunga_sebelumnya ?? 0);
 
-    $total_saldo_awal = $total_pokok + $total_bunga_sebelumnya;
+        $total_saldo_awal = $total_pokok + $total_bunga_sebelumnya;
 
-    // Query untuk Total Bunga Bulan Ini
-    $this->db->select_sum('bl.jumlah_bunga', 'total_bunga_bulan_ini');
-    $this->db->from('tb_bunga_deposito_log bl');
-    $this->db->join('tbdeposito d', 'd.id = bl.deposito_id');
-    $this->db->where('d.status', 'aktif');
-    $this->db->where('d.tanggal_deposito <=', $end_of_selected_month);
-    $this->db->where('MONTH(bl.tanggal_perhitungan)', $bulan);
-    $this->db->where('YEAR(bl.tanggal_perhitungan)', $tahun);
-    $query3 = $this->db->get();
-    $total_bunga_bulan_ini = $query3 ? ($query3->row()->total_bunga_bulan_ini ?? 0) : 0;
+        // ✅ MODIFIED: Total Interest for the Current Period
+        $this->db->select_sum('bl.jumlah_bunga', 'total_bunga_bulan_ini');
+        $this->db->from('tb_bunga_deposito_log bl')->join('tbdeposito d', 'd.id = bl.deposito_id');
+        $this->db->where('d.status', 'aktif')->where('d.tanggal_deposito <=', $end_of_period);
 
-    return [
-        'total_saldo_awal'      => $total_saldo_awal,
-        'total_bunga_bulan_ini' => $total_bunga_bulan_ini,
-    ];
-}
+        if ($bulan == 'all') {
+            $this->db->where('YEAR(bl.tanggal_perhitungan)', $tahun)->where('bl.tanggal_perhitungan <=', $end_of_period);
+        } else {
+            $this->db->where('MONTH(bl.tanggal_perhitungan)', $bulan)->where('YEAR(bl.tanggal_perhitungan)', $tahun);
+        }
+        $total_bunga_bulan_ini = ($this->db->get()->row()->total_bunga_bulan_ini ?? 0);
+
+        return [
+            'total_saldo_awal'      => $total_saldo_awal,
+            'total_bunga_bulan_ini' => $total_bunga_bulan_ini,
+        ];
+    }
 }

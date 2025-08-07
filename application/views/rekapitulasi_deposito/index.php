@@ -5,27 +5,20 @@
                 <div class="col-md-3">
                     <label for="bulan" class="form-label">Bulan</label>
                     <select class="form-select" id="bulan" name="bulan">
+                        <option value="all" <?= ('all' == $selected_month) ? 'selected' : '' ?>>Semua Bulan</option>
                         <?php
                         $months = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
-
-                        // Get the current year and month from the server
                         $current_year_server = date('Y');
                         $current_month_server = date('n');
 
                         foreach ($months as $num => $name) {
-                            // By default, assume the month should be shown
                             $show_month = true;
-
-                            // Logic to hide future months in the current year
                             if ($selected_year == $current_year_server && $num > $current_month_server) {
                                 $show_month = false;
                             }
-
-                            // Logic to hide all months for a future year
                             if ($selected_year > $current_year_server) {
                                 $show_month = false;
                             }
-
                             if ($show_month) {
                                 $option_selected = ($num == $selected_month) ? ' selected' : '';
                                 echo '<option value="' . $num . '"' . $option_selected . '>' . $name . '</option>';
@@ -54,7 +47,7 @@
                 <div class="total-balance-card" style="border-radius: 15px; overflow: hidden; border: 1px solid #dee2e6;">
                     <div class="row g-0">
                         <div class="col-md-6 p-4 bg-light-success">
-                            <h6 class="text-muted">Total Saldo Awal Bulan</h6>
+                            <h6 class="text-muted">Total Saldo Pokok Nasabah</h6>
                             <h3 id="totalSaldoAwal" class="fw-bold">Rp 0</h3>
                         </div>
                         <div class="col-md-6 p-4 bg-light-info">
@@ -94,7 +87,6 @@
 
 <script>
     $(document).ready(function() {
-        // Initialize the DataTable ONCE.
         var table = $('#rekapTable').DataTable({
             "processing": true,
             "serverSide": true,
@@ -102,40 +94,45 @@
             "ajax": {
                 "url": "<?= site_url('rekapitulasi_deposito/fetch_rekapitulasi') ?>",
                 "type": "POST",
-                // Use a function to dynamically send the latest filter data
                 "data": function(d) {
                     d.bulan = $('#bulan').val();
                     d.tahun = $('#tahun').val();
                 },
                 "dataSrc": function(json) {
-                    // This function is called after the ajax request completes.
-                    // Update summary cards and titles here.
+                    // ✅ MODIFIED: Logic to handle dynamic titles
+                    const selectedMonthValue = $('#bulan').val();
                     const monthName = $('#bulan option:selected').text();
                     const year = $('#tahun').val();
 
-                    $('#recapMonthYear').text(monthName + ' ' + year);
-                    $('#detailTitle').html('<i class="fa fa-users"></i> Detail Saldo Nasabah - ' + monthName + ' ' + year);
+                    if (selectedMonthValue === 'all') {
+                        // Update titles for the "Entire Year" view
+                        $('#recapMonthYear').text('Tahun ' + year);
+                        $('#detailTitle').html('<i class="fa fa-users"></i> Detail Saldo Nasabah - Tahun ' + year);
+                        $('#totalBungaBulanIni').siblings('h6').text('Total Bunga Tahun Ini');
+                    } else {
+                        // Update titles for the "Monthly" view
+                        $('#recapMonthYear').text(monthName + ' ' + year);
+                        $('#detailTitle').html('<i class="fa fa-users"></i> Detail Saldo Nasabah - ' + monthName + ' ' + year);
+                        $('#totalBungaBulanIni').siblings('h6').text('Total Bunga Bulan Ini');
+                    }
+
+                    // Update summary cards with data from the backend
                     $('#totalSaldoAwal').text(json.total_saldo_awal);
                     $('#totalBungaBulanIni').text(json.total_bunga_bulan_ini);
 
-                    // Return the data array for DataTables to draw the rows
                     return json.data;
                 }
             },
             "columnDefs": [{
-                "targets": [0, 5], // 'No.' and 'Saldo Akhir' columns
+                "targets": [0, 5],
                 "orderable": false,
             }]
         });
 
-        // Event listener for the filter button
         $('#filterBtn').on('click', function() {
-            // Just reload the table. DataTables will use the 'data' function
-            // in the ajax settings to get the new filter values.
             table.ajax.reload();
         });
 
-        // Trigger a click on the filter button to load initial data when the page loads
         $('#filterBtn').trigger('click');
     });
 </script>

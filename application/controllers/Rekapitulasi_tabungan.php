@@ -49,15 +49,13 @@ class Rekapitulasi_tabungan extends CI_Controller
         $this->parser->parse('templates/main', $parser);
     }
 
+    // Your controller function - No changes needed here. It works perfectly with the new model.
     public function fetch_rekapitulasi()
     {
-        // if (!$this->input->is_ajax_request()) {
-        //     exit('No direct script access allowed');
-        // }
-
         $bulan = $this->input->post('bulan');
         $tahun = $this->input->post('tahun');
 
+        // The model now handles the 'all' case internally
         $list = $this->Rekapitulasi_tabungan_model->get_datatables($bulan, $tahun);
         $data = array();
         $no = $_POST['start'];
@@ -66,7 +64,6 @@ class Rekapitulasi_tabungan extends CI_Controller
             $no++;
             $row = array();
 
-            // Ensure saldo_pokok is not null before calculations
             $saldo_pokok = $field->saldo_pokok ?? 0;
             $bunga = $field->bunga ?? 0;
             $total_diterima = $saldo_pokok + $bunga;
@@ -81,16 +78,18 @@ class Rekapitulasi_tabungan extends CI_Controller
             $data[] = $row;
         }
 
+        // The model also handles the summary query correctly now
         $summary = $this->Rekapitulasi_tabungan_model->get_summary_data($bulan, $tahun);
         $recordsFiltered = $this->Rekapitulasi_tabungan_model->count_filtered($bulan, $tahun);
+        $recordsTotal = $this->Rekapitulasi_tabungan_model->count_all(); // count_all also benefits from the change
 
         $output = array(
             "draw"              => $_POST['draw'],
-            "recordsTotal"      => $this->Rekapitulasi_tabungan_model->count_all(),
+            "recordsTotal"      => $recordsTotal,
             "recordsFiltered"   => $recordsFiltered,
             "data"              => $data,
-            "total_saldo_pokok" => "Rp " . number_format($summary['total_saldo_pokok'], 0, ',', '.'),
-            "total_bunga"       => "Rp " . number_format($summary['total_bunga'], 0, ',', '.'),
+            "total_saldo_pokok" => "Rp " . number_format($summary['total_saldo_pokok'] ?? 0, 0, ',', '.'),
+            "total_bunga"       => "Rp " . number_format($summary['total_bunga'] ?? 0, 0, ',', '.'),
         );
 
         header('Content-Type: application/json');

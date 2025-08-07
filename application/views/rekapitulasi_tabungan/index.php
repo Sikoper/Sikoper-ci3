@@ -5,29 +5,20 @@
                 <div class="col-md-3">
                     <label for="bulan" class="form-label">Bulan</label>
                     <select class="form-select" id="bulan" name="bulan">
+                        <option value="all" <?= ('all' == $selected_month) ? 'selected' : '' ?>>Semua Bulan</option>
                         <?php
                         $months = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
-
-                        // Get the current year and month from the server
                         $current_year_server = date('Y');
                         $current_month_server = date('n');
 
                         foreach ($months as $num => $name) {
-                            // ✅ Determine if the month has already passed or is the current month
-                            $show_month = true; // Assume we show the month by default
-
-                            // Hide the option if the selected year is the current year,
-                            // AND the loop month is greater than the current month.
+                            $show_month = true;
                             if ($selected_year == $current_year_server && $num > $current_month_server) {
                                 $show_month = false;
                             }
-
-                            // Also hide all months for any year selected that is in the future.
                             if ($selected_year > $current_year_server) {
                                 $show_month = false;
                             }
-
-                            // Only print the <option> tag if it's allowed to be shown
                             if ($show_month) {
                                 $option_selected = ($num == $selected_month) ? ' selected' : '';
                                 echo '<option value="' . $num . '"' . $option_selected . '>' . $name . '</option>';
@@ -97,7 +88,6 @@
 
 <script>
     $(document).ready(function() {
-        // Initialize the DataTable ONCE.
         var table = $('#rekapTable').DataTable({
             "processing": true,
             "serverSide": true,
@@ -105,38 +95,50 @@
             "ajax": {
                 "url": "<?= site_url('rekapitulasi_tabungan/fetch_rekapitulasi') ?>",
                 "type": "POST",
-                // Use a function to dynamically send the latest filter data
                 "data": function(d) {
                     d.bulan = $('#bulan').val();
                     d.tahun = $('#tahun').val();
                 },
                 "dataSrc": function(json) {
-                    // This function is called after the ajax request completes.
-                    // Update summary cards and titles here.
+                    // ✅ MODIFIED: Logic to handle dynamic titles
+                    const selectedMonthValue = $('#bulan').val();
                     const monthName = $('#bulan option:selected').text();
                     const year = $('#tahun').val();
 
-                    $('#recapMonthYear').text(monthName + ' ' + year);
-                    $('#detailTitle').text('Detail Saldo Nasabah - ' + monthName + ' ' + year);
+                    if (selectedMonthValue === 'all') {
+                        // Update titles for the "Entire Year" view
+                        $('#recapPeriodType').text('Rekapitulasi Koperasi untuk Tahun');
+                        $('#recapMonthYear').text(year);
+                        $('#detailTitle').text('Detail Saldo Nasabah - Tahun ' + year);
+                        $('#totalBunga').siblings('h6').text('Total Bunga Tahun Ini'); // Optional: change subtitle
+                    } else {
+                        // Update titles for the "Monthly" view (your original logic)
+                        $('#recapPeriodType').text('Rekapitulasi Koperasi untuk Bulan');
+                        $('#recapMonthYear').text(monthName + ' ' + year);
+                        $('#detailTitle').text('Detail Saldo Nasabah - ' + monthName + ' ' + year);
+                        $('#totalBunga').siblings('h6').text('Total Bunga Bulan Ini'); // Optional: change subtitle
+                    }
+
+                    // Update summary cards with data from the backend
                     $('#totalSaldoPokok').text(json.total_saldo_pokok);
                     $('#totalBunga').text(json.total_bunga);
 
-                    // Return the data array for DataTables to draw the rows
+                    // Return data for table rows
                     return json.data;
                 }
             },
             "columnDefs": [{
-                "targets": [0, 5], // 'No.' and 'Total Diterima' columns
+                "targets": [0, 5],
                 "orderable": false,
             }]
         });
 
-        // Event listener for the filter button
         $('#filterBtn').on('click', function() {
-            // Just reload the table. DataTables will use the 'data' function
-            // in the ajax settings to get the new filter values.
             table.ajax.reload();
         });
 
+        $('#tahun').on('change', function() {
+            $('#filterBtn').click();
+        });
     });
 </script>
