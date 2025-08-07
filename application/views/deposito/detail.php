@@ -314,33 +314,42 @@
         });
     }
 
-    function deleteRecordBunga(id, nama, tipe) {
+    function deleteItem(id, nama) {
         Swal.fire({
-            title: "Hapus data ini?",
-            html: `Yakin ingin menghapus bunga dari no. rekening: <strong>${nama}</strong>?`,
+            title: "Anda Yakin?",
+            html: `Ingin menghapus data bunga dari no. rekening: <strong>${nama}</strong>?`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
             confirmButtonText: "Ya, Hapus!",
             cancelButtonText: "Batal",
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
-                $.post("<?= base_url('bunga_deposito/delete') ?>", {
-                    id: id,
-                    tipe: tipe
-                }, function(response) {
-                    if (response.success) {
-                        Swal.fire("Berhasil!", response.success, "success");
-                        tabel_bunga.ajax.reload(null, false);
-                        location.reload();
-                    } else {
-                        Swal.fire("Gagal!", response.error || "Terjadi kesalahan.", "error");
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('bunga_deposito/delete') ?>",
+                    data: {
+                        id: id
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire("Berhasil!", response.success, "success");
+                            $('#tabel_bunga').DataTable().ajax.reload(null, false);
+                            location.reload();
+                        } else {
+                            Swal.fire("Gagal!", response.error, "error");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error (Hapus Bunga):", {
+                            status,
+                            error,
+                            response: xhr.responseText
+                        });
+                        Swal.fire('Oops...', 'Sistem tidak dapat terhubung ke server.', 'error');
                     }
-                }, "json").fail(function() {
-                    Swal.fire("Error", "Tidak dapat terhubung ke server.", "error");
                 });
             }
         });
