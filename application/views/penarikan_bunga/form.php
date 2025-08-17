@@ -40,7 +40,7 @@
                         <label for="perkiraan_sisa_bunga">Perkiraan Sisa Bunga</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="perkiraan_sisa_bunga" class="form-control text-end" value="0,00" readonly style="font-weight: bold; background-color: #e9ecef;" />
+                            <input type="text" id="perkiraan_sisa_bunga" class="form-control text-end" value="0" readonly style="font-weight: bold; background-color: #e9ecef;" />
                         </div>
                     </div>
 
@@ -65,7 +65,6 @@
 
                     <?= form_close() ?>
                 </div>
-                <div class="col-md-3"></div>
             </div>
         </div>
     </div>
@@ -77,18 +76,19 @@
         const anJumlah = new AutoNumeric('#jumlah_penarikan', {
             aSep: '.',
             aDec: ',',
-            mDec: '0'
+            mDec: 0,
+            readOnly: true
         });
         const anBungaTersedia = new AutoNumeric('#bunga_tersedia', {
             aSep: '.',
             aDec: ',',
-            mDec: '0',
+            mDec: 0,
             readOnly: true
         });
         const anSisaBunga = new AutoNumeric('#perkiraan_sisa_bunga', {
             aSep: '.',
             aDec: ',',
-            mDec: '0',
+            mDec: 0,
             readOnly: true
         });
 
@@ -112,26 +112,16 @@
             }
         });
 
-        function hitungSisaBunga() {
-            const bungaTersedia = anBungaTersedia.getNumber() || 0;
-            const jumlahDitarik = anJumlah.getNumber() || 0;
-            const sisa = bungaTersedia - jumlahDitarik;
-            anSisaBunga.set(sisa);
-            $('#perkiraan_sisa_bunga').css('color', sisa < 0 ? 'red' : '');
-        }
-
-        $('#jumlah_penarikan').on('keyup change', hitungSisaBunga);
-
         $('#comboRekening').on('change', function() {
             const idDeposito = $(this).val();
             $('#infoNasabah').hide();
             anBungaTersedia.set(0);
             anJumlah.set(0);
-            hitungSisaBunga();
+            anSisaBunga.set(0);
 
             if (idDeposito) {
                 $.ajax({
-                    url: '<?= base_url("deposito/fetch_detail_rekening") ?>', // <-- URL Sudah Benar
+                    url: '<?= base_url("deposito/fetch_detail_rekening") ?>',
                     method: 'POST',
                     data: {
                         id: idDeposito
@@ -143,7 +133,7 @@
                             $('#infoNama').text(response.nama_nasabah || '-');
                             anBungaTersedia.set(response.bunga_tersedia || 0);
                             anJumlah.set(response.bunga_tersedia || 0);
-                            hitungSisaBunga();
+                            anSisaBunga.set(0);
                         } else {
                             Swal.fire('Gagal!', response.message || 'Gagal mengambil detail rekening.', 'error');
                         }
@@ -155,7 +145,11 @@
 
         $('#form_penarikan_bunga').submit(function(e) {
             e.preventDefault();
-            $('#jumlah_penarikan').val(anJumlah.getNumber());
+            const jumlahDitarik = anJumlah.getNumber() || 0;
+            if (jumlahDitarik <= 0) {
+                Swal.fire('Gagal', 'Tidak ada bunga yang tersedia untuk ditarik.', 'error');
+                return;
+            }
 
             Swal.fire({
                 title: 'Konfirmasi Penarikan Bunga',
@@ -168,10 +162,17 @@
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    const postData = {
+                        tanggal_penarikan: $('#tanggal_penarikan').val(),
+                        deposito_id: $('#comboRekening').val(),
+                        jumlah_penarikan: anJumlah.getNumber(),
+                        pegawai_id: $('[name="pegawai_id"]').val()
+                    };
+
                     $.ajax({
                         url: $(this).attr('action'),
                         type: 'POST',
-                        data: $(this).serialize(),
+                        data: postData,
                         dataType: 'json',
                         beforeSend: () => $('#tombol_simpan').prop('disabled', true).html('<i class="fa fa-spin fa-spinner"></i> Memproses...'),
                         complete: () => $('#tombol_simpan').prop('disabled', false).html('Tarik Semua Bunga'),

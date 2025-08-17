@@ -8,17 +8,14 @@ class Bunga_deposito_model extends CI_Model
     var $column_search = array('n.nama_lengkap', 'd.no_rekening');
     var $order = array('log.tanggal_perhitungan' => 'DESC');
 
-    /**
-     * Fungsi utama untuk perhitungan bunga bulanan (Pembungaan).
-     */
     public function bunga_proses_deposito()
     {
-        $today = date('Y-m-d');
-        $dayOfMonth = date('d');
+        $currentDay = date('d');
+        $currentMonth = date('m');
+        $currentYear = date('Y');
         $processedAny = false;
 
         $this->db->where('status', 'aktif');
-        $this->db->where('DAY(tanggal_deposito)', $dayOfMonth);
         $depositoList = $this->db->get('tbdeposito')->result();
 
         if (empty($depositoList)) {
@@ -29,25 +26,28 @@ class Bunga_deposito_model extends CI_Model
         $data_bunga_batch = [];
 
         foreach ($depositoList as $deposito) {
-            $bungaExists = $this->db->where('deposito_id', $deposito->id)
-                ->where('MONTH(tanggal_perhitungan)', date('m'))
-                ->where('YEAR(tanggal_perhitungan)', date('Y'))
-                ->get($this->table)->num_rows();
+            $bungaExistsThisMonth = $this->db->where('deposito_id', $deposito->id)
+                ->where('MONTH(tanggal_perhitungan)', $currentMonth)
+                ->where('YEAR(tanggal_perhitungan)', $currentYear)
+                ->get($this->table)
+                ->num_rows();
 
-            if ($bungaExists > 0) {
+            if ($bungaExistsThisMonth > 0) {
                 continue;
             }
+            $hariBungaNasabah = date('d', strtotime($deposito->tanggal_deposito));
 
-            // Rumus bunga bulanan
-            $bungaAmount = ($deposito->jumlah_deposito * ($deposito->rate_bunga / 100));
+            if ($hariBungaNasabah <= $currentDay) {
+                $bungaAmount = ($deposito->jumlah_deposito * ($deposito->rate_bunga / 100));
 
-            $data_bunga_batch[] = [
-                'deposito_id'           => $deposito->id,
-                'jumlah_bunga'          => $bungaAmount,
-                'tanggal_perhitungan'   => $today,
-                'status_penarikan'      => 'belum_ditarik'
-            ];
-            $processedAny = true;
+                $data_bunga_batch[] = [
+                    'deposito_id'         => $deposito->id,
+                    'jumlah_bunga'        => $bungaAmount,
+                    'tanggal_perhitungan' => $currentYear . '-' . $currentMonth . '-' . $hariBungaNasabah,
+                    'status_penarikan'    => 'belum_ditarik'
+                ];
+                $processedAny = true;
+            }
         }
 
         if (!empty($data_bunga_batch)) {
@@ -61,7 +61,6 @@ class Bunga_deposito_model extends CI_Model
 
     private function _get_datatables_query($start_date = null, $end_date = null)
     {
-        // Memberi 'nama panggilan' (alias) agar cocok dengan view Anda
         $this->db->select('log.id, log.tanggal_perhitungan as tanggal_transaksi, log.jumlah_bunga as jumlah_transaksi, n.nama_lengkap, d.no_rekening, d.rate_bunga');
         $this->db->from('tb_bunga_deposito_log as log');
         $this->db->join('tbdeposito as d', 'd.id = log.deposito_id');
@@ -102,7 +101,7 @@ class Bunga_deposito_model extends CI_Model
 
         $query = $this->db->get();
         if (!$query) {
-            return []; // Kembalikan array kosong jika query error, mencegah error fatal
+            return [];
         }
         return $query->result();
     }
@@ -111,7 +110,7 @@ class Bunga_deposito_model extends CI_Model
     {
         $this->_get_datatables_query($start_date, $end_date);
         $query = $this->db->get();
-        return $query ? $query->num_rows() : 0; // Lebih aman jika query gagal
+        return $query ? $query->num_rows() : 0;
     }
 
     public function count_all()
@@ -148,33 +147,33 @@ class Bunga_deposito_model extends CI_Model
     }
 
     public function get_detail_bunga_by_deposito_id($deposito_id)
-{
-    if (empty($deposito_id)) {
-        return [];
+    {
+        if (empty($deposito_id)) {
+            return [];
+        }
+
+        $this->db->select('id, tanggal_perhitungan, jumlah_bunga');
+        $this->db->from('tb_bunga_deposito_log');
+        $this->db->where('deposito_id', $deposito_id);
+        $this->db->order_by('tanggal_perhitungan', 'DESC');
+
+        $query = $this->db->get();
+        return $query ? $query->result() : [];
     }
 
-    $this->db->select('id, tanggal_perhitungan, jumlah_bunga');
-    $this->db->from('tb_bunga_deposito_log');
-    $this->db->where('deposito_id', $deposito_id);
-    $this->db->order_by('tanggal_perhitungan', 'DESC');
-    
-    $query = $this->db->get();
-    return $query ? $query->result() : []; 
-}
+    public function get_total_detail_bunga($deposito_id)
+    {
+        if (empty($deposito_id)) {
+            return 0;
+        }
 
-public function get_total_detail_bunga($deposito_id)
-{
-    if (empty($deposito_id)) {
-        return 0;
+        $this->db->select_sum('jumlah_bunga', 'total');
+        $this->db->from('tb_bunga_deposito_log');
+        $this->db->where('deposito_id', $deposito_id);
+
+        $query = $this->db->get();
+
+        // Pengecekan keamanan jika query gagal
+        return $query ? ($query->row()->total ?? 0) : 0;
     }
-
-    $this->db->select_sum('jumlah_bunga', 'total');
-    $this->db->from('tb_bunga_deposito_log');
-    $this->db->where('deposito_id', $deposito_id);
-    
-    $query = $this->db->get();
-    
-    // Pengecekan keamanan jika query gagal
-    return $query ? ($query->row()->total ?? 0) : 0;
-}
 }
