@@ -84,12 +84,16 @@ class Bunga extends CI_Controller
 
     public function fetchNasabahTabunganBunga()
     {
+        // It's good practice to uncomment this for security in production
         if (!$this->input->is_ajax_request()) {
-            exit('Maaf data tidak bisa ditampilkan');
+            exit('No direct script access allowed');
         }
 
         $no_rekening = $this->input->post('no_rekening');
-        $list = $this->Nasabah_bunga_model->get_datatables($no_rekening, 'Simpanan');
+
+        // The model calls are now simpler, no 'Simpanan' type needed
+        $list = $this->Nasabah_bunga_model->get_datatables($no_rekening);
+
         $data = array();
         $no = $_POST['start'];
 
@@ -97,21 +101,26 @@ class Bunga extends CI_Controller
             $no++;
             $row = array();
             $row[] = "<div class=\"text-center\">$no</div>";
-            $row[] = $field->tanggal_transaksi;
+            $row[] = date('d-m-Y', strtotime($field->tanggal_transaksi)); // Format date for consistency
             $row[] = "Rp " . number_format($field->jumlah_transaksi, 2, ',', '.');
+
+            // This line now works correctly because the new query selects 'bunga_riil'
             $row[] = "Rp " . number_format($field->bunga_riil, 2, ',', '.');
-            $row[] = ((float)$field->rate_bunga) . " %";
-            $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+
+            $row[] = number_format((float)$field->rate_bunga, 2, ',', '.') . " %";
+
+            // The delete button remains compatible
+            $row[] = "<button class=\"btn btn-danger btn-sm\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
 
             $data[] = $row;
         }
 
-        $total_bunga = $this->Nasabah_bunga_model->get_total_bunga_by_rekening($no_rekening, 'Simpanan');
+        $total_bunga = $this->Nasabah_bunga_model->get_total_bunga_by_rekening($no_rekening);
 
         $output = array(
             "draw" => $_POST['draw'],
-            "recordsTotal" => $this->Nasabah_bunga_model->count_all('Simpanan'),
-            "recordsFiltered" => $this->Nasabah_bunga_model->count_filtered($no_rekening, 'Simpanan'),
+            "recordsTotal" => $this->Nasabah_bunga_model->count_all($no_rekening),
+            "recordsFiltered" => $this->Nasabah_bunga_model->count_filtered($no_rekening),
             "data" => $data,
             "total_bunga" => number_format($total_bunga, 2, ',', '.')
         );

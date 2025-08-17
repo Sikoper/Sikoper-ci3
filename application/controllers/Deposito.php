@@ -710,50 +710,51 @@ class Deposito extends CI_Controller
 
     public function print_laporan()
     {
-        $id = $this->input->get('id');
-        $tanggal_mulai = $this->input->get('tanggal_mulai');
-        $tanggal_akhir = $this->input->get('tanggal_akhir');
-        $jenis_laporan = $this->input->get('jenis_laporan');
+        $id             = $this->input->get('id');
+        $tanggal_mulai  = $this->input->get('tanggal_mulai');
+        $tanggal_akhir  = $this->input->get('tanggal_akhir');
+        $jenis_laporan  = $this->input->get('jenis_laporan') ?: '3';
 
-        // Default laporan ke '3' (Setor dan Tarik)
-        if (empty($jenis_laporan)) {
-            $jenis_laporan = '3';
-        }
-
-        // Ambil data tabungan dan nasabah
-        $tabungan = $this->Tabungan_model->get_data_by_id($id);
-        if (!$tabungan) {
-            echo "Error: Data tabungan tidak ditemukan.";
+        $deposito = $this->Deposito_model->get_data_by_id($id);
+        if (!$deposito) {
+            show_error("Error: Data deposito tidak ditemukan.", 404);
             return;
         }
 
-        $nasabah = (object) ['nama_lengkap' => $tabungan->nama_lengkap];
+        $nasabah = $this->db->get_where('tbnasabah', ['id' => $deposito->nasabah_id])->row();
+        if (!$nasabah) {
+            show_error("Error: Data nasabah terkait tidak ditemukan.", 404);
+            return;
+        }
 
-        // Ambil data transaksi (gabungan setor dan tarik)
-        $transaksi = $this->Tabungan_model->get_transaksi_by_simpanan($tabungan->id, $tanggal_mulai, $tanggal_akhir, $jenis_laporan);
+        // IMPORTANT: default range that won't accidentally exclude bunga
+        $start = $tanggal_mulai ?: $deposito->tanggal_deposito;
+        $end   = $tanggal_akhir ?: date('Y-m-d');
+
+        $rekening_data = $this->Deposito_model->get_transaksi_by_deposito(
+            $deposito->id,
+            $start,
+            $end,
+            $jenis_laporan
+        );
 
         $data = [
-            'tabungan' => $tabungan,
-            'nasabah' => $nasabah,
-            'transaksi' => $transaksi,
-            'tanggal_mulai' => $tanggal_mulai,
-            'tanggal_akhir' => $tanggal_akhir,
-            'jenis_laporan' => $jenis_laporan,
+            'deposito'      => $deposito,
+            'nasabah'       => $nasabah,
+            'rekening'      => $rekening_data,
+            'tanggal_mulai' => $start,
+            'tanggal_akhir' => $end,
         ];
 
-        // Load view
         $html = $this->load->view('deposito/cetak_laporan', $data, true);
 
-        // PDF dompdf
         $this->load->library('dompdf_lib');
         $this->dompdf_lib->loadHtml($html);
         $this->dompdf_lib->setPaper('A4', 'portrait');
         $this->dompdf_lib->render();
-
-        $filename = "laporan_" . $nasabah->nama_lengkap . "_" . $tabungan->no_rekening . ".pdf";
-        $this->dompdf_lib->stream($filename, false);
+        $filename = "Rekening_Koran_" . str_replace(' ', '_', $nasabah->nama_lengkap) . "_" . $deposito->no_rekening . ".pdf";
+        $this->dompdf_lib->stream($filename);
     }
-
 
     private function _safe_base64_encode($string)
     {
