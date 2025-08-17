@@ -117,6 +117,7 @@
                                     <th>No</th>
                                     <th>Tanggal bunga</th>
                                     <th>Jumlah bunga</th>
+                                    <th>Bunga riil</th>
                                     <th>Presentase bunga</th>
                                     <th>#</th>
                                 </tr>
@@ -215,6 +216,9 @@
         },
 
         "columns": [{
+                "type": "string"
+            },
+            {
                 "type": "string"
             },
             {

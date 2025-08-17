@@ -93,10 +93,17 @@
                         </td>
                     </tr>
                 </table>
-                <div class="d-flex justify-content-end gap-2">
-                    <button onclick="printSertifikat('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-info">
-                        Cetak Sertifikat <i class="fa fa-id-card ms-2"></i>
-                    </button>
+                <div class="d-flex align-end justify-content-end">
+                    <div class="d-flex justify-content-end me-2">
+                        <button onclick="printLaporan('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-warning">
+                            Cetak Laporan <i class="fa fa-id-card ms-2"></i>
+                        </button>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button onclick="printSertifikat('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-info">
+                            Cetak Sertifikat <i class="fa fa-id-card ms-2"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -314,10 +321,10 @@
         });
     }
 
-    function deleteRecordBunga(id, nama, tipe) {
+    function deleteRecordBunga(id, tipe) {
         Swal.fire({
             title: "Hapus data ini?",
-            html: `Yakin ingin menghapus bunga dari no. rekening: <strong>${nama}</strong>?`,
+            html: `Yakin ingin menghapus bunga?`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",
@@ -346,9 +353,9 @@
         });
     }
 
-    function printNasabah(id, nama) {
+    function printLaporan(id, nama) {
         Swal.fire({
-            title: "Cetak Data Nasabah?",
+            title: "Cetak laporan transaksi?",
             html: `Membuka tab baru untuk mencetak data <strong>${nama}</strong>.`,
             icon: "question",
             showCancelButton: true,
@@ -359,7 +366,7 @@
             allowEnterKey: false,
         }).then((result) => {
             if (result.isConfirmed) {
-                window.open("<?= base_url('deposito/print_nasabah?id=') ?>" + id, "_blank");
+                window.open("<?= base_url('deposito/print_laporan?id=') ?>" + id, "_blank");
             }
         });
     }

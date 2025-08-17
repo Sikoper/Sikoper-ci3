@@ -3,156 +3,109 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Nasabah_Bunga_model extends CI_Model
 {
-    var $column_order = array(null, 'tanggal_transaksi', 'jumlah_transaksi', 'rate_bunga', null);
-    var $column_search = array('tanggal_transaksi', 'rate_bunga');
-    var $order = array('tanggal_transaksi' => 'DESC');
+    // Define table and joins for reuse
+    private $table = 'tbtransaksi';
+    private $column_order = array(null, 'tbtransaksi.tanggal_transaksi', 'tbtransaksi.jumlah_transaksi', 'tbtransaksi.rate_bunga', 'tbtransaksi.bunga_riil', null);
+    private $column_search = array('tbtransaksi.tanggal_transaksi', 'tbtransaksi.rate_bunga');
+    private $order = array('tbtransaksi.tanggal_transaksi' => 'DESC');
 
     /**
      * The main query builder for the datatable.
-     * Now accepts a $no_rekening to filter by a specific savings or deposit account ID.
+     * Uses CI Query Builder for better readability and security.
      */
-    private function _get_base_query($no_rekening = null, $tipe = null)
+    private function _get_datatables_query($no_rekening = null)
     {
-        $conditions = [];
+        $this->db->select("
+            tbtransaksi.id,
+            tbtransaksi.id AS source_id,
+            tbtransaksi.tanggal_transaksi,
+            tbtransaksi.jumlah_transaksi,
+            tbtransaksi.rate_bunga,
+            tbtransaksi.bunga_riil,
+            'Simpanan' AS tipe, -- Kept for compatibility with the delete function's parameters
+            tbnasabah.nama_lengkap,
+            tbsimpanan.no_rekening
+        ");
+        $this->db->from($this->table);
+        $this->db->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id');
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
 
+        // Filter by specific account number if provided
         if ($no_rekening !== null) {
-            $no_rekening = $this->db->escape($no_rekening);
-            $conditions[] = "bunga.no_rekening = $no_rekening";
+            $this->db->where('tbsimpanan.no_rekening', $no_rekening);
         }
 
-        if ($tipe !== null) {
-            $tipe = $this->db->escape($tipe); // Escape 'Simpanan' or 'Deposito'
-            $conditions[] = "bunga.tipe = $tipe";
-        }
-
-        $whereClause = count($conditions) > 0 ? "WHERE " . implode(' AND ', $conditions) : "";
-
-        return "
-        SELECT * FROM (
-            SELECT 
-                t1.id,
-                t1.tanggal_transaksi,
-                t1.jumlah_transaksi,
-                'Simpanan' AS tipe,
-                n.nama_lengkap,
-                s.no_rekening,
-                t1.rate_bunga AS rate_bunga,
-                t1.id AS source_id
-            FROM tbtransaksi t1
-            JOIN tbsimpanan s ON s.id = t1.simpanan_id
-            JOIN tbnasabah n ON n.id = s.nasabah_id
-
-            UNION ALL
-
-            SELECT 
-                t2.id,
-                t2.tanggal_transaksi,
-                t2.jumlah_transaksi,
-                'Deposito' AS tipe,
-                n.nama_lengkap,
-                d.no_rekening,
-                t2.rate_bunga AS rate_bunga,
-                t2.id AS source_id
-            FROM tbtransaksi_deposito t2
-            JOIN tbdeposito d ON d.id = t2.deposito_id
-            JOIN tbnasabah n ON n.id = d.nasabah_id
-        ) AS bunga
-        $whereClause
-    ";
-    }
-
-    private function _get_filtered_query($no_rekening = null, $tipe = null)
-    {
-        $sql = $this->_get_base_query($no_rekening, $tipe);
-
+        // Handle searching
         $search_value = $_POST['search']['value'] ?? '';
         if (!empty($search_value)) {
-            $search_value = $this->db->escape_like_str($search_value);
-            $conditions = [];
-            foreach ($this->column_search as $col) {
-                $conditions[] = "$col LIKE '%$search_value%'";
+            $this->db->group_start(); // Open bracket
+            foreach ($this->column_search as $i => $item) {
+                if ($i === 0) {
+                    $this->db->like($item, $search_value);
+                } else {
+                    $this->db->or_like($item, $search_value);
+                }
             }
-            $sql .= " AND (" . implode(' OR ', $conditions) . ")";
+            $this->db->group_end(); // Close bracket
         }
 
+        // Handle ordering
         if (isset($_POST['order'])) {
             $column_index = $_POST['order'][0]['column'];
-            $column_name = $this->column_order[$column_index];
             $dir = $_POST['order'][0]['dir'];
-            if ($column_name) {
-                $sql .= " ORDER BY $column_name $dir";
-            }
-        } else {
-            $sql .= " ORDER BY tanggal_transaksi DESC";
+            $this->db->order_by($this->column_order[$column_index], $dir);
+        } else if (isset($this->order)) {
+            $order = $this->order;
+            $this->db->order_by(key($order), $order[key($order)]);
         }
-
-        return $sql;
     }
 
-    public function get_datatables($no_rekening = null, $tipe = null)
+    /**
+     * Fetches data for the datatable.
+     */
+    public function get_datatables($no_rekening = null)
     {
-        $sql = $this->_get_filtered_query($no_rekening, $tipe);
-
+        $this->_get_datatables_query($no_rekening);
         if ($_POST['length'] != -1) {
-            $sql .= " LIMIT " . (int)$_POST['start'] . ", " . (int)$_POST['length'];
+            $this->db->limit($_POST['length'], $_POST['start']);
         }
-
-        return $this->db->query($sql)->result();
+        return $this->db->get()->result();
     }
 
-    public function count_filtered($no_rekening = null, $tipe = null)
+    /**
+     * Counts filtered records.
+     */
+    public function count_filtered($no_rekening = null)
     {
-        $sql = $this->_get_filtered_query($no_rekening, $tipe);
-        $count_sql = "SELECT COUNT(*) AS filtered FROM ($sql) AS count_table";
-        return $this->db->query($count_sql)->row()->filtered;
+        $this->_get_datatables_query($no_rekening);
+        return $this->db->get()->num_rows();
     }
 
-    public function count_all($tipe = null)
+    /**
+     * Counts all records in the table.
+     */
+    public function count_all($no_rekening = null)
     {
-        $condition = '';
-        if ($tipe === 'Simpanan') {
-            $condition = "WHERE tipe = 'Simpanan'";
-        } elseif ($tipe === 'Deposito') {
-            $condition = "WHERE tipe = 'Deposito'";
+        $this->db->from($this->table);
+        if ($no_rekening !== null) {
+            $this->db->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id');
+            $this->db->where('tbsimpanan.no_rekening', $no_rekening);
         }
-
-        $sql = "
-        SELECT COUNT(*) AS total FROM (
-            SELECT 
-                id, 'Simpanan' AS tipe 
-            FROM tbtransaksi
-            UNION ALL
-            SELECT 
-                id, 'Deposito' AS tipe 
-            FROM tbtransaksi_deposito
-        ) AS alltrans
-        $condition
-    ";
-
-        return $this->db->query($sql)->row()->total;
+        return $this->db->count_all_results();
     }
 
-    public function get_total_bunga_by_rekening($no_rekening, $tipe)
+    /**
+     * Gets the total interest amount for a specific savings account.
+     */
+    public function get_total_bunga_by_rekening($no_rekening)
     {
-        if ($tipe === 'Deposito') {
-            return $this->db
-                ->select_sum('jumlah_transaksi')
-                ->from('tbtransaksi_deposito')
-                ->join('tbdeposito', 'tbdeposito.id = tbtransaksi_deposito.deposito_id')
-                ->where('tbdeposito.no_rekening', $no_rekening)
-                ->get()
-                ->row()
-                ->jumlah_transaksi ?? 0;
-        } else if ($tipe === 'Simpanan') {
-            return $this->db
-                ->select_sum('jumlah_transaksi')
-                ->from('tbtransaksi')
-                ->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id')
-                ->where('tbsimpanan.no_rekening', $no_rekening)
-                ->get()
-                ->row()
-                ->jumlah_transaksi ?? 0;
-        }
-        return 0;
+        return $this->db
+            ->select_sum('jumlah_transaksi')
+            ->from($this->table)
+            ->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id')
+            ->where('tbsimpanan.no_rekening', $no_rekening)
+            ->get()
+            ->row()
+            ->jumlah_transaksi ?? 0;
     }
 }

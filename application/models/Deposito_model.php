@@ -10,7 +10,6 @@ class Deposito_model extends CI_Model
 
     public $_table_penarikan_deposito = 'tbpenarikan_deposito';
     public $_table_bunga_log = 'tbdeposito_bunga_log';
-    public $_table_transaksi_deposito = 'tbtransaksi_deposito';
 
     private function _get_datatables_query()
     {
@@ -90,9 +89,6 @@ class Deposito_model extends CI_Model
 
         $this->db->where('deposito_id', $id_deposito);
         $this->db->delete($this->_table_bunga_log);
-
-        $this->db->where('deposito_id', $id_deposito);
-        $this->db->delete($this->_table_transaksi_deposito);
 
         $this->db->where('id', $id_deposito);
         $this->db->delete($this->table);
@@ -362,6 +358,154 @@ class Deposito_model extends CI_Model
         return (object)[
             'nama_nasabah' => $nasabah->nama_nasabah ?? 'Tidak ditemukan',
             'bunga_tersedia' => floatval($total_bunga)
+        ];
+    }
+
+    public function get_transaksi_by_deposito($id, $tanggal_mulai, $tanggal_akhir, $jenis_laporan = '3')
+    {
+        $deposito = $this->db->select('jumlah_deposito, tanggal_deposito, pegawai_id')
+            ->where('id', $id)->get('tbdeposito')->row();
+
+        if (!$deposito) {
+            return [
+                'saldo_awal'  => 0,
+                'total_setor' => 0,
+                'total_tarik' => 0,
+                'total_bunga' => 0,
+                'saldo_akhir' => 0,
+                'transaksi'   => []
+            ];
+        }
+
+        $tgl_mulai_real  = $tanggal_mulai ?: $deposito->tanggal_deposito;
+        $tgl_akhir_query = $tanggal_akhir ?: date('Y-m-d');
+
+        $total_pokok_ditarik = (float)($this->db->select_sum('jumlah_penarikan_pokok', 'total')
+            ->where('deposito_id', $id)->get('tbpenarikan_deposito')->row()->total ?? 0);
+
+        $setoran_awal_asli = (float)$deposito->jumlah_deposito + $total_pokok_ditarik;
+
+        $pegawai_awal = $this->db->select('nama_lengkap')->where('id', $deposito->pegawai_id)
+            ->get('tbpegawai')->row()->nama_lengkap ?? 'SYSTEM';
+
+        $transaksi_setoran_awal = (object)[
+            'tanggal'    => $deposito->tanggal_deposito,
+            'keterangan' => 'Setoran Awal Deposito',
+            'kredit'     => (float)$setoran_awal_asli,
+            'debit'      => 0.0,
+            'jenis'      => 'setoran',
+            'pegawai'    => $pegawai_awal
+        ];
+
+        // Penarikan pokok & bunga dari tbpenarikan_deposito
+        $penarikan_sql = "
+            SELECT pd.tanggal_penarikan AS tanggal,
+                CASE 
+                    WHEN pd.jumlah_penarikan_pokok > 0 AND pd.jumlah_penarikan_bunga > 0 THEN 'Penarikan Pokok & Bunga'
+                    WHEN pd.jumlah_penarikan_pokok > 0 THEN 'Penarikan Pokok'
+                    WHEN pd.jumlah_penarikan_bunga > 0 THEN 'Penarikan Bunga'
+                    ELSE 'Penarikan' END AS keterangan,
+                0 AS kredit,
+                pd.total_penarikan AS debit,
+                'penarikan' AS jenis,
+                p.nama_lengkap AS pegawai
+            FROM tbpenarikan_deposito pd
+            LEFT JOIN tbpegawai p ON pd.pegawai_id = p.id
+            WHERE pd.deposito_id = ?
+            AND DATE(pd.tanggal_penarikan) <= DATE(?)
+            ";
+        $transaksi_penarikan = $this->db->query($penarikan_sql, [$id, $tgl_akhir_query])->result();
+
+        // Bunga — tampilkan semua status
+        // Bunga — tampilkan semua status, bahkan jika sudah_ditarik tampilkan dua baris
+        $bunga_sql = "
+                SELECT * FROM (
+                    -- Baris sebagai Bunga Deposito (selalu ditampilkan)
+                    SELECT 
+                        DATE(b.tanggal_perhitungan) AS tanggal,
+                        'Bunga Deposito' AS keterangan,
+                        b.jumlah_bunga AS kredit,
+                        0 AS debit,
+                        'bunga' AS jenis,
+                        'SYSTEM' AS pegawai,
+                        b.status_penarikan
+                    FROM tb_bunga_deposito_log b
+                    WHERE b.deposito_id = ?
+                    AND DATE(b.tanggal_perhitungan) <= DATE(?)
+
+                    UNION ALL
+
+                    -- Baris tambahan jika sudah ditarik (Penarikan Bunga)
+                    SELECT 
+                        DATE(b.tanggal_perhitungan) AS tanggal,
+                        'Penarikan Bunga' AS keterangan,
+                        0 AS kredit,
+                        b.jumlah_bunga AS debit,
+                        'penarikan' AS jenis,
+                        'SYSTEM' AS pegawai,
+                        b.status_penarikan
+                    FROM tb_bunga_deposito_log b
+                    WHERE b.deposito_id = ?
+                    AND DATE(b.tanggal_perhitungan) <= DATE(?)
+                    AND b.status_penarikan = 'sudah_ditarik'
+                ) AS bunga
+                ORDER BY tanggal
+            ";
+
+        $transaksi_bunga = $this->db->query($bunga_sql, [$id, $tgl_akhir_query, $id, $tgl_akhir_query])->result();
+
+
+        // Merge semua transaksi
+        $semua_transaksi = array_merge([$transaksi_setoran_awal], $transaksi_bunga, $transaksi_penarikan);
+        usort($semua_transaksi, fn($a, $b) => strcmp($a->tanggal, $b->tanggal));
+
+        // Hitung total
+        $saldo_awal = 0.0;
+        $total_setor = 0.0;
+        $total_tarik = 0.0;
+        $total_bunga = 0.0;
+        $transaksi_periode = [];
+
+        foreach ($semua_transaksi as $t) {
+            $t->kredit = (float)$t->kredit;
+            $t->debit  = (float)$t->debit;
+
+            if ($t->tanggal < $tgl_mulai_real) {
+                $saldo_awal += ($t->kredit - $t->debit);
+                continue;
+            }
+
+            if ($t->tanggal > $tgl_akhir_query) {
+                continue;
+            }
+
+            $is_kredit = ($t->jenis === 'setoran' || $t->jenis === 'bunga');
+            $is_debit  = ($t->jenis === 'penarikan');
+
+            if (($jenis_laporan === '1' && $is_kredit) ||
+                ($jenis_laporan === '2' && $is_debit)  ||
+                $jenis_laporan === '3'
+            ) {
+                $transaksi_periode[] = $t;
+
+                // Semua bunga masuk total_bunga
+                if ($t->jenis === 'bunga' || $t->keterangan === 'Penarikan Bunga') {
+                    $total_bunga += $t->kredit;
+                }
+
+                // Sudah_ditarik tetap masuk sebagai setoran untuk pencatatan
+                $total_setor += $t->kredit;
+                $total_tarik += $t->debit;
+            }
+        }
+
+        return [
+            'saldo_awal'  => $saldo_awal,
+            'total_setor' => $total_setor,
+            'total_tarik' => $total_tarik,
+            'total_bunga' => $total_bunga,
+            'saldo_akhir' => $saldo_awal + $total_setor - $total_tarik,
+            'transaksi'   => $transaksi_periode
         ];
     }
 }
