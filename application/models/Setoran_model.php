@@ -91,9 +91,23 @@ class Setoran_model extends CI_Model
 
     public function count_new_data($today)
     {
+        $date = $date ?? date('Y-m-d');
+        $start_of_month = date('Y-m-01', strtotime($date));
+        $end_of_month   = date('Y-m-t', strtotime($date));
+
+        // Count simpanan
         $this->db->from('tbdetail_simpanan');
-        $this->db->where('tanggal_setoran', $today);
-        return $this->db->count_all_results();
+        $this->db->where('tanggal_setoran >=', $start_of_month . ' 00:00:00');
+        $this->db->where('tanggal_setoran <=', $end_of_month . ' 23:59:59');
+        $simpanan = $this->db->count_all_results();
+
+        // Count deposito
+        $this->db->from('tbdeposito');
+        $this->db->where('tanggal_deposito >=', $start_of_month);
+        $this->db->where('tanggal_deposito <=', $end_of_month);
+        $deposito = $this->db->count_all_results();
+
+        return $simpanan + $deposito;
     }
     public function jumlah_setoran()
     {
