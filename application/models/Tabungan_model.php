@@ -31,10 +31,10 @@ class Tabungan_model extends CI_Model
                 tbs.id AS simpanan_id,
                 tbs.pegawai_id,
                 dp.tanggal_penarikan AS tanggal,
-                dp.jumlah_penarikan AS jumlah_uang,
+                dp.total_penarikan AS jumlah_uang,
                 tp.nama_lengkap as pegawai,
                 'Tarik' AS keterangan
-            FROM tbdetail_penarikan dp
+            FROM tbpenarikan dp
             JOIN tbpegawai tp ON tp.id = dp.pegawai_id
             JOIN tbsimpanan tbs ON tbs.id = dp.simpanan_id
         ) AS trans

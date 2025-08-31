@@ -54,117 +54,147 @@
 </div>
 
 <script>
-// Fungsi deleteItem diletakkan di luar document.ready agar bisa diakses secara global oleh tombol
-function deleteItem(id, nama) {
-    Swal.fire({
-        title: "Anda Yakin?",
-        html: `Ingin menghapus data bunga dari no. rekening: <strong>${nama}</strong>?`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "Ya, Hapus!",
-        cancelButtonText: "Batal",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('bunga_deposito/delete') ?>",
-                data: { id: id },
-                dataType: "json",
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire("Berhasil!", response.success, "success");
-                        $('#tabel_bunga').DataTable().ajax.reload(null, false);
-                    } else {
-                        Swal.fire("Gagal!", response.error, "error");
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error("AJAX Error (Hapus Bunga):", { status, error, response: xhr.responseText });
-                    Swal.fire('Oops... Terjadi Kesalahan', 'Sistem tidak dapat terhubung ke server.', 'error');
-                }
-            });
-        }
-    });
-}
-
-// Semua kode jQuery dibungkus di dalam $(document).ready()
-$(document).ready(function() {
-    var table = $('#tabel_bunga').DataTable({
-        responsive: true,
-        processing: true,
-        serverSide: true,
-        order: [[ 3, "desc" ]],
-        ajax: {
-            url: "<?= site_url('bunga_deposito/fetchBungaDeposito') ?>",
-            type: "POST",
-            data: function(d) {
-                d.start_date = $('#start_date').val();
-                d.end_date = $('#end_date').val();
-            },
-            dataSrc: function(json) {
-                $('#total_bunga_display').text('Rp ' + (json.total_bunga || '0'));
-                return json.data;
-            }
-        },
-        "columns": [
-            { "data": 0, "orderable": false },
-            { "data": 1 },
-            { "data": 2 },
-            { "data": 3 },
-            { "data": 4, "className": "text-end" },
-            { "data": 5, "className": "text-center" },
-            <?php if ($this->session->userdata('level') == 'Admin'): ?>,
-            { "data": 6, "orderable": false, "className": "text-center" }
-            <?php endif; ?>
-        ]
-    });
-
-    $('#filterBtn').on('click', function() {
-        table.ajax.reload();
-    });
-
-    $('#btnPembungaanDeposito').click(function() {
+    // Fungsi deleteItem diletakkan di luar document.ready agar bisa diakses secara global oleh tombol
+    function deleteItem(id, nama) {
         Swal.fire({
-            title: 'Konfirmasi Proses Pembungaan',
-            html: "Anda yakin ingin menjalankan proses perhitungan bunga untuk hari ini? <br><b>Proses ini tidak dapat dibatalkan.</b>",
-            icon: 'warning',
+            title: "Anda Yakin?",
+            html: `Ingin menghapus data bunga dari no. rekening: <strong>${nama}</strong>?`,
+            icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, Lanjutkan Proses!',
-            cancelButtonText: 'Batal'
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Ya, Hapus!",
+            cancelButtonText: "Batal",
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
                     type: "POST",
-                    url: "<?= site_url('bunga_deposito/run_bunga_deposito') ?>",
+                    url: "<?= base_url('bunga_deposito/delete') ?>",
+                    data: {
+                        id: id
+                    },
                     dataType: "json",
-                    beforeSend: function() {
-                        $('#btnPembungaanDeposito').prop('disabled', true).html('<i class="fa fa-spin fa-spinner"></i> Memproses...');
-                        $('#loadingOverlay').fadeIn();
-                    },
-                    complete: function() {
-                        $('#btnPembungaanDeposito').prop('disabled', false).html('<i class="fa fa-calculator"></i> Hitung Bunga Deposito Hari Ini');
-                        $('#loadingOverlay').fadeOut();
-                    },
                     success: function(response) {
                         if (response.success) {
-                            Swal.fire("Berhasil!", response.success, "success").then(() => table.ajax.reload()); 
-                        } else if (response.empty) {
-                            Swal.fire("Informasi", response.empty, "info");
+                            Swal.fire("Berhasil!", response.success, "success");
+                            $('#tabel_bunga').DataTable().ajax.reload(null, false);
                         } else {
-                            Swal.fire("Gagal!", response.error || "Terjadi kesalahan.", "error");
+                            Swal.fire("Gagal!", response.error, "error");
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error("AJAX Error (Hitung Bunga):", { status, error, response: xhr.responseText });
+                        console.error("AJAX Error (Hapus Bunga):", {
+                            status,
+                            error,
+                            response: xhr.responseText
+                        });
                         Swal.fire('Oops... Terjadi Kesalahan', 'Sistem tidak dapat terhubung ke server.', 'error');
                     }
                 });
             }
         });
+    }
+
+    // Semua kode jQuery dibungkus di dalam $(document).ready()
+    $(document).ready(function() {
+        var table = $('#tabel_bunga').DataTable({
+            responsive: true,
+            processing: true,
+            serverSide: true,
+            order: [
+                [3, "desc"]
+            ],
+            ajax: {
+                url: "<?= site_url('bunga_deposito/fetchBungaDeposito') ?>",
+                type: "POST",
+                data: function(d) {
+                    d.start_date = $('#start_date').val();
+                    d.end_date = $('#end_date').val();
+                },
+                dataSrc: function(json) {
+                    $('#total_bunga_display').text('Rp ' + (json.total_bunga || '0'));
+                    return json.data;
+                }
+            },
+            "columns": [{
+                    "data": 0,
+                    "orderable": false
+                },
+                {
+                    "data": 1
+                },
+                {
+                    "data": 2
+                },
+                {
+                    "data": 3
+                },
+                {
+                    "data": 4,
+                    "className": "text-end"
+                },
+                {
+                    "data": 5,
+                    "className": "text-center"
+                }
+                <?php if ($this->session->userdata('level') == 'Admin'): ?>,
+                    {
+                        "data": 6,
+                        "orderable": false,
+                        "className": "text-center"
+                    }
+                <?php endif; ?>
+            ]
+        });
+
+        $('#filterBtn').on('click', function() {
+            table.ajax.reload();
+        });
+
+        $('#btnPembungaanDeposito').click(function() {
+            Swal.fire({
+                title: 'Konfirmasi Proses Pembungaan',
+                html: "Anda yakin ingin menjalankan proses perhitungan bunga untuk hari ini? <br><b>Proses ini tidak dapat dibatalkan.</b>",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Lanjutkan Proses!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: "POST",
+                        url: "<?= site_url('bunga_deposito/run_bunga_deposito') ?>",
+                        dataType: "json",
+                        beforeSend: function() {
+                            $('#btnPembungaanDeposito').prop('disabled', true).html('<i class="fa fa-spin fa-spinner"></i> Memproses...');
+                            $('#loadingOverlay').fadeIn();
+                        },
+                        complete: function() {
+                            $('#btnPembungaanDeposito').prop('disabled', false).html('<i class="fa fa-calculator"></i> Hitung Bunga Deposito Hari Ini');
+                            $('#loadingOverlay').fadeOut();
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire("Berhasil!", response.success, "success").then(() => table.ajax.reload());
+                            } else if (response.empty) {
+                                Swal.fire("Informasi", response.empty, "info");
+                            } else {
+                                Swal.fire("Gagal!", response.error || "Terjadi kesalahan.", "error");
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX Error (Hitung Bunga):", {
+                                status,
+                                error,
+                                response: xhr.responseText
+                            });
+                            Swal.fire('Oops... Terjadi Kesalahan', 'Sistem tidak dapat terhubung ke server.', 'error');
+                        }
+                    });
+                }
+            });
+        });
     });
-});
 </script>

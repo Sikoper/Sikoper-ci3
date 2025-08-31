@@ -17,6 +17,7 @@
                             <th>Nomer Rekening</th>
                             <th>Nomer Telepon</th>
                             <th>Jumlah Saldo</th>
+                            <th>Status</th>
                             <th>#</th>
                         </tr>
                     </thead>
@@ -64,6 +65,9 @@
                 "type": "string"
             },
             {
+                "type": "string"
+            },
+            {
                 "orderable": false
             }
         ],
@@ -74,9 +78,14 @@
                 "width": "5%"
             },
             {
-                "targets": 5,
+                "targets": 2,
                 "orderable": false,
-                "width": "15%"
+                "width": "8%"
+            },
+            {
+                "targets": 6,
+                "orderable": false,
+                "width": "30%"
             }
         ],
     });

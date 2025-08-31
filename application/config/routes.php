@@ -133,6 +133,7 @@ $route['deposito/detail/(:any)'] = 'deposito/detail/$1';
 $route['deposito/print_nasabah'] = 'deposito/print_nasabah';
 $route['deposito/laporan'] = 'deposito/laporan';
 $route['deposito/print_laporan'] = 'deposito/print_laporan';
+$route['deposito/perpanjang'] = 'deposito/perpanjang';
 
 $route['setoran'] = 'setoran';
 $route['setoran/get_no_rekening'] = 'setoran/get_no_rekening';

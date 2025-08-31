@@ -149,7 +149,7 @@
                 ?>
 
                 <a href="<?= base_url('pencairan?id=' . safe_base64_encode($deposito->id)) ?>"
-                    class="btn btn-danger <?= ($deposito->status !== 'aktif') ? 'disabled' : '' ?>">
+                    class="btn btn-danger <?= in_array($deposito->status, ['aktif', 'jatuh tempo']) ? '' : 'disabled' ?>">
                     <i class="fa fa-credit-card"></i>
                     Cairkan Deposito
                 </a>

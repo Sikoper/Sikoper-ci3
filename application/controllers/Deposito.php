@@ -27,6 +27,7 @@ class Deposito extends CI_Controller
 
     public function index()
     {
+        $this->Deposito_model->update_status_jatuh_tempo();
         $parser = [
             'judul' => "Data Deposito",
             'isi'   => $this->load->view('deposito/index', '', TRUE)
@@ -47,15 +48,37 @@ class Deposito extends CI_Controller
             $no = $_POST['start'];
             $level = $this->session->userdata('level');
 
+
             foreach ($list as $field) {
                 $no++;
                 $row = array();
+
+                $badgeClass = 'bg-secondary';
+
+                switch ($field->status) {
+                    case 'aktif':
+                        $badgeClass = 'bg-success';
+                        break;
+                    case 'jatuh tempo':
+                        $badgeClass = 'bg-warning';
+                        break;
+                    case 'nonaktif':
+                        $badgeClass = 'bg-secondary';
+                        break;
+                    case 'ditutup':
+                        $badgeClass = 'bg-secondary';
+                        break;
+                    default:
+                        $badgeClass = 'bg-light text-dark';
+                        break;
+                }
 
                 $row[] = "<div class=\"text-center\">$no</div>";
                 $row[] = $field->nama_nasabah;
                 $row[] = $field->no_rekening;
                 $row[] = $field->telp_nasabah;
                 $row[] = number_format($field->jumlah_deposito, 0, ',', '.');
+                $row[] = "<div class=\"badge $badgeClass text-capitalize\" style=\"min-width:100px; display:inline-block; text-align:center;\">{$field->status}</div>";
                 if ($level == 'Admin') {
                     $row[] = '<button type="button" class="btn btn-success" onclick="window.location=\'deposito/edit/' . safe_base64_encode($field->no_rekening) . '\'">
                                     <i class="fa fa-edit fa-fw"></i>
@@ -68,10 +91,12 @@ class Deposito extends CI_Controller
                                 </button>
                                 <button type="button" class="btn btn-primary" onclick="printSertifikat(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
                                     <i class="fa fa-file"></i>
-                                </button>';
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="window.location=\'' . base_url('pencairan?id=') . safe_base64_encode($field->id) . '\'">Pencairan</button>
+                                <button type="button" class="btn btn-primary" onclick="window.location=\'' . base_url('deposito/perpanjang?id=') . safe_base64_encode($field->id) . '\'">Perpanjang</button>';
                 } else {
                     $row[] = '
-                            <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->no_rekening) . '\'">
+                            <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->id) . '\'">
                                 <i class="fa fa-info fa-fw"></i>
                             </button>
                             <button type="button" class="btn btn-primary" onclick="printSertifikat(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
@@ -273,6 +298,15 @@ class Deposito extends CI_Controller
         } else {
             redirect('unauthorized_403');
         }
+    }
+
+    public function perpanjang()
+    {
+        $parser = [
+            'judul' => " Form Perpanjangan Deposito",
+            'isi'   => $this->load->view('deposito/perpanjang', '', TRUE)
+        ];
+        $this->parser->parse('templates/main', $parser);
     }
 
     public function delete()

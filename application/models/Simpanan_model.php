@@ -6,7 +6,7 @@ class Simpanan_model extends CI_Model
     var $table = 'tbsimpanan';
     var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_simpanan',  null);
     var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbjenistabungan.nama');
-    var $order = array('no_rekening' => 'ASC');
+    var $order = array('created_at' => 'DESC');
 
     public $_table_detail_simpanan = 'tbdetail_simpanan';
     public $_table_transaksi = 'tbtransaksi';

@@ -81,45 +81,45 @@ class Bunga_deposito extends CI_Controller
         echo json_encode($output);
     }
 
-public function fetchNasabahDepositoBunga()
-{
-    if (!$this->input->is_ajax_request()) {
-        exit('Maaf data tidak bisa ditampilkan');
-    }
-
-    $deposito_id = $this->input->post('deposito_id');
-    $deposito = $this->Deposito_model->get_by_id($deposito_id); 
-    $list = $this->Bunga_deposito_model->get_detail_bunga_by_deposito_id($deposito_id);
-
-    $data = array();
-    $no = 0;
-
-    if (!empty($list)) {
-        foreach ($list as $field) {
-            $no++;
-            $row = array();
-            $row[] = "<div class=\"text-center\">{$no}</div>";
-            $row[] = date('d-m-Y', strtotime($field->tanggal_perhitungan));
-            $row[] = "Rp " . number_format($field->jumlah_bunga, 2, ',', '.');
-            $row[] = ($deposito ? $deposito->rate_bunga : '0') . " %";
-            $row[] = "<button class=\"btn btn-sm btn-danger\" onclick=\"deleteItem('{$field->id}', '{$deposito->no_rekening}')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
-
-            $data[] = $row;
+    public function fetchNasabahDepositoBunga()
+    {
+        if (!$this->input->is_ajax_request()) {
+            exit('Maaf data tidak bisa ditampilkan');
         }
+
+        $deposito_id = $this->input->post('deposito_id');
+        $deposito = $this->Deposito_model->get_by_id($deposito_id);
+        $list = $this->Bunga_deposito_model->get_detail_bunga_by_deposito_id($deposito_id);
+
+        $data = array();
+        $no = 0;
+
+        if (!empty($list)) {
+            foreach ($list as $field) {
+                $no++;
+                $row = array();
+                $row[] = "<div class=\"text-center\">{$no}</div>";
+                $row[] = date('d-m-Y', strtotime($field->tanggal_perhitungan));
+                $row[] = "Rp " . number_format($field->jumlah_bunga, 2, ',', '.');
+                $row[] = ($deposito ? $deposito->rate_bunga : '0') . " %";
+                $row[] = "<button class=\"btn btn-sm btn-danger\" onclick=\"deleteItem('{$field->id}', '{$deposito->no_rekening}')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+
+                $data[] = $row;
+            }
+        }
+
+        $total_bunga = $this->Bunga_deposito_model->get_total_detail_bunga($deposito_id);
+
+        $output = array(
+            "draw" => $this->input->post('draw') ? (int)$this->input->post('draw') : 1,
+            "recordsTotal" => count($list),
+            "recordsFiltered" => count($list),
+            "data" => $data,
+            "total_bunga" => number_format($total_bunga, 2, ',', '.')
+        );
+
+        echo json_encode($output);
     }
-
-    $total_bunga = $this->Bunga_deposito_model->get_total_detail_bunga($deposito_id);
-
-    $output = array(
-        "draw" => $this->input->post('draw') ? (int)$this->input->post('draw') : 1,
-        "recordsTotal" => count($list),
-        "recordsFiltered" => count($list),
-        "data" => $data,
-        "total_bunga" => number_format($total_bunga, 2, ',', '.')
-    );
-
-    echo json_encode($output);
-}
 
     public function delete()
     {
