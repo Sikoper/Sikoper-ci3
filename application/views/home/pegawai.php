@@ -5,39 +5,56 @@
                 <div class="card-body">
                     <p class="mb-3">Silakan gunakan menu di bawah ini untuk mengakses fitur-fitur yang tersedia:</p>
 
-                    <div class="row">
-                        <!-- Transaksi Buttons -->
-                        <div class="col-md-6 mb-3">
-                            <h5>Transaksi</h5>
-                            <a href="<?= base_url('setoran') ?>" class="btn btn-success mb-2 w-100">
-                                <i class="bi bi-plus-circle"></i> Setoran Tunai
-                            </a>
-                            <a href="<?= base_url('penarikan') ?>" class="btn btn-danger mb-2 w-100">
-                                <i class="bi bi-dash-circle"></i> Penarikan Tunai
-                            </a>
-                            <a href="<?= base_url('pencairan') ?>" class="btn btn-warning mb-2 w-100">
-                                <i class="fa fa-wallet"></i> Pencairan Deposito
-                            </a>
-                            <a href="<?= base_url('bunga') ?>" class="btn btn-primary mb-2 w-100">
-                                <i class="bi bi-percent"></i> Proses Bunga
-                            </a>
+                    <div class="card-body p-4">
+                        <h5 class="card-title pb-3 border-bottom mb-4">
+                            <i class="bi bi-lightning-charge-fill me-2"></i>Menu Utama Pegawai
+                        </h5>
+
+                        <p class="text-muted small fw-bold mb-3">TRANSAKSI KEUANGAN</p>
+                        <div class="row mb-3">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <a href="<?= base_url('setoran') ?>" class="btn btn-success btn-lg w-100 p-3">
+                                    <i class="bi bi-arrow-down-circle me-2"></i> Setor Tunai
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <a href="<?= base_url('penarikan') ?>" class="btn btn-danger btn-lg w-100 p-3">
+                                    <i class="bi bi-arrow-up-circle me-2"></i> Tarik Tunai
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <a href="<?= base_url('Deposito/add') ?>" class="btn btn-success btn-lg w-100 p-3">
+                                    <i class="bi bi-arrow-down-circle me-2"></i> Setor Deposito
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <a href="<?= base_url('Pencairan') ?>" class="btn btn-danger btn-lg w-100 p-3">
+                                    <i class="bi bi-arrow-up-circle me-2"></i> Cairkan Deposito
+                                </a>
+                            </div>
                         </div>
 
-                        <!-- Data Master Buttons -->
-                        <div class="col-md-6 mb-3">
-                            <h5>Data Master</h5>
-                            <a href="<?= base_url('nasabah') ?>" class="btn btn-outline-dark mb-2 w-100">
-                                <i class="bi bi-people-fill"></i> Data Nasabah
-                            </a>
-                            <a href="<?= base_url('simpanan') ?>" class="btn btn-outline-primary mb-2 w-100">
-                                <i class="bi bi-wallet2"></i> Data Tabungan
-                            </a>
-                            <a href="<?= base_url('deposito') ?>" class="btn btn-outline-success mb-2 w-100">
-                                <i class="fa fa-bank"></i> Data Deposito
-                            </a>
+                        <hr class="my-4">
+
+                        <p class="text-muted small fw-bold mb-3">PENDAFTARAN & PEMBUKAAN REKENING</p>
+                        <div class="row">
+                            <div class="col-lg-4 col-md-12 mb-3">
+                                <a href="<?= base_url('nasabah/add') ?>" class="btn btn-primary btn-lg w-100 p-3">
+                                    <i class="bi bi-person-plus-fill me-2"></i> Tambah Nasabah
+                                </a>
+                            </div>
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <a href="<?= base_url('simpanan/add') ?>" class="btn btn-info btn-lg w-100 p-3">
+                                    <i class="bi bi-journal-plus me-2"></i> Buka Tabungan
+                                </a>
+                            </div>
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <a href="<?= base_url('deposito/add') ?>" class="btn btn-secondary btn-lg w-100 p-3">
+                                    <i class="bi bi-wallet2 me-2"></i> Buka Deposito
+                                </a>
+                            </div>
                         </div>
                     </div>
-
                     <p class="mt-4 text-muted">Jika Anda mengalami kendala, silakan hubungi Administrator.</p>
                 </div>
             </div>
