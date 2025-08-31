@@ -16,7 +16,7 @@
                             <th>Nik</th>
                             <th>Nama Nasabah</th>
                             <th>Nomer Telepon</th>
-                            <th>Email</th>
+                            <th>Alamat</th>
                             <th>#</th>
                         </tr>
                     </thead>

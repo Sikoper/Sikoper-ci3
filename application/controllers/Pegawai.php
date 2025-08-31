@@ -98,7 +98,7 @@ class Pegawai extends CI_Controller
                 echo json_encode($msg);
                 return;
             }
-            
+
             $nik = $this->input->post('nik');
             $nama_lengkap = $this->input->post('nama_lengkap');
             $tempat_lahir = $this->input->post('tempat_lahir');
@@ -109,9 +109,8 @@ class Pegawai extends CI_Controller
             $telp = $this->input->post('telp');
             $jabatan = $this->input->post('jabatan');
 
-            $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbpegawai.nik]', [
+            $this->form_validation->set_rules('nik', 'NIK', 'required', [
                 'required'   => 'NIK wajib diisi.',
-                'is_unique'  => 'NIK sudah terdaftar.'
             ]);
 
             $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]', [
@@ -141,7 +140,7 @@ class Pegawai extends CI_Controller
                 'required' => 'Agama harus diisi.'
             ]);
 
-            $this->form_validation->set_rules('telp', 'Nomer Telpon', 'required|numeric|min_length[10]', [
+            $this->form_validation->set_rules('telp', 'Nomer Telpon', 'required', [
                 'required' => 'Nomer telepon harus diisi.'
             ]);
 
@@ -278,17 +277,9 @@ class Pegawai extends CI_Controller
             $telp = $this->input->post('telp');
             $jabatan = $this->input->post('jabatan');
 
-            $pegawai = $this->Pegawai_model->get_data_by_id($id);
-            if ($pegawai->nik == $nik) {
-                $this->form_validation->set_rules('nik', 'NIK', 'required', [
-                    'required'   => 'NIK wajib diisi.',
-                ]);
-            } else {
-                $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbpegawai.nik]', [
-                    'required'   => 'NIK wajib diisi.',
-                    'is_unique'  => 'NIK sudah terdaftar.'
-                ]);
-            };
+            $this->form_validation->set_rules('nik', 'NIK', 'required', [
+                'required'   => 'NIK wajib diisi.',
+            ]);
 
             $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]', [
                 'required'     => 'Nama tidak boleh kosong.',
@@ -317,7 +308,7 @@ class Pegawai extends CI_Controller
                 'required' => 'Agama harus diisi.'
             ]);
 
-            $this->form_validation->set_rules('telp', 'Nomer Telpon', 'required|numeric|min_length[10]', [
+            $this->form_validation->set_rules('telp', 'Nomer Telpon', 'required', [
                 'required' => 'Nomer telepon harus diisi.'
             ]);
 
@@ -405,7 +396,7 @@ class Pegawai extends CI_Controller
             $pegawai = $this->Pegawai_model->search_pegawai($keyword);
         } else {
             $this->db->select('id, nama_lengkap');
-            $this->db->where('user_token','1');
+            $this->db->where('user_token', '1');
             $this->db->from('tbpegawai');
             $this->db->limit(100);
             $pegawai = $this->db->get()->result();
@@ -413,9 +404,13 @@ class Pegawai extends CI_Controller
 
         $data = [];
         foreach ($pegawai as $row) {
+            $parts = explode(" ", trim($row->nama_lengkap));
+            $last_name = end($parts);
+
             $data[] = [
-                'id' => $row->id,
-                'text' => $row->nama_lengkap
+                'id'        => $row->id,
+                'text'      => $row->nama_lengkap,
+                'last_name' => $last_name
             ];
         }
 

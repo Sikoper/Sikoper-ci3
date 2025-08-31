@@ -263,17 +263,17 @@ class Deposito extends CI_Controller
                 // exit;
 
                 $data = [
-                    'tanggal_deposito' => $this->input->post('tanggal_deposito'),
-                    'no_rekening' => $this->input->post('nomor_rekening'),
-                    'nasabah_id' => $this->input->post('nasabah'),
-                    'pegawai_id' => $this->input->post('pegawai_id'),
-                    'jenistabungan_id' => $this->input->post('jenis_tabungan'),
-                    'jumlah_deposito' => str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_deposito')),
-                    'durasi' => $this->input->post('durasi'),
-                    'rate_bunga' => $this->input->post('bunga'),
-                    'nama_ahli_waris' => $this->input->post('nama_ahli_waris'),
-                    'telp_ahli_waris' => $this->input->post('kontak_ahli_waris'),
-                    'hubungan_ahli_waris' => $this->input->post('hubungan_ahli_waris'),
+                    'tanggal_deposito' => $tanggal_deposito,
+                    'no_rekening' => $no_rekening,
+                    'nasabah_id' => $nasabah,
+                    'pegawai_id' => $pegawai,
+                    'jenistabungan_id' => $jenis_tabungan,
+                    'jumlah_deposito' => str_replace(['.', ','], ['', '.'], $jumlah_deposito),
+                    'durasi' => $durasi,
+                    'rate_bunga' => $rate_bunga,
+                    'nama_ahli_waris' => $nama_ahli_waris,
+                    'telp_ahli_waris' => $kontak_ahli_waris,
+                    'hubungan_ahli_waris' => $hubungan_ahli_waris,
                 ];
 
                 // echo '<pre>';
@@ -300,13 +300,128 @@ class Deposito extends CI_Controller
         }
     }
 
+    public function get_next_rekening()
+    {
+        $this->db->select('no_rekening');
+        $this->db->from('tbdeposito');
+        $this->db->order_by('id', 'DESC');
+        $this->db->limit(1);
+        $query = $this->db->get();
+
+        if ($query && $query->num_rows() > 0) {
+            $last = $query->row();
+            $lastNumber = (int) substr($last->no_rekening, 1);
+            $nextNumber = $lastNumber + 1;
+            $lastRek = $last->no_rekening;
+        } else {
+            $nextNumber = 1;
+            $lastRek = '-';
+        }
+
+        $newRek = 'D' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        echo json_encode([
+            'next_rekening' => $newRek,
+            'last_rekening' => $lastRek
+        ]);
+    }
+
     public function perpanjang()
     {
+        // Get the encoded ID from the URL query string
+        $encoded_id = $this->input->get('id');
+        if (!$encoded_id) {
+            // Handle missing ID
+            show_error('ID Deposito tidak ditemukan.', 404);
+            return;
+        }
+
+        function safe_base64_decode($string)
+        {
+            return base64_decode(strtr($string, '-_?', '+/='));
+        }
+
+        // Decode the ID
+        $id = safe_base64_decode($encoded_id);
+        $data['title'] = "Perpanjang Deposito";
+        $data['level'] = $this->session->userdata('level');
+        $data['deposito'] = $this->Deposito_model->get_data_by_id($id);
+
+        if (!$data['deposito']) {
+            show_error('Data Deposito tidak valid.', 404);
+            return;
+        }
+
+        $data['nasabah'] = $this->Nasabah_model->get_data_by_id($data['deposito']->nasabah_id);
+        $query_jenis = $this->db
+            ->select('*')
+            ->from('tbjenistabungan')
+            ->like('nama', 'deposito', 'both') // 'both' adds wildcards %deposito%
+            ->get();
+        $data['jenis'] = $query_jenis->row();
+        $data['pegawai'] = $this->Pegawai_model->get_data();
+
+        // Load the new view for renewal
         $parser = [
-            'judul' => " Form Perpanjangan Deposito",
-            'isi'   => $this->load->view('deposito/perpanjang', '', TRUE)
+            'judul' => "Form Perpanjang Deposito",
+            'isi'   => $this->load->view('deposito/perpanjang', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
+    }
+
+    public function proses_perpanjang()
+    {
+        if ($this->input->is_ajax_request()) {
+            $allowed_roles = ['Admin', 'Direktur', 'Pegawai'];
+            $level = $this->session->userdata('level');
+
+            if (!in_array($level, $allowed_roles)) {
+                echo json_encode(['error' => 'Unauthorized 403']);
+                return;
+            }
+
+            $id = $this->input->post('id');
+            $durasi = $this->input->post('durasi');
+            $bunga_baru = str_replace(',', '.', $this->input->post('bunga'));
+
+            // --- Validation Rules ---
+            $this->form_validation->set_rules('durasi', 'Jangka Waktu', 'required', [
+                'required' => 'Jangka waktu perpanjangan wajib dipilih.'
+            ]);
+            $this->form_validation->set_rules('bunga', 'Jumlah Bunga', 'required', [
+                'required' => 'Bunga tidak boleh kosong.'
+            ]);
+
+            if ($this->form_validation->run() == FALSE) {
+                $msg = [
+                    'error' => [
+                        'errorDurasi' => form_error('durasi'),
+                        'errorBunga'  => form_error('bunga'),
+                    ]
+                ];
+            } else {
+                $tanggal_perpanjangan = date('Y-m-d');
+
+                // Data array updated to exclude 'tanggal_jatuh_tempo'
+                $data = [
+                    'tanggal_deposito'    => $tanggal_perpanjangan,
+                    'durasi'              => $durasi,
+                    'rate_bunga'          => $bunga_baru,
+                    'status'              => 'aktif'
+                ];
+
+                $updated = $this->Deposito_model->edit_data($id, $data);
+
+                if ($updated) {
+                    $msg = ['success' => 'Deposito berhasil diperpanjang dengan suku bunga terbaru.'];
+                    push_event('deposito-channel', 'deposito-event', ['message' => 'Deposito berhasil diperpanjang!']);
+                } else {
+                    $msg = ['error' => 'Gagal memperpanjang data deposito.'];
+                }
+            }
+
+            echo json_encode($msg);
+        }
     }
 
     public function delete()

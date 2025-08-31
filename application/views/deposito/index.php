@@ -79,7 +79,6 @@
             },
             {
                 "targets": 2,
-                "orderable": false,
                 "width": "8%"
             },
             {

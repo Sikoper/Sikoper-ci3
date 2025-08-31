@@ -422,7 +422,6 @@
         });
     });
 
-
     $('#nasabah').select2({
         placeholder: 'Cari nama nasabah...',
         ajax: {

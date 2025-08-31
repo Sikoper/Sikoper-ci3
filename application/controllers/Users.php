@@ -90,7 +90,7 @@ class Users extends CI_Controller
                 'regex_match'  => 'Username harus mengandung huruf kecil, angka, dan simbol opsional.',
                 'is_unique'    => 'Username sudah digunakan.',
             ]);
-            $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]|regex_match[/^(?=.*[A-Z])(?=.*\d).+$/]', [
+            $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]|regex_match[/^(?=.*\d).+$/]', [
                 'required'     => 'Password wajib diisi.',
                 'min_length'   => 'Password harus lebih dari 6 karakter.',
                 'regex_match'  => 'Password harus mengandung setidaknya satu huruf kapital dan satu angka.'
@@ -208,7 +208,7 @@ class Users extends CI_Controller
                 ]);
             };
             if (!empty($password)) {
-                $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]|regex_match[/^(?=.*[A-Z])(?=.*\d).+$/]', [
+                $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]|regex_match[/^(?=.*\d).+$/]', [
                     'required'     => 'Password wajib diisi.',
                     'min_length'   => 'Password harus lebih dari 6 karakter.',
                     'regex_match'  => 'Password harus mengandung setidaknya satu huruf kapital dan satu angka.'
@@ -244,5 +244,33 @@ class Users extends CI_Controller
 
             echo json_encode($msg);
         }
+    }
+
+    public function cari_pegawai_singkat()
+    {
+        $keyword = $this->input->get('q');
+
+        $this->db->select('id, nama_lengkap');
+        $this->db->where('user_token', '1');
+        $this->db->from('tbpegawai');
+        $this->db->limit(100);
+        $pegawai = $this->db->get()->result();
+
+        $data = [];
+        foreach ($pegawai as $row) {
+            // Ambil kata terakhir dari nama_lengkap
+            $parts = explode(" ", trim($row->nama_lengkap));
+            $last_name = end($parts);
+
+            // Kalau ada pencarian keyword, filter berdasarkan last name
+            if (empty($keyword) || stripos($last_name, $keyword) !== false) {
+                $data[] = [
+                    'id'   => $row->id,
+                    'text' => $last_name
+                ];
+            }
+        }
+
+        echo json_encode($data);
     }
 }

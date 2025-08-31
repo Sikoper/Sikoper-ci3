@@ -172,10 +172,12 @@
 
     $('#pegawai').on('select2:select', function(e) {
         let id = e.params.data.id;
-        let nama = e.params.data.text;
+        let fullName = e.params.data.text; // full name (select2 display)
+        let lastName = e.params.data.last_name; // last name (from JSON)
         let angka = Math.floor(Math.random() * 90) + 10;
+
         $('#pegawai_id').val(id);
-        $('#nama').val(nama);
-        $('#username').val(nama.toLowerCase().replace(/\s/g, '') + angka);
+        $('#nama').val(lastName); // pakai last name di field
+        $('#username').val(lastName.toLowerCase().replace(/\s/g, '') + angka);
     });
 </script>

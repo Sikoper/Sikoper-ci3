@@ -5,7 +5,7 @@ class Deposito_model extends CI_Model
 {
     var $table = 'tbdeposito';
     var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_deposito', 'status', null);
-    var $column_search = array('tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
+    var $column_search = array('tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbdeposito.status');
     var $order = array('created_at' => 'DESC');
 
     public $_table_penarikan_deposito = 'tbpenarikan_deposito';
