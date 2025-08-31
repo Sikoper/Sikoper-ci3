@@ -386,6 +386,42 @@ class Deposito_model extends CI_Model
         }
     }
 
+    public function perpanjang_otomatis()
+    {
+        $today = date('Y-m-d');
+        $file = APPPATH . 'cache/last_auto_renew_deposito.txt';
+        $last_run = file_exists($file) ? file_get_contents($file) : null;
+
+        if ($last_run !== $today) {
+            $jenis_query = $this->db->select('bunga')
+                ->from('tbjenistabungan')
+                ->like('nama', 'deposito', 'both')
+                ->get();
+            $jenis = $jenis_query->row();
+
+            if (!$jenis) {
+                log_message('error', 'Auto-renew failed: Jenis tabungan "Deposito" not found.');
+                return;
+            }
+            $bunga_terbaru = $jenis->bunga;
+
+            $sql = "
+                UPDATE tbdeposito
+                SET 
+                    status = 'aktif',
+                    tanggal_deposito = ?, -- The renewal date is today
+                    rate_bunga = ?         -- The new interest rate
+                WHERE
+                    status = 'jatuh tempo'
+                    AND DATE_ADD(tanggal_deposito, INTERVAL durasi MONTH) <= DATE_SUB(?, INTERVAL 7 DAY)
+            ";
+
+            $this->db->query($sql, [$today, $bunga_terbaru, $today]);
+
+            file_put_contents($file, $today);
+        }
+    }
+
     public function get_transaksi_by_deposito($id, $tanggal_mulai, $tanggal_akhir, $jenis_laporan = '3')
     {
         $deposito = $this->db->select('jumlah_deposito, tanggal_deposito, pegawai_id')

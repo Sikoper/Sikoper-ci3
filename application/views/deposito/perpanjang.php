@@ -53,12 +53,12 @@
                         <label for="durasi"><strong>Pilih Jangka Waktu Perpanjangan</strong></label>
                         <select id="durasi" name="durasi" class="form-control" autocomplete="off">
                             <option value=""> -- Pilih Jangka Waktu Baru -- </option>
-                            <option value="6">6 Bulan / &frac12; Tahun</option>
-                            <option value="12">12 Bulan / 1 Tahun</option>
-                            <option value="18">18 Bulan / 1.5 Tahun</option>
-                            <option value="24">24 Bulan / 2 Tahun</option>
-                            <option value="30">30 Bulan / 2.5 Tahun</option>
-                            <option value="36">36 Bulan / 3 Tahun</option>
+                            <option value="6" <?= ($deposito->durasi == 6) ? 'selected' : '' ?>>6 Bulan / ½ Tahun</option>
+                            <option value="12" <?= ($deposito->durasi == 12) ? 'selected' : '' ?>>12 Bulan / 1 Tahun</option>
+                            <option value="18" <?= ($deposito->durasi == 18) ? 'selected' : '' ?>>18 Bulan / 1.5 Tahun</option>
+                            <option value="24" <?= ($deposito->durasi == 24) ? 'selected' : '' ?>>24 Bulan / 2 Tahun</option>
+                            <option value="30" <?= ($deposito->durasi == 30) ? 'selected' : '' ?>>30 Bulan / 2.5 Tahun</option>
+                            <option value="36" <?= ($deposito->durasi == 36) ? 'selected' : '' ?>>36 Bulan / 3 Tahun</option>
                         </select>
                         <div id="errorDurasi" class="invalid-feedback" style="display: none;"></div>
                     </div>
