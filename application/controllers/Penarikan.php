@@ -129,40 +129,34 @@ class Penarikan extends CI_Controller
 
     public function proses()
     {
-        // --- Basic setup remains the same ---
+        // --- Basic setup ---
         $waktu_sekarang = date('H:i:s');
-        $tanggal_penarikan_input = $this->input->post('tanggal_penarikan') . ' ' . $waktu_sekarang;
+        $tanggal_input = $this->input->post('tanggal_penarikan');
+        $tanggal_penarikan_input = $tanggal_input . ' ' . $waktu_sekarang;
         $simpanan_id = $this->input->post('tabungan');
         $jumlah_penarikan_diminta = (float) str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_penarikan') ?? '');
-        $pegawai_id = $this->input->post('pegawai_id');
+        $pegawai_id = $this->session->userdata('level') == 'Admin' ? $this->input->post('pegawai_id') : $this->session->userdata('pegawai_id');
         $level_user = $this->session->userdata('level');
 
-        // --- Validation rules remain mostly the same ---
+        // --- Validation rules ---
         $this->form_validation->set_rules('tabungan', 'Tabungan', 'required', ['required' => 'Tabungan wajib dipilih.']);
         $this->form_validation->set_rules('jumlah_penarikan', 'Jumlah Penarikan', 'required', ['required' => 'Jumlah penarikan wajib diisi.']);
         if ($level_user == 'Admin') {
             $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', ['required' => 'Pegawai wajib dipilih oleh Admin.']);
         }
 
-        // --- Simplified balance and validation logic ---
-        $saldo_pokok = 0;
-        $pengendapan_minimal = 0;
-
+        // --- Balance and withdrawal validation logic ---
         if (!empty($simpanan_id)) {
             $simpanan_data = $this->Penarikan_model->get_simpanan_by_id($simpanan_id);
             if (!empty($simpanan_data)) {
                 $saldo_pokok = (float) $simpanan_data->jumlah_simpanan;
-                // The 'pengendapan' value is still needed from the join in get_simpanan_by_id
                 $pengendapan_minimal = (float) $simpanan_data->pengendapan;
-
-                // Update the validation callback with fewer parameters
                 $validation_params = implode(',', [$saldo_pokok, $pengendapan_minimal]);
                 $this->form_validation->set_rules('jumlah_penarikan', 'Jumlah Penarikan', 'required|callback_valid_jumlah_penarikan[' . $validation_params . ']');
             }
         }
 
         if ($this->form_validation->run() == FALSE) {
-            // ... (Error handling remains the same) ...
             $errors = [
                 'errorSimpanan' => form_error('tabungan'),
                 'errorJumlah'   => form_error('jumlah_penarikan')
@@ -174,33 +168,57 @@ class Penarikan extends CI_Controller
             return;
         }
 
-        // --- Simplified database transaction ---
+        // --- DATABASE TRANSACTION LOGIC ---
         $this->db->trans_start();
 
-        // REMOVED: penarikan_dari_pokok and penarikan_dari_bunga
-        $data_penarikan_header = [
-            'simpanan_id'       => $simpanan_id,
-            'pegawai_id'        => $pegawai_id,
-            'tanggal_penarikan' => $tanggal_penarikan_input,
-            'jumlah_denda'      => 0, // Assuming no penalty for now, adjust if needed
-            'total_penarikan'   => $jumlah_penarikan_diminta,
-        ];
+        try {
+            // 1. Check if a withdrawal header already exists for this account on this date
+            $penarikan_header = $this->Penarikan_model->get_penarikan_by_date($simpanan_id, $tanggal_input);
+            $penarikan_id = 0;
 
-        // The 'simpan_penarikan' function now inserts into the original 'tbpenarikan' table structure
-        $this->db->insert('tbpenarikan', $data_penarikan_header);
-        $id_penarikan_baru = $this->db->insert_id();
+            if ($penarikan_header) {
+                // 2a. If header exists, use its ID
+                $penarikan_id = $penarikan_header->id;
+            } else {
+                // 2b. If not, create a new header record
+                $data_penarikan_header = [
+                    'simpanan_id'       => $simpanan_id,
+                    'pegawai_id'        => $pegawai_id,
+                    'tanggal_penarikan' => $tanggal_penarikan_input,
+                    'jumlah_denda'      => 0,
+                    'total_penarikan'   => 0
+                ];
+                $penarikan_id = $this->Penarikan_model->simpan_penarikan($data_penarikan_header);
+            }
 
-        if ($id_penarikan_baru) {
-            // Directly reduce the main balance by the requested amount
+            if (!$penarikan_id) {
+                throw new Exception('Gagal membuat atau menemukan header penarikan.');
+            }
+
+            // 3. Save the withdrawal detail record
+            $data_penarikan_detail = [
+                'penarikan_id'      => $penarikan_id, // Link to the header
+                'simpanan_id'       => $simpanan_id,
+                'tanggal_penarikan' => $tanggal_penarikan_input,
+                'jumlah_penarikan'  => $jumlah_penarikan_diminta,
+                'pegawai_id'        => $pegawai_id,
+                'status'            => 'disetujui'
+            ];
+            $this->Penarikan_model->simpan_penarikan_detail($data_penarikan_detail);
+
+            // 4. Update the total in the header record by adding the new amount
+            $this->Penarikan_model->update_total_penarikan($penarikan_id, $jumlah_penarikan_diminta);
+
+            // 5. Reduce the main balance in the savings account
             $this->Penarikan_model->kurangi_saldo_pokok($simpanan_id, $jumlah_penarikan_diminta);
 
-            // REMOVED: Call to tandai_bunga_sebagai_ditarik()
-
+            // If all operations were successful, commit the transaction
             $this->db->trans_commit();
-            echo json_encode(['success' => 'Penarikan berhasil diproses.', 'redirect' => site_url('penarikan')]);
-        } else {
+            echo json_encode(['success' => 'Penarikan berhasil diproses.', 'redirect' => site_url('simpanan')]);
+        } catch (Exception $e) {
+            // If any operation fails, roll back the transaction
             $this->db->trans_rollback();
-            echo json_encode(['error_save' => 'Gagal menyimpan data penarikan.']);
+            echo json_encode(['error_save' => $e->getMessage()]);
         }
     }
 
@@ -229,7 +247,7 @@ class Penarikan extends CI_Controller
 
         return TRUE;
     }
-    
+
     public function delete()
     {
         $id = $this->input->post('id');
@@ -443,6 +461,7 @@ class Penarikan extends CI_Controller
 
         $this->db->trans_start();
 
+        // Get the header data before deleting to know how much balance to restore
         $penarikan_data = $this->Penarikan_model->get_penarikan_untuk_dihapus($penarikan_id);
         if (!$penarikan_data) {
             $this->db->trans_rollback();
@@ -450,19 +469,27 @@ class Penarikan extends CI_Controller
             return;
         }
 
+        // The amount to return is the total from the header
         $simpanan_id = $penarikan_data->simpanan_id;
-        $jumlah_kembali_pokok = (float)$penarikan_data->penarikan_dari_pokok;
-        $jumlah_kembali_denda = (float)$penarikan_data->jumlah_denda;
+        $jumlah_total_kembali = (float)$penarikan_data->total_penarikan;
 
+        // 1. Delete all detail records associated with this header
+        // This is important for data integrity
+        $this->db->where('penarikan_id', $penarikan_id);
+        $this->db->delete('tbdetail_penarikan');
+
+        // 2. Delete the header record itself
         $deleted_header = $this->Penarikan_model->hapus_data_penarikan_by_id($penarikan_id);
 
         if ($deleted_header) {
-            $this->Penarikan_model->tambah_saldo_pokok($simpanan_id, $jumlah_kembali_pokok + $jumlah_kembali_denda);
-            $this->Penarikan_model->kembalikan_status_bunga($penarikan_id);
+            // 3. Restore the principal balance with the total withdrawn amount
+            $this->Penarikan_model->tambah_saldo_pokok($simpanan_id, $jumlah_total_kembali);
 
+            // Commit the transaction
             $this->db->trans_commit();
             echo json_encode(['success' => 'Data penarikan berhasil dihapus dan saldo telah dikembalikan.']);
         } else {
+            // If deletion fails, roll back
             $this->db->trans_rollback();
             echo json_encode(['error' => 'Gagal menghapus data penarikan.']);
         }

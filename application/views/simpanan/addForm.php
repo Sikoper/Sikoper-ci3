@@ -33,11 +33,20 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
-                    <div class="form-group" style="height: 80px;">
+                    <div class="form-group" style="height: auto;">
                         <label for="nomor_rekening">Nomor Rekening</label>
                         <div class="input-group">
-                            <input type="text" name="nomor_rekening" id="nomor_rekening" class="form-control text-end" autocomplete="off">
+                            <input type="text" name="nomor_rekening" id="nomor_rekening"
+                                class="form-control text-end" autocomplete="off" readonly>
+                            <button type="button" id="refreshRek" class="btn btn-secondary">
+                                <i class="fa fa-sync"></i>
+                            </button>
                         </div>
+
+                        <div id="lastRekening" class="mt-2 text-primary fw-bold">
+                            Nomor rekening terakhir: <span id="lastRekeningValue">-</span>
+                        </div>
+
                         <div id="errorNoRekening" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -202,6 +211,11 @@
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
     $(document).ready(function() {
+        fetchRekening();
+
+        $('#refreshRek').on('click', function() {
+            fetchRekening();
+        });
         $('#bunga').autoNumeric('init', {
             aSep: ',',
             aDec: '.',
@@ -247,6 +261,22 @@
                     }
                 });
             }
+        }
+
+        function fetchRekening() {
+            $.ajax({
+                url: '<?= base_url("simpanan/get_next_rekening") ?>',
+                method: 'GET',
+                dataType: 'json',
+                success: function(res) {
+                    if (res.next_rekening) {
+                        $('#nomor_rekening').val(res.next_rekening);
+                    }
+                    if (res.last_rekening) {
+                        $('#lastRekeningValue').text(res.last_rekening);
+                    }
+                }
+            });
         }
 
         function jenis_tabungan_handler(response) {
