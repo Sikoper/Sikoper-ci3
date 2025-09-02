@@ -91,7 +91,7 @@
                             <option value="CUSTOMER SERVICE" <?= ($pegawai->jabatan == 'CUSTOMER SERVICE') ? 'selected' : ''; ?>>CUSTOMER SERVICE</option>
                             <option value="PEMASARAN KREDIT" <?= ($pegawai->jabatan == 'PEMASARAN KREDIT') ? 'selected' : ''; ?>>PEMASARAN KREDIT</option>
                             <option value="KEPALA BAGIAN KEUANGAN" <?= ($pegawai->jabatan == 'KEPALA BAGIAN KEUANGAN') ? 'selected' : ''; ?>>KEPALA BAGIAN KEUANGAN</option>
-                            <option value="PEMBUKAAN TABUNGAN" <?= ($pegawai->jabatan == 'PEMBUKAAN TABUNGAN') ? 'selected' : ''; ?>>PEMBUKAAN TABUNGAN</option>
+                            <option value="PEMBUKUAN TABUNGAN" <?= ($pegawai->jabatan == 'PEMBUKUAN TABUNGAN') ? 'selected' : ''; ?>>PEMBUKUAN TABUNGAN</option>
                             <option value="PEMUNGUTAN TABUNGAN" <?= ($pegawai->jabatan == 'PEMUNGUTAN TABUNGAN') ? 'selected' : ''; ?>>PEMUNGUTAN TABUNGAN</option>
                             <option value="PEMBANTU UMUM" <?= ($pegawai->jabatan == 'PEMBANTU UMUM') ? 'selected' : ''; ?>>PEMBANTU UMUM</option>
                         </select>

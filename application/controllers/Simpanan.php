@@ -42,22 +42,22 @@ class Simpanan extends CI_Controller
         }
 
         // if ($this->input->is_ajax_request() == true) {
-            $list = $this->Simpanan_model->get_datatables();
-            $data = array();
-            $no = $_POST['start'];
-            $level = $this->session->userdata('level');
+        $list = $this->Simpanan_model->get_datatables();
+        $data = array();
+        $no = $_POST['start'];
+        $level = $this->session->userdata('level');
 
-            foreach ($list as $field) {
-                $no++;
-                $row = array();
+        foreach ($list as $field) {
+            $no++;
+            $row = array();
 
-                $row[] = "<div class=\"text-center\">$no</div>";
-                $row[] = $field->nama_nasabah;
-                $row[] = $field->no_rekening;
-                $row[] = $field->telp_nasabah;
-                $row[] = number_format($field->jumlah_simpanan, 0, ',', '.');
-                if ($level == 'Admin') {
-                    $row[] = '<button type="button" class="btn btn-success" onclick="window.location=\'simpanan/edit/' . safe_base64_encode($field->no_rekening) . '\'">
+            $row[] = "<div class=\"text-center\">$no</div>";
+            $row[] = $field->nama_nasabah;
+            $row[] = $field->no_rekening;
+            $row[] = $field->telp_nasabah;
+            $row[] = number_format($field->jumlah_simpanan, 0, ',', '.');
+            if ($level == 'Admin') {
+                $row[] = '<button type="button" class="btn btn-success" onclick="window.location=\'simpanan/edit/' . safe_base64_encode($field->no_rekening) . '\'">
                                     <i class="fa fa-edit fa-fw"></i>
                                 </button>
                                 <button type="button" class="btn btn-danger" onclick="deleteItem(\'' . $field->id . '\', \'' . $field->no_rekening . '\')">
@@ -69,26 +69,26 @@ class Simpanan extends CI_Controller
                                 <button type="button" class="btn btn-primary" onclick="printNasabah(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
                                     <i class="fa fa-file"></i>
                                 </button>';
-                } else {
-                    $row[] = '
+            } else {
+                $row[] = '
                             <button type="button" class="btn btn-secondary" onclick="window.location=\'simpanan/detail/' . safe_base64_encode($field->no_rekening) . '\'">
                                 <i class="fa fa-info fa-fw"></i>
                             </button>
                             <button type="button" class="btn btn-primary" onclick="printNasabah(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
                                 <i class="fa fa-file"></i>
                             </button>';
-                }
-                $data[] = $row;
             }
+            $data[] = $row;
+        }
 
-            $output = array(
-                "draw" => $_POST['draw'],
-                "recordsTotal" => $this->Simpanan_model->count_all(),
-                "recordsFiltered" => $this->Simpanan_model->count_filtered(),
-                "data" => $data,
-            );
+        $output = array(
+            "draw" => $_POST['draw'],
+            "recordsTotal" => $this->Simpanan_model->count_all(),
+            "recordsFiltered" => $this->Simpanan_model->count_filtered(),
+            "data" => $data,
+        );
 
-            echo json_encode($output);
+        echo json_encode($output);
         // } else {
         //     exit('Maaf data tidak bisa ditampilkan');
         // }
@@ -660,6 +660,32 @@ class Simpanan extends CI_Controller
             'isi'   => $this->load->view('simpanan/laporan', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
+    }
+
+    public function get_next_rekening()
+    {
+        $this->db->select('no_rekening');
+        $this->db->from('tbsimpanan');
+        $this->db->order_by('id', 'DESC');
+        $this->db->limit(1);
+        $query = $this->db->get();
+
+        if ($query && $query->num_rows() > 0) {
+            $last = $query->row();
+            $lastNumber = (int) substr($last->no_rekening, 1);
+            $nextNumber = $lastNumber + 1;
+            $lastRek = $last->no_rekening;
+        } else {
+            $nextNumber = 1;
+            $lastRek = '-';
+        }
+
+        $newRek = 'D' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        echo json_encode([
+            'next_rekening' => $newRek,
+            'last_rekening' => $lastRek
+        ]);
     }
 
     public function print_laporan()

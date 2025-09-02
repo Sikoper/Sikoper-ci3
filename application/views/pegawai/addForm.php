@@ -92,7 +92,7 @@
                             <option value="CUSTOMER SERVICE">CUSTOMER SERVICE</option>
                             <option value="PEMASARAN KREDIT">PEMASARAN KREDIT</option>
                             <option value="KEPALA BAGIAN KEUANGAN">KEPALA BAGIAN KEUANGAN</option>
-                            <option value="PEMBUKAAN TABUNGAN">PEMBUKAAN TABUNGAN</option>
+                            <option value="PEMBUKUAN TABUNGAN">PEMBUKUAN TABUNGAN</option>
                             <option value="PEMUNGUTAN TABUNGAN">PEMUNGUTAN TABUNGAN</option>
                             <option value="PEMBANTU UMUM">PEMBANTU UMUM</option>
                         </select>
@@ -181,33 +181,6 @@
 </script>
 <script>
     $(document).ready(function() {
-        $('#nik').on('input', function() {
-            let value = $(this).val();
-
-            value = value.replace(/\D/g, '');
-
-            if (value.length > 16) {
-                value = value.slice(0, 16);
-            }
-
-            $(this).val(value);
-        });
-
-        $('#telp').on('input', function() {
-            let value = $(this).val();
-
-            value = value.replace(/\D/g, '');
-
-            if (value.length > 0 && value.charAt(0) !== '0') {
-                value = value.replace(/^[^0]+/, '');
-            }
-
-            if (value.length > 14) {
-                value = value.slice(0, 14);
-            }
-
-            $(this).val(value);
-        });
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();

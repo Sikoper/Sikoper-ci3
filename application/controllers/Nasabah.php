@@ -52,7 +52,7 @@ class Nasabah extends CI_Controller
                 $row[] = $field->nik;
                 $row[] = $field->nama_lengkap;
                 $row[] = $field->telp;
-                $row[] = $field->email;
+                $row[] = $field->alamat;
                 if ($level == 'Admin') {
                     $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-edit fa-fw'></i></button>
                             <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_lengkap . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
@@ -120,18 +120,13 @@ class Nasabah extends CI_Controller
             $agama              = $input->post('agama');
             $pekerjaan          = $input->post('pekerjaan');
             $nama_ibu_kandung   = $input->post('nama_ibu_kandung');
-            $email              = $input->post('email');
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
             $pegawai_id         = $input->post('pegawai_id');
 
             // Validasi
-            $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbnasabah.nik]|numeric|min_length[16]|max_length[16]', [
+            $this->form_validation->set_rules('nik', 'NIK', 'required', [
                 'required'     => 'NIK wajib diisi.',
-                'is_unique'    => 'NIK sudah terdaftar.',
-                'numeric'      => 'NIK harus berupa angka.',
-                'min_length'   => 'NIK harus terdiri dari 16 digit.',
-                'max_length'   => 'NIK harus terdiri dari 16 digit.'
             ]);
 
             $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]', [
@@ -142,12 +137,8 @@ class Nasabah extends CI_Controller
             $this->form_validation->set_rules('jenis_kelamin', 'Jenis Kelamin', 'required', [
                 'required'   => 'Jenis Kelamin tidak boleh kosong.'
             ]);
-            $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'required|max_length[30]', [
+            $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'required', [
                 'required'   => 'Tempat Lahir tidak boleh kosong.',
-                'max_length' => 'Tempat Lahir maksimal 30 karakter.'
-            ]);
-            $this->form_validation->set_rules('tgl_lahir', 'Tanggal Lahir', 'required', [
-                'required'   => 'Tanggal Lahir tidak boleh kosong.'
             ]);
             $this->form_validation->set_rules('agama', 'Agama', 'required', [
                 'required'   => 'Agama tidak boleh kosong.'
@@ -158,16 +149,11 @@ class Nasabah extends CI_Controller
             $this->form_validation->set_rules('nama_ibu_kandung', 'Nama Ibu Kandung', 'required', [
                 'required'   => 'Nama Ibu Kandung tidak boleh kosong.'
             ]);
-            $this->form_validation->set_rules('email', 'Email', 'valid_email', [
-                'valid_email' => 'Format email tidak valid.'
-            ]);
             $this->form_validation->set_rules('alamat', 'Alamat', 'required', [
                 'required'   => 'Alamat tidak boleh kosong.'
             ]);
-            $this->form_validation->set_rules('telp', 'No Telepon', 'required|numeric|min_length[11]', [
+            $this->form_validation->set_rules('telp', 'No Telepon', 'required', [
                 'required'   => 'No Telepon tidak boleh kosong.',
-                'numeric'    => 'No Telepon harus berupa angka.',
-                'min_length' => 'No Telepon minimal 11 karakter.'
             ]);
 
             if ($this->form_validation->run() == FALSE) {
@@ -181,14 +167,7 @@ class Nasabah extends CI_Controller
                         'errorAgama'            => form_error('agama'),
                         'errorPekerjaan'        => form_error('pekerjaan'),
                         'errorNama_ibu_kandung' => form_error('nama_ibu_kandung'),
-                        'errorEmail'            => form_error('email'),
-                        'errorProvinsi'         => form_error('provinsi'),
-                        'errorKabupaten'        => form_error('kabupaten'),
-                        'errorKecamatan'        => form_error('kecamatan'),
-                        'errorDesa'             => form_error('desa'),
                         'errorAlamat'           => form_error('alamat'),
-                        'errorRt'               => form_error('rt'),
-                        'errorRw'               => form_error('rw'),
                         'errorTelp'             => form_error('telp'),
                         'errorJabatan'          => form_error('jenistabungan_id'),
                     ]
@@ -203,7 +182,6 @@ class Nasabah extends CI_Controller
                     'agama'             => $agama,
                     'pekerjaan'         => $pekerjaan,
                     'nama_ibu_kandung'  => $nama_ibu_kandung,
-                    'email'             => $email,
                     'alamat'            => $alamat,
                     'telp'              => $telp,
                     'pegawai_id'        => $pegawai_id
@@ -309,29 +287,13 @@ class Nasabah extends CI_Controller
             $agama              = $input->post('agama');
             $pekerjaan          = $input->post('pekerjaan');
             $nama_ibu_kandung   = $input->post('nama_ibu_kandung');
-            $email              = $input->post('email');
             $alamat             = $input->post('alamat');
             $telp               = $input->post('telp');
             $pegawai_id         = $input->post('pegawai_id');
 
-            // Validasi
-            $nasabah = $this->Nasabah_model->get_data_by_id($id);
-            if ($nasabah->nik == $nik) {
-                $this->form_validation->set_rules('nik', 'NIK', 'required|numeric|min_length[16]|max_length[16]', [
-                    'required'     => 'NIK wajib diisi.',
-                    'numeric'      => 'NIK harus berupa angka.',
-                    'min_length'   => 'NIK harus terdiri dari 16 digit.',
-                    'max_length'   => 'NIK harus terdiri dari 16 digit.'
-                ]);
-            } else {
-                $this->form_validation->set_rules('nik', 'NIK', 'required|is_unique[tbnasabah.nik]|numeric|min_length[16]|max_length[16]', [
-                    'required'     => 'NIK wajib diisi.',
-                    'is_unique'    => 'NIK sudah terdaftar.',
-                    'numeric'      => 'NIK harus berupa angka.',
-                    'min_length'   => 'NIK harus terdiri dari 16 digit.',
-                    'max_length'   => 'NIK harus terdiri dari 16 digit.'
-                ]);
-            };
+            $this->form_validation->set_rules('nik', 'NIK', 'required', [
+                'required'     => 'NIK wajib diisi.',
+            ]);
 
             $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]', [
                 'required'   => 'Nama tidak boleh kosong.',
@@ -345,9 +307,6 @@ class Nasabah extends CI_Controller
                 'required'   => 'Tempat Lahir tidak boleh kosong.',
                 'max_length' => 'Tempat Lahir maksimal 30 karakter.'
             ]);
-            $this->form_validation->set_rules('tgl_lahir', 'Tanggal Lahir', 'required', [
-                'required'   => 'Tanggal Lahir tidak boleh kosong.'
-            ]);
             $this->form_validation->set_rules('agama', 'Agama', 'required', [
                 'required'   => 'Agama tidak boleh kosong.'
             ]);
@@ -357,16 +316,11 @@ class Nasabah extends CI_Controller
             $this->form_validation->set_rules('nama_ibu_kandung', 'Nama Ibu Kandung', 'required', [
                 'required'   => 'Nama Ibu Kandung tidak boleh kosong.'
             ]);
-            $this->form_validation->set_rules('email', 'Email', 'valid_email', [
-                'valid_email' => 'Format email tidak valid.'
-            ]);
             $this->form_validation->set_rules('alamat', 'Alamat', 'required', [
                 'required'   => 'Alamat tidak boleh kosong.'
             ]);
-            $this->form_validation->set_rules('telp', 'No Telepon', 'required|numeric|min_length[10]', [
+            $this->form_validation->set_rules('telp', 'No Telepon', 'required', [
                 'required'   => 'No Telepon tidak boleh kosong.',
-                'numeric'    => 'No Telepon harus berupa angka.',
-                'min_length' => 'No Telepon minimal 11 karakter.'
             ]);
 
             if ($this->form_validation->run() == FALSE) {
@@ -380,14 +334,7 @@ class Nasabah extends CI_Controller
                         'errorAgama'            => form_error('agama'),
                         'errorPekerjaan'        => form_error('pekerjaan'),
                         'errorNama_ibu_kandung' => form_error('nama_ibu_kandung'),
-                        'errorEmail'            => form_error('email'),
-                        'errorProvinsi'         => form_error('provinsi'),
-                        'errorKabupaten'        => form_error('kabupaten'),
-                        'errorKecamatan'        => form_error('kecamatan'),
-                        'errorDesa'             => form_error('desa'),
                         'errorAlamat'           => form_error('alamat'),
-                        'errorRt'               => form_error('rt'),
-                        'errorRw'               => form_error('rw'),
                         'errorTelp'             => form_error('telp'),
                         'errorJabatan'          => form_error('jenistabungan_id'),
                     ]
@@ -402,7 +349,6 @@ class Nasabah extends CI_Controller
                     'agama'             => $agama,
                     'pekerjaan'         => $pekerjaan,
                     'nama_ibu_kandung'  => $nama_ibu_kandung,
-                    'email'             => $email,
                     'alamat'            => $alamat,
                     'telp'              => $telp,
                     'pegawai_id'        => $pegawai_id

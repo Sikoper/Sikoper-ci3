@@ -303,8 +303,15 @@
                                 Swal.fire("Error!", "Terjadi kesalahan yang tidak diketahui saat memproses.", "error");
                             }
                         },
-                        error: function(xhr, thrownError) {
-                            alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                        error: function(xhr, status, error) {
+                            if (xhr.status === 422) {
+                                let response = xhr.responseJSON;
+                                if (response.error) {
+                                    let dataError = response.error;
+                                }
+                            } else {
+                                Swal.fire("Error!", "Terjadi kesalahan pada server.", "error");
+                            }
                         }
                     });
                 }

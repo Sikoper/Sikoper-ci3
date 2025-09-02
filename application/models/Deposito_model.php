@@ -4,9 +4,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Deposito_model extends CI_Model
 {
     var $table = 'tbdeposito';
-    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_deposito', null);
-    var $column_search = array('tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbnasabah.telp', 'tbjenistabungan.nama');
-    var $order = array('no_rekening' => 'ASC');
+    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_deposito', 'status', null);
+    var $column_search = array('tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbdeposito.status');
+    var $order = array('created_at' => 'DESC');
 
     public $_table_penarikan_deposito = 'tbpenarikan_deposito';
     public $_table_bunga_log = 'tbdeposito_bunga_log';
@@ -214,7 +214,10 @@ class Deposito_model extends CI_Model
         $this->db->join('tbnasabah', 'tbnasabah.id = tbdeposito.nasabah_id');
         $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbdeposito.jenistabungan_id');
         $this->db->where('tbjenistabungan.nama', 'Deposito');
-        $this->db->where('tbdeposito.status', 'aktif');
+        $this->db->group_start()
+            ->where('tbdeposito.status', 'aktif')
+            ->or_where('tbdeposito.status', 'jatuh tempo')
+            ->group_end();
         $this->db->where('tbdeposito.jumlah_deposito >', 0);
 
         if ($searchTerm) {
@@ -361,6 +364,64 @@ class Deposito_model extends CI_Model
         ];
     }
 
+    public function update_status_jatuh_tempo()
+    {
+        $today = date('Y-m-d');
+        $file  = APPPATH . 'cache/last_update_deposito.txt';
+
+        $last_run = file_exists($file) ? file_get_contents($file) : null;
+
+        if ($last_run !== $today) {
+            // Jalankan update
+            $sql = "
+            UPDATE tbdeposito 
+            SET status = 'jatuh tempo'
+            WHERE status = 'aktif'
+            AND DATE_ADD(tanggal_deposito, INTERVAL durasi MONTH) <= ?
+        ";
+            $this->db->query($sql, [$today]);
+
+            // Simpan tanggal terbaru
+            file_put_contents($file, $today);
+        }
+    }
+
+    public function perpanjang_otomatis()
+    {
+        $today = date('Y-m-d');
+        $file = APPPATH . 'cache/last_auto_renew_deposito.txt';
+        $last_run = file_exists($file) ? file_get_contents($file) : null;
+
+        if ($last_run !== $today) {
+            $jenis_query = $this->db->select('bunga')
+                ->from('tbjenistabungan')
+                ->like('nama', 'deposito', 'both')
+                ->get();
+            $jenis = $jenis_query->row();
+
+            if (!$jenis) {
+                log_message('error', 'Auto-renew failed: Jenis tabungan "Deposito" not found.');
+                return;
+            }
+            $bunga_terbaru = $jenis->bunga;
+
+            $sql = "
+                UPDATE tbdeposito
+                SET 
+                    status = 'aktif',
+                    tanggal_deposito = ?, -- The renewal date is today
+                    rate_bunga = ?         -- The new interest rate
+                WHERE
+                    status = 'jatuh tempo'
+                    AND DATE_ADD(tanggal_deposito, INTERVAL durasi MONTH) <= DATE_SUB(?, INTERVAL 7 DAY)
+            ";
+
+            $this->db->query($sql, [$today, $bunga_terbaru, $today]);
+
+            file_put_contents($file, $today);
+        }
+    }
+
     public function get_transaksi_by_deposito($id, $tanggal_mulai, $tanggal_akhir, $jenis_laporan = '3')
     {
         $deposito = $this->db->select('jumlah_deposito, tanggal_deposito, pegawai_id')
@@ -454,10 +515,11 @@ class Deposito_model extends CI_Model
 
         $transaksi_bunga = $this->db->query($bunga_sql, [$id, $tgl_akhir_query, $id, $tgl_akhir_query])->result();
 
-
         // Merge semua transaksi
         $semua_transaksi = array_merge([$transaksi_setoran_awal], $transaksi_bunga, $transaksi_penarikan);
-        usort($semua_transaksi, fn($a, $b) => strcmp($a->tanggal, $b->tanggal));
+        usort($semua_transaksi, function ($a, $b) {
+            return strcmp($a->tanggal, $b->tanggal);
+        });
 
         // Hitung total
         $saldo_awal = 0.0;

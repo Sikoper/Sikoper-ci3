@@ -43,6 +43,7 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="tempat_lahir">Tempat Lahir</label>
+                        <i>jika tidak ada silahkan isi dengan (-)</i>
                         <input type="text" id="tempat_lahir" name="tempat_lahir" class="form-control" placeholder="Tempat lahir sesuai KTP" autocomplete="off">
                         <div id="errorTempatLahir" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -50,6 +51,7 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="tanggal_lahir">Tanggal Lahir</label>
+                        <i>Jika tidak ada boleh dikosongkan</i>
                         <input type="date" id="tanggal_lahir" name="tgl_lahir" class="form-control">
                         <div id="errorTanggalLahir" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -57,6 +59,7 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="agama">Agama</label>
+                        <i>jika tidak ada silahkan isi dengan (-)</i>
                         <input type="text" id="agama" name="agama" class="form-control" placeholder="Agama sesuai KTP" autocomplete="off">
                         <div id="errorAgama" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -90,15 +93,9 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="nama_ibu_kanudng">Nama Ibu Kandung</label>
+                        <i>kolom ini opsional, boleh diisi dengan (-)</i>
                         <input type="text" id="nama_ibu_kandung" name="nama_ibu_kandung" class="form-control" placeholder="Nama Ibu Kandung" autocomplete="off">
                         <div id="errorNama_ibu_kandung" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group" style="height: 80px;">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" placeholder="Email Aktif" autocomplete="off">
-                        <div id="errorEmail" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
@@ -111,6 +108,7 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="telp">Nomer Telpon</label>
+                        <i>jika tidak ada silahkan isi dengan (-)</i>
                         <input type="text" id="telp" name="telp" class="form-control" placeholder="Nomer aktif/whatsapp" autocomplete="off">
                         <div id="errorTelp" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -145,34 +143,6 @@
 </section>
 <script>
     $(document).ready(function() {
-        $('#nik').on('input', function() {
-            let value = $(this).val();
-
-            value = value.replace(/\D/g, '');
-
-            if (value.length > 16) {
-                value = value.slice(0, 16);
-            }
-
-            $(this).val(value);
-        });
-
-        $('#telp').on('input', function() {
-            let value = $(this).val();
-
-            value = value.replace(/\D/g, '');
-
-            if (value.length > 0 && value.charAt(0) !== '0') {
-                value = value.replace(/^[^0]+/, '');
-            }
-
-            if (value.length > 14) {
-                value = value.slice(0, 14);
-            }
-
-            $(this).val(value);
-        });
-
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
 
@@ -219,13 +189,6 @@
                             $('#errorTempatLahir').fadeOut();
                             $('#tempat_lahir').removeClass('is-invalid').addClass('is-valid');
                         }
-                        if (dataError.errorTanggalLahir) {
-                            $('#errorTanggalLahir').html(dataError.errorTanggalLahir).show();
-                            $('#tanggal_lahir').addClass('is-invalid');
-                        } else {
-                            $('#errorTanggalLahir').fadeOut();
-                            $('#tanggal_lahir').removeClass('is-invalid').addClass('is-valid');
-                        }
                         if (dataError.errorPekerjaan) {
                             $('#errorPekerjaan').html(dataError.errorPekerjaan).show();
                             $('#pekerjaan').addClass('is-invalid');
@@ -239,13 +202,6 @@
                         } else {
                             $('#errorNama_ibu_kandung').fadeOut();
                             $('#nama_ibu_kandung').removeClass('is-invalid').addClass('is-valid');
-                        }
-                        if (dataError.errorEmail) {
-                            $('#errorEmail').html(dataError.errorEmail).show();
-                            $('#email').addClass('is-invalid');
-                        } else {
-                            $('#errorEmail').fadeOut();
-                            $('#email').removeClass('is-invalid').addClass('is-valid');
                         }
                         if (dataError.errorJenisKelamin) {
                             $('#errorJenisKelamin').html(dataError.errorJenisKelamin).show();

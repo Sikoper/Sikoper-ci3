@@ -39,10 +39,6 @@
                 <td><?= $nasabah->telp ?></td>
             </tr>
             <tr>
-                <th>Email</th>
-                <td><?= $nasabah->email ?></td>
-            </tr>
-            <tr>
                 <th>Nama Ibu Kandung</th>
                 <td><?= $nasabah->nama_ibu_kandung ?></td>
             </tr>

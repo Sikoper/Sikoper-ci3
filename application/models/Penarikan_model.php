@@ -113,7 +113,8 @@ class Penarikan_model extends CI_Model
 
     public function simpan_penarikan($data)
     {
-        return $this->db->insert('tbpenarikan', $data);
+        $this->db->insert('tbpenarikan', $data);
+        return $this->db->insert_id();
     }
 
     public function kurangi_saldo_pokok($id, $jumlah)
@@ -123,6 +124,31 @@ class Penarikan_model extends CI_Model
         $this->db->where('id', $id);
         $this->db->update('tbsimpanan');
         return $this->db->affected_rows() > 0;
+    }
+
+    public function get_penarikan_by_date($simpanan_id, $date)
+    {
+        $this->db->where('simpanan_id', $simpanan_id);
+        $this->db->where('DATE(tanggal_penarikan)', $date);
+        return $this->db->get('tbpenarikan')->row();
+    }
+
+    /**
+     * Updates the total withdrawal amount on an existing record.
+     */
+    public function update_total_penarikan($penarikan_id, $jumlah_tambahan)
+    {
+        $this->db->set('total_penarikan', 'total_penarikan + ' . (float)$jumlah_tambahan, false);
+        $this->db->where('id', $penarikan_id);
+        return $this->db->update('tbpenarikan');
+    }
+
+    /**
+     * Saves a new detail record for a specific withdrawal transaction.
+     */
+    public function simpan_penarikan_detail($data)
+    {
+        return $this->db->insert('tbdetail_penarikan', $data);
     }
 
     public function get_penarikan_untuk_dihapus($penarikan_id)
