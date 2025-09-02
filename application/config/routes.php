@@ -150,3 +150,4 @@ $route['pencairan'] = 'pencairan';
 
 $route['rekapitulasi_tabungan'] = 'rekapitulasi_tabungan';
 $route['rekapitulasi_deposito'] = 'rekapitulasi_deposito';
+$route['rekapitulasi_harian'] = 'rekapitulasi_harian';

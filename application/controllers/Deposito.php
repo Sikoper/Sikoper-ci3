@@ -82,8 +82,9 @@ class Deposito extends CI_Controller
                 $row[] = "<div class=\"text-center\">
                         <span class=\"badge $badgeClass text-capitalize\" style=\"min-width:100px; display:inline-block;\">{$field->status}</span>
                         </div>";
-                $perpanjangDisabled = ($field->status === 'aktif') ? 'disabled' : '';
-                $row[] = ' <button type="button" class="btn btn-danger" onclick="window.location=\'' . base_url('pencairan?id=') . safe_base64_encode($field->id) . '\'">Pencairan</button>
+                $perpanjangDisabled = ($field->status === 'aktif' || $field->status === 'ditutup') ? 'disabled' : '';
+                $pencairanDisabled  = ($field->status === 'ditutup') ? 'disabled' : '';
+                $row[] = ' <button type="button" class="btn btn-danger '. $pencairanDisabled . ' " onclick="window.location=\'' . base_url('pencairan?id=') . safe_base64_encode($field->id) . '\'">Pencairan</button>
                             <button type="button" class="btn btn-primary" ' . $perpanjangDisabled . ' onclick="window.location=\'' . base_url('deposito/perpanjang?id=') . safe_base64_encode($field->id) . '\'">Perpanjang</button>';
                 if ($level == 'Admin') {
                     $row[] = '<button type="button" class="btn btn-success" onclick="window.location=\'deposito/edit/' . safe_base64_encode($field->no_rekening) . '\'">
