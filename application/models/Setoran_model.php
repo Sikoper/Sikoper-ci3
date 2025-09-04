@@ -91,7 +91,7 @@ class Setoran_model extends CI_Model
 
     public function count_new_data($today)
     {
-        $date = $date ?? date('Y-m-d');
+        $date = $today ?? date('Y-m-d');
         $start_of_month = date('Y-m-01', strtotime($date));
         $end_of_month   = date('Y-m-t', strtotime($date));
 
@@ -109,6 +109,7 @@ class Setoran_model extends CI_Model
 
         return $simpanan + $deposito;
     }
+    
     public function jumlah_setoran()
     {
         $this->db->select('MONTH(tanggal_setoran) as bulan, COUNT(id) as total_setoran');

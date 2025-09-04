@@ -26,6 +26,18 @@ class Bunga_deposito_model extends CI_Model
         $data_bunga_batch = [];
 
         foreach ($depositoList as $deposito) {
+            // cek umur deposito
+            $tanggal_deposito = new DateTime($deposito->tanggal_deposito);
+            $tanggal_mulai_bunga = clone $tanggal_deposito;
+            $tanggal_mulai_bunga->modify('+30 days'); // bunga mulai dihitung 30 hari setelah registrasi
+            $today = new DateTime();
+
+            if ($today < $tanggal_mulai_bunga) {
+                // skip kalau belum 30 hari
+                continue;
+            }
+
+            // cek apakah bunga bulan ini sudah ada
             $bungaExistsThisMonth = $this->db->where('deposito_id', $deposito->id)
                 ->where('MONTH(tanggal_perhitungan)', $currentMonth)
                 ->where('YEAR(tanggal_perhitungan)', $currentYear)
@@ -35,6 +47,7 @@ class Bunga_deposito_model extends CI_Model
             if ($bungaExistsThisMonth > 0) {
                 continue;
             }
+
             $hariBungaNasabah = date('d', strtotime($deposito->tanggal_deposito));
 
             if ($hariBungaNasabah <= $currentDay) {
@@ -57,7 +70,6 @@ class Bunga_deposito_model extends CI_Model
         $this->db->trans_complete();
         return $processedAny;
     }
-
 
     private function _get_datatables_query($start_date = null, $end_date = null)
     {

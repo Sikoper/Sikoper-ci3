@@ -173,7 +173,7 @@ class Pencairan_model extends CI_Model
     public function count_new_data($today)
     {
         $this->db->from($this->_table_penarikan);
-        $this->db->where('DATE(tanggal_penarikan)', $today);
+        $this->db->where('DATE(tanggal_penarikan)', date('Y-m-d', strtotime($today)));
         return $this->db->count_all_results();
     }
 
@@ -206,7 +206,7 @@ class Pencairan_model extends CI_Model
     public function proses_pencairan_penuh($deposito_id, $pegawai_id)
     {
         $deposito = $this->db->get_where('tbdeposito', ['id' => $deposito_id])->row();
-        if (!$deposito || $deposito->status !== 'aktif') {
+        if (!$deposito || !in_array($deposito->status, ['aktif', 'jatuh tempo'])) {
             return ['status' => false, 'message' => 'Rekening tidak valid atau sudah tidak aktif.'];
         }
 

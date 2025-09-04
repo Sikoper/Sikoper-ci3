@@ -69,7 +69,7 @@ class Dashboard extends CI_Controller
         $penarikan_baru_simpanan = $this->Penarikan_model->count_new_data($today);
         $penarikan_baru_deposito = $this->Pencairan_model->count_new_data($today);
         $penarikan_baru = $penarikan_baru_simpanan + $penarikan_baru_deposito;
-
+        
         // Total deposito (jumlah rekening deposito)
         $jumlah_deposito = $this->Deposito_model->count_all();
 
