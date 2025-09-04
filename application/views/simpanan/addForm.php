@@ -13,14 +13,19 @@
                     <?= form_open('', ['id' => 'form_simpan']) ?>
 
                     <div class="form-group mb-3" style="height: 80px;">
-                        <label for="tanggal_simpanan">Tanggal</label>
+                        <label for="tanggal_simpanan">Tanggal & Waktu</label>
                         <div class="input-group">
-                            <input type="date" name="tanggal_simpanan" id="tanggal_simpanan" class="form-control" value="<?= date('Y-m-d') ?>">
+                            <input
+                                type="datetime-local"
+                                name="tanggal_simpanan"
+                                id="tanggal_simpanan"
+                                class="form-control"
+                                value="<?= date('Y-m-d\TH:i') ?>">
                         </div>
                         <div id="errorTanggalSimpanan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
-
+                    
                     <div class="form-group" style="height: 80px;">
                         <label for="nasabah">Pilih Nasabah</label>
                         <div class="d-flex align-items-center">

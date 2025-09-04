@@ -84,7 +84,7 @@ class Deposito extends CI_Controller
                         </div>";
                 $perpanjangDisabled = ($field->status === 'aktif' || $field->status === 'ditutup') ? 'disabled' : '';
                 $pencairanDisabled  = ($field->status === 'ditutup') ? 'disabled' : '';
-                $row[] = ' <button type="button" class="btn btn-danger '. $pencairanDisabled . ' " onclick="window.location=\'' . base_url('pencairan?id=') . safe_base64_encode($field->id) . '\'">Pencairan</button>
+                $row[] = ' <button type="button" class="btn btn-danger ' . $pencairanDisabled . ' " onclick="window.location=\'' . base_url('pencairan?id=') . safe_base64_encode($field->id) . '\'">Pencairan</button>
                             <button type="button" class="btn btn-primary" ' . $perpanjangDisabled . ' onclick="window.location=\'' . base_url('deposito/perpanjang?id=') . safe_base64_encode($field->id) . '\'">Perpanjang</button>';
                 if ($level == 'Admin') {
                     $row[] = '<button type="button" class="btn btn-success" onclick="window.location=\'deposito/edit/' . safe_base64_encode($field->no_rekening) . '\'">
@@ -681,7 +681,7 @@ class Deposito extends CI_Controller
         }
 
         $deposito = $this->Deposito_model->get_data_by_norek($no_rekening);
-
+        log_message('debug', 'Level: ' . $level . ' | Rek: ' . $no_rekening . ' | Result: ' . print_r($deposito, true));
         if (!$deposito) {
             show_404("Data deposito tidak ditemukan untuk nomor rekening: " . html_escape($no_rekening));
             return;

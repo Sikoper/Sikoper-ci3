@@ -226,8 +226,8 @@ class Penarikan_model extends CI_Model
 
     public function count_new_data($today)
     {
-        $this->db->from('tbdetail_penarikan');
-        $this->db->where('tanggal_penarikan', $today);
+        $this->db->from($this->_table_penarikan_items);
+        $this->db->where('DATE(tanggal_penarikan)', date('Y-m-d', strtotime($today)));
         return $this->db->count_all_results();
     }
 

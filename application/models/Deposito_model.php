@@ -119,9 +119,17 @@ class Deposito_model extends CI_Model
         return $this->db->get_where($this->table, ['id' => $id])->row();
     }
 
-    public function get_data_by_norek($no_rekening)
+    public function get_data_by_norek($rek)
     {
-        return $this->db->get_where($this->table, ['no_rekening' => $no_rekening])->row();
+        $this->db->where('no_rekening', $rek);
+        $result = $this->db->get($this->table)->row();
+
+        if (!$result && is_numeric($rek)) {
+            $this->db->where('id', $rek);
+            $result = $this->db->get($this->table)->row();
+        }
+
+        return $result;
     }
 
     public function get_rekening_deposito_by_nasabah($nasabah_id)

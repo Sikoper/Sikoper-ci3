@@ -57,9 +57,7 @@ class Simpanan extends CI_Controller
             $row[] = $field->telp_nasabah;
             $row[] = number_format($field->jumlah_simpanan, 0, ',', '.');
             if ($level == 'Admin') {
-                $row[] = '<button type="button" class="btn btn-success" onclick="window.location=\'simpanan/edit/' . safe_base64_encode($field->no_rekening) . '\'">
-                                    <i class="fa fa-edit fa-fw"></i>
-                                </button>
+                $row[] = '
                                 <button type="button" class="btn btn-danger" onclick="deleteItem(\'' . $field->id . '\', \'' . $field->no_rekening . '\')">
                                     <i class="fa fa-trash fa-fw"></i>
                                 </button>
@@ -131,7 +129,7 @@ class Simpanan extends CI_Controller
                 return;
             }
 
-            $tanggal_simpanan = $this->input->post('tanggal_simpanan');
+            $tanggal_simpanan = date('Y-m-d H:i:s', strtotime($this->input->post('tanggal_simpanan')));
             $nasabah = $this->input->post('nasabah');
             $jenis_tabungan = $this->input->post('jenis_tabungan');
             $pegawai = $this->input->post('pegawai_id');
@@ -470,6 +468,7 @@ class Simpanan extends CI_Controller
                 $first_setoran = $this->Setoran_model->get_first_by_simpanan_id($id);
                 if ($first_setoran) {
                     $this->Setoran_model->edit_data($first_setoran->id, [
+                        'tanggal_setoran' => date('Y-m-d H:i:s'),
                         'jumlah_setoran' => $jumlah_simpanan
                     ]);
                 }
@@ -680,7 +679,7 @@ class Simpanan extends CI_Controller
             $lastRek = '-';
         }
 
-        $newRek = 'D' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        $newRek = 'T' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
         echo json_encode([
             'next_rekening' => $newRek,
