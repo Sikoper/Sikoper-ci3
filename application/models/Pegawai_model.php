@@ -100,6 +100,14 @@ class Pegawai_model extends CI_Model
         return $query->result();
     }
 
+    public function get_first_by_jabatan($jabatan)
+    {
+        return $this->db->where('jabatan', $jabatan)
+            ->order_by('id', 'ASC')
+            ->get('tbpegawai')
+            ->row();
+    }
+
     public function update_user_token($pegawai_id, $token_value)
     {
         $this->db->where('id', $pegawai_id);

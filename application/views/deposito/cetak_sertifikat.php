@@ -249,7 +249,7 @@ $formatter->setPattern('d MMMM yyyy');
                         <p class="tanggal">Culik, <?= $formatter->format(new DateTime()); ?></p>
                         <br />
                         <br />
-                        <p class="nama"><?= $nama_pegawai->nama_lengkap ?></p>
+                        <p class="nama"><?= $nama_pegawai ?></p>
                     </div>
                 </div>
             </div>
