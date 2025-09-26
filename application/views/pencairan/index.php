@@ -227,7 +227,7 @@ $(document).ready(function() {
                             });
                         } else if (res.success) {
                             Swal.fire('Berhasil', res.success, 'success').then(() => {
-                                window.location.href = res.redirect || '<?= base_url("deposito") ?>';
+                                window.location.reload();
                             });
                         } else {
                             Swal.fire('Gagal', res.error_save || 'Terjadi kesalahan pada server.', 'error');
