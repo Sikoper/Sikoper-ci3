@@ -926,6 +926,8 @@ class Deposito extends CI_Controller
 
         $sertifikat_data = $this->Deposito_model->get_detail_for_sertifikat($id);
         if (!$sertifikat_data) show_error('Data sertifikat dengan ID ' . $id . ' tidak ditemukan.', 404);
+        $pegawai = $this->session->userdata('pegawai_id');
+        $nama_pegawai = $this->Pegawai_model->get_data_by_id($pegawai);
 
         $tanggal_depo = new DateTime($sertifikat_data->tanggal_deposito);
         $bulan_romawi = $this->_bulan_romawi($tanggal_depo->format('n'));
@@ -942,6 +944,7 @@ class Deposito extends CI_Controller
         $data = [
             'nomor_sertifikat'   => $nomor_sertifikat_lengkap,
             'nama_nasabah'       => $sertifikat_data->nama_nasabah ?? '',
+            'nama_pegawai'       => $nama_pegawai,
             'alamat_nasabah'     => $sertifikat_data->alamat_nasabah ?? '',
             'jumlah_deposito'    => $sertifikat_data->jumlah_deposito ?? 0,
             'terbilang'          => ucwords($this->terbilang_rupiah($sertifikat_data->jumlah_deposito)),

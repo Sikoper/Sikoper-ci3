@@ -145,7 +145,7 @@ class Setoran extends CI_Controller
                 $data_simpanan = $this->Simpanan_model->get_data_by_id($tabungan);
                 $msg = [
                     'success' => 'Data berhasil ditambahkan.',
-                    'redirect' => base_url('simpanan/detail/') . safe_base64_encode($data_simpanan->no_rekening)
+                    'redirect' => $_SERVER['HTTP_REFERER']
                 ];
             }
         }
