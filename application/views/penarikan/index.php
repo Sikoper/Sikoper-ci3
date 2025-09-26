@@ -296,7 +296,7 @@
                                     allowEnterKey: false
                                 }).then((result) => {
                                     if (result.isConfirmed) {
-                                        window.location.href = response.redirect || '<?= base_url('penarikan') ?>';
+                                        window.location.reload();
                                     }
                                 });
                             } else {

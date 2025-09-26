@@ -498,7 +498,7 @@
                             html: response.success
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location = '<?= base_url('deposito') ?>';
+                                window.location.reload();
                             }
                         });
                     }

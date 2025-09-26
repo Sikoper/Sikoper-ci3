@@ -193,7 +193,7 @@ class Deposito_model extends CI_Model
         $this->db->join('tbjenistabungan', 'tbdeposito.jenistabungan_id = tbjenistabungan.id', 'left');
         $this->db->join('tbnasabah', 'tbdeposito.nasabah_id = tbnasabah.id', 'left');
         $this->db->join('tbpegawai as pegawai', 'tbdeposito.pegawai_id = pegawai.id', 'left');
-        $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'KEPALA BAGIAN TATA USAHA'", 'left');
+        $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'KEPALA BAGIAN KEUANGAN'", 'left');
         $this->db->join('tbpegawai as bendahara', "bendahara.jabatan = 'Bendahara'", 'left');
         $this->db->where('tbdeposito.id', $id);
         $this->db->limit(1);
