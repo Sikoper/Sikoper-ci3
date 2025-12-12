@@ -1,10 +1,7 @@
 <section class="section">
     <div class="card">
         <?php
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_.');
-        }
+        // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
         $backUrl = $this->input->get('code') == 1
             ? site_url('nasabah/detail/' . safe_base64_encode($nasabah->nik))
             : site_url('nasabah');
@@ -29,14 +26,17 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="nik">NIK</label>
-                        <input type="text" class="form-control" id="nik" name="nik" value="<?= $nasabah->nik ?>" placeholder="NIK sesuai KTP" autocomplete="off">
+                        <input type="text" class="form-control" id="nik" name="nik" value="<?= $nasabah->nik ?>"
+                            placeholder="NIK sesuai KTP" autocomplete="off">
                         <div id="errorNik" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="nama_lengkap">Nama Lengkap</label>
-                        <input type="text" id="nama_lengkap" name="nama_lengkap" class="form-control" value="<?= $nasabah->nama_lengkap ?>" placeholder="Nama lengkap sesuai KTP" autocomplete="off">
+                        <input type="text" id="nama_lengkap" name="nama_lengkap" class="form-control"
+                            value="<?= $nasabah->nama_lengkap ?>" placeholder="Nama lengkap sesuai KTP"
+                            autocomplete="off">
                         <div id="errorNamaLengkap" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -44,8 +44,10 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="jenis_kelamin">Jenis Kelamin</label>
                         <select class="form-select" id="jenis_kelamin" name="jenis_kelamin">
-                            <option value="Laki-laki" <?= ($nasabah->jenis_kelamin == 'Laki-laki') ? 'selected' : ''; ?>>Laki-laki</option>
-                            <option value="Perempuan" <?= ($nasabah->jenis_kelamin == 'Perempuan') ? 'selected' : ''; ?>>Perempuan</option>
+                            <option value="Laki-laki" <?= ($nasabah->jenis_kelamin == 'Laki-laki') ? 'selected' : ''; ?>>
+                                Laki-laki</option>
+                            <option value="Perempuan" <?= ($nasabah->jenis_kelamin == 'Perempuan') ? 'selected' : ''; ?>>
+                                Perempuan</option>
                         </select>
                         <div id="errorJenisKelamin" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -54,7 +56,9 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="tempat_lahir">Tempat Lahir</label>
                         <i>jika tidak ada silahkan isi dengan (-)</i>
-                        <input type="text" id="tempat_lahir" name="tempat_lahir" class="form-control" value="<?= $nasabah->tempat_lahir ?>" placeholder="Tempat lahir sesuai KTP" autocomplete="off">
+                        <input type="text" id="tempat_lahir" name="tempat_lahir" class="form-control"
+                            value="<?= $nasabah->tempat_lahir ?>" placeholder="Tempat lahir sesuai KTP"
+                            autocomplete="off">
                         <div id="errorTempatLahir" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -62,7 +66,8 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="tanggal_lahir">Tanggal Lahir</label>
                         <i>Jika tidak ada boleh dikosongkan</i>
-                        <input type="date" id="tanggal_lahir" name="tgl_lahir" value="<?= $nasabah->tanggal_lahir ?>" class="form-control">
+                        <input type="date" id="tanggal_lahir" name="tgl_lahir" value="<?= $nasabah->tanggal_lahir ?>"
+                            class="form-control">
                         <div id="errorTanggalLahir" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -70,7 +75,8 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="agama">Agama</label>
                         <i>jika tidak ada silahkan isi dengan (-)</i>
-                        <input type="text" id="agama" name="agama" class="form-control" value="<?= $nasabah->agama ?>" placeholder="Agama sesuai KTP" autocomplete="off">
+                        <input type="text" id="agama" name="agama" class="form-control" value="<?= $nasabah->agama ?>"
+                            placeholder="Agama sesuai KTP" autocomplete="off">
                         <div id="errorAgama" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -103,9 +109,10 @@
                     <div class="form-group" style="min-height: 80px;">
                         <label for="pekerjaan">Pekerjaan</label>
                         <select id="pekerjaan" name="pekerjaan" class="form-control">
-                            <option value="" <?= empty($pekerjaan_tersimpan) ? 'selected' : '' ?> disabled>Pilih pekerjaan Nasabah</option>
+                            <option value="" <?= empty($pekerjaan_tersimpan) ? 'selected' : '' ?> disabled>Pilih
+                                pekerjaan Nasabah</option>
 
-                            <?php foreach ($daftar_pekerjaan_standar as $pekerjaan) : ?>
+                            <?php foreach ($daftar_pekerjaan_standar as $pekerjaan): ?>
                                 <option value="<?= $pekerjaan ?>" <?= ($pekerjaan == $pekerjaan_tersimpan) ? 'selected' : '' ?>>
                                     <?= $pekerjaan ?>
                                 </option>
@@ -117,23 +124,27 @@
                         </select>
                         <div id="errorPekerjaan" class="invalid-feedback" style="display: none;"></div>
 
-                        <div id="form-pekerjaan-lainnya" style="display: <?= (!$is_pekerjaan_standar && !empty($pekerjaan_tersimpan)) ? 'block' : 'none' ?>; margin-top: 15px;">
+                        <div id="form-pekerjaan-lainnya"
+                            style="display: <?= (!$is_pekerjaan_standar && !empty($pekerjaan_tersimpan)) ? 'block' : 'none' ?>; margin-top: 15px;">
                             <label for="pekerjaan_lainnya">Sebutkan Pekerjaan Nasabah</label>
-                            <input type="text" id="pekerjaan_lainnya" name="pekerjaan_lainnya" class="form-control" placeholder="Tulis pekerjaan di sini" value="<?= $pekerjaan_lainnya_value ?>">
+                            <input type="text" id="pekerjaan_lainnya" name="pekerjaan_lainnya" class="form-control"
+                                placeholder="Tulis pekerjaan di sini" value="<?= $pekerjaan_lainnya_value ?>">
                         </div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="nama_ibu_kanudng">Nama Ibu Kandung</label>
                         <i>kolom ini opsional, boleh diisi dengan (-)</i>
-                        <input type="text" id="nama_ibu_kandung" name="nama_ibu_kandung" class="form-control" value="<?= $nasabah->nama_ibu_kandung ?>" placeholder="Nama Ibu Kandung" autocomplete="off">
+                        <input type="text" id="nama_ibu_kandung" name="nama_ibu_kandung" class="form-control"
+                            value="<?= $nasabah->nama_ibu_kandung ?>" placeholder="Nama Ibu Kandung" autocomplete="off">
                         <div id="errorNama_ibu_kandung" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="alamat">Alamat</label>
-                        <input type="text" id="alamat" name="alamat" class="form-control" value="<?= $nasabah->alamat ?>" placeholder="Alamat Sesuai KTP" autocomplete="off">
+                        <input type="text" id="alamat" name="alamat" class="form-control"
+                            value="<?= $nasabah->alamat ?>" placeholder="Alamat Sesuai KTP" autocomplete="off">
                         <div id="errorAlamat" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -141,7 +152,8 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="telp">Nomer Telpon</label>
                         <i>jika tidak ada silahkan isi dengan (-)</i>
-                        <input type="text" id="telp" name="telp" class="form-control" value="<?= $nasabah->telp ?>" placeholder="Nomer aktif/whatsapp" autocomplete="off">
+                        <input type="text" id="telp" name="telp" class="form-control" value="<?= $nasabah->telp ?>"
+                            placeholder="Nomer aktif/whatsapp" autocomplete="off">
                         <div id="errorTelp" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -161,12 +173,14 @@
                             <div class="valid-feedback" style="display: none;"></div>
                         </div>
                     <?php else: ?>
-                        <input type="hidden" name="pegawai_id" id="pegawai_id" value="<?= $this->session->userdata('id') ?>">
+                        <input type="hidden" name="pegawai_id" id="pegawai_id"
+                            value="<?= $this->session->userdata('id') ?>">
                     <?php endif; ?>
 
                     <div class="text-center mb-3">
                         <button type="button" id="tombol_simpan" class="btn btn-success">Simpan</button>
-                        <button type="button" onclick="window.location='<?= $backUrl ?>'" class="btn btn-danger">Batal</button>
+                        <button type="button" onclick="window.location='<?= $backUrl ?>'"
+                            class="btn btn-danger">Batal</button>
                     </div>
                     <?= form_close() ?>
                 </div>
@@ -176,8 +190,8 @@
     </div>
 </section>
 <script>
-    $(document).ready(function() {
-        $('#tombol_simpan').click(function(e) {
+    $(document).ready(function () {
+        $('#tombol_simpan').click(function (e) {
             e.preventDefault();
 
             let form = $('#form_simpan')[0];
@@ -191,15 +205,15 @@
                 processData: false,
                 contentType: false,
                 cache: false,
-                beforeSend: function() {
+                beforeSend: function () {
                     $('#tombol_simpan').prop('disabled', true)
                     $('#tombol_simpan').html('<i class="fa fa-spin fa-spinner"></i>')
                 },
-                complete: function() {
+                complete: function () {
                     $('#tombol_simpan').prop('disabled', false)
                     $('#tombol_simpan').html('Save')
                 },
-                success: function(response) {
+                success: function (response) {
                     if (response.error) {
                         let dataError = response.error;
                         if (dataError.errorNik) {
@@ -300,7 +314,7 @@
                         });
                     }
                 },
-                error: function(xhr, thrownError) {
+                error: function (xhr, thrownError) {
                     alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                 }
             });
@@ -309,12 +323,12 @@
 </script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const selectPekerjaan = document.getElementById('pekerjaan');
         const formPekerjaanLainnya = document.getElementById('form-pekerjaan-lainnya');
         const inputPekerjaanLainnya = document.getElementById('pekerjaan_lainnya');
 
-        selectPekerjaan.addEventListener('change', function() {
+        selectPekerjaan.addEventListener('change', function () {
             if (this.value === 'Lainnya') {
                 formPekerjaanLainnya.style.display = 'block';
                 inputPekerjaanLainnya.focus();

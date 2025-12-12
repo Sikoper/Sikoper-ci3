@@ -2,10 +2,7 @@
     <div class="card-header">
         <h4 class="card-title">
             <?php
-            function safe_base64_encode($string)
-            {
-                return strtr(base64_encode($string), '+/=', '-_.');
-            }
+            // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
             $backUrl = $this->input->get('code') == 1
                 ? site_url('deposito/detail/' . safe_base64_encode($deposito->no_rekening))
                 : site_url('deposito');
@@ -57,8 +54,8 @@
     <?= form_close() ?>
 </div>
 <script>
-    $(document).ready(function() {
-        $('#form_laporan').submit(function(e) {
+    $(document).ready(function () {
+        $('#form_laporan').submit(function (e) {
             e.preventDefault();
 
             Swal.fire({
