@@ -48,16 +48,34 @@ class Bunga_deposito_model extends CI_Model
                 continue;
             }
 
-            $hariBungaNasabah = date('d', strtotime($deposito->tanggal_deposito));
+            $hariBungaNasabah = (int) date('d', strtotime($deposito->tanggal_deposito));
+            $lastDayOfMonth = (int) date('t'); // Tanggal terakhir bulan ini
+            $isLastDayOfMonth = ($currentDay == $lastDayOfMonth);
 
-            if ($hariBungaNasabah <= $currentDay) {
+            // Proses jika:
+            // 1. Hari bunga nasabah <= hari ini, ATAU
+            // 2. Hari ini adalah tanggal terakhir bulan dan hari bunga nasabah > hari terakhir
+            //    (untuk menangani kasus Februari dimana tanggal 29/30/31 tidak ada)
+            $shouldProcess = ($hariBungaNasabah <= $currentDay) ||
+                ($isLastDayOfMonth && $hariBungaNasabah > $lastDayOfMonth);
+
+            if ($shouldProcess) {
                 $bungaAmount = ($deposito->jumlah_deposito * ($deposito->rate_bunga / 100));
 
+                // Gunakan tanggal perhitungan yang sesuai
+                $tanggalPerhitungan = $currentYear . '-' . $currentMonth . '-';
+                if ($hariBungaNasabah > $lastDayOfMonth) {
+                    // Jika tanggal daftar > tanggal terakhir bulan, gunakan tanggal terakhir
+                    $tanggalPerhitungan .= str_pad($lastDayOfMonth, 2, '0', STR_PAD_LEFT);
+                } else {
+                    $tanggalPerhitungan .= str_pad($hariBungaNasabah, 2, '0', STR_PAD_LEFT);
+                }
+
                 $data_bunga_batch[] = [
-                    'deposito_id'         => $deposito->id,
-                    'jumlah_bunga'        => $bungaAmount,
-                    'tanggal_perhitungan' => $currentYear . '-' . $currentMonth . '-' . $hariBungaNasabah,
-                    'status_penarikan'    => 'belum_ditarik'
+                    'deposito_id' => $deposito->id,
+                    'jumlah_bunga' => $bungaAmount,
+                    'tanggal_perhitungan' => $tanggalPerhitungan,
+                    'status_penarikan' => 'belum_ditarik'
                 ];
                 $processedAny = true;
             }
@@ -92,7 +110,8 @@ class Bunga_deposito_model extends CI_Model
                 } else {
                     $this->db->or_like($item, $_POST['search']['value']);
                 }
-                if (count($this->column_search) - 1 == $i) $this->db->group_end();
+                if (count($this->column_search) - 1 == $i)
+                    $this->db->group_end();
             }
             $i++;
         }

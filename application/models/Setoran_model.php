@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Setoran_model extends CI_Model
 {
     var $table = 'tbdetail_simpanan';
-    var $column_order = array(null, 'tanggal_setoran', 'jumlah_setoran', 'pegawai',  null);
+    var $column_order = array(null, 'tanggal_setoran', 'jumlah_setoran', 'pegawai', null);
     var $column_search = array('tbdetail_simpanan.tanggal_setoran', 'tbpegawai.nama_lengkap');
     var $order = array('created_at' => 'ASC');
 
@@ -13,7 +13,7 @@ class Setoran_model extends CI_Model
         $this->db->select('tbdetail_simpanan.*, tbpegawai.nama_lengkap as pegawai');
         $this->db->from($this->table);
         $this->db->where('tbdetail_simpanan.simpanan_id', $id);
-        $this->db->join('tbpegawai', 'tbpegawai.id = tbdetail_simpanan.pegawai_id');
+        $this->db->join('tbpegawai', 'tbpegawai.id = tbdetail_simpanan.pegawai_id', 'left');
 
         $i = 0;
 
@@ -93,7 +93,7 @@ class Setoran_model extends CI_Model
     {
         $date = $today ?? date('Y-m-d');
         $start_of_month = date('Y-m-01', strtotime($date));
-        $end_of_month   = date('Y-m-t', strtotime($date));
+        $end_of_month = date('Y-m-t', strtotime($date));
 
         // Count simpanan
         $this->db->from('tbdetail_simpanan');
@@ -109,7 +109,7 @@ class Setoran_model extends CI_Model
 
         return $simpanan + $deposito;
     }
-    
+
     public function jumlah_setoran()
     {
         $this->db->select('MONTH(tanggal_setoran) as bulan, COUNT(id) as total_setoran');

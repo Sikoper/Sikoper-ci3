@@ -47,17 +47,17 @@
             </div>
         </div>
         <?php
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_.');
-        }
+        // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
         ?>
-        <?php if ($this->session->userdata('level') != 'Direktur') : ?>
+        <?php if ($this->session->userdata('level') != 'Direktur'): ?>
             <div class="d-flex justify-content-end mt-4">
-                <button type="button" onclick="window.location='<?= base_url('pegawai/edit/' . safe_base64_encode($pegawai->nik)) . '?code=1' ?>'" class="btn btn-success me-2">
+                <button type="button"
+                    onclick="window.location='<?= base_url('pegawai/edit/' . safe_base64_encode($pegawai->nik)) . '?code=1' ?>'"
+                    class="btn btn-success me-2">
                     <i class="fa fa-edit fa-fw"></i> Edit
                 </button>
-                <button class="btn btn-danger" onclick="deleteItem('<?= $pegawai->nik ?>', '<?= addslashes($pegawai->nama_lengkap) ?>')">
+                <button class="btn btn-danger"
+                    onclick="deleteItem('<?= $pegawai->nik ?>', '<?= addslashes($pegawai->nama_lengkap) ?>')">
                     <i class="fa fa-trash fa-fw"></i> Hapus
                 </button>
             </div>
@@ -89,7 +89,7 @@
                         id: id
                     },
                     dataType: "json",
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             Swal.fire({
                                 title: "Success!",
@@ -118,7 +118,7 @@
                             });
                         }
                     },
-                    error: function(xhr, thrownError) {
+                    error: function (xhr, thrownError) {
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });
