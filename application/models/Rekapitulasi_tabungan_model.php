@@ -25,12 +25,18 @@ class Rekapitulasi_tabungan_model extends CI_Model
             $end_of_period = date('Y-m-t', strtotime($start_of_period));
         }
 
-        // Subquery for SALDO POKOK: This logic is now correct because the dates are right
+        // Subquery for SALDO POKOK: (Setoran - Penarikan) + Bunga sebelumnya
+        // FIXED: Now includes withdrawals in the calculation
         $saldo_pokok_subquery = "
             COALESCE((SELECT SUM(tds.jumlah_setoran) 
                         FROM tbdetail_simpanan tds 
                         WHERE tds.simpanan_id = tbsimpanan.id 
                         AND tds.tanggal_setoran <= " . $this->db->escape($end_of_period) . "), 0)
+            - 
+            COALESCE((SELECT SUM(tdp.jumlah_penarikan) 
+                        FROM tbdetail_penarikan tdp 
+                        WHERE tdp.simpanan_id = tbsimpanan.id 
+                        AND tdp.tanggal_penarikan <= " . $this->db->escape($end_of_period) . "), 0)
             + 
             COALESCE((SELECT SUM(tbt.jumlah_transaksi) 
                         FROM tbtransaksi tbt 
@@ -67,7 +73,8 @@ class Rekapitulasi_tabungan_model extends CI_Model
 
         $this->db->from($this->table);
         $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
-        $this->db->where('tbsimpanan.status', 'aktif');
+        // FIXED: Removed status filter to include closed accounts in historical reports
+        // Only filter by date registration to show accounts that existed in the period
         $this->db->where('tbsimpanan.tanggal_simpanan <=', $end_of_period);
 
         // --- Search and Order logic remains unchanged ---
@@ -114,7 +121,7 @@ class Rekapitulasi_tabungan_model extends CI_Model
     public function count_all()
     {
         $this->db->from($this->table);
-        $this->db->where('status', 'aktif');
+        // FIXED: Removed status filter for count_all to be consistent
         return $this->db->count_all_results();
     }
 
@@ -140,16 +147,25 @@ class Rekapitulasi_tabungan_model extends CI_Model
         $this->db->select_sum('tds.jumlah_setoran', 'total_deposits');
         $this->db->from('tbdetail_simpanan as tds');
         $this->db->join('tbsimpanan as ts', 'ts.id = tds.simpanan_id');
-        $this->db->where('ts.status', 'aktif');
+        // FIXED: Removed status filter
         $this->db->where('tds.tanggal_setoran <=', $end_of_period);
         $this->db->where('ts.tanggal_simpanan <=', $end_of_period);
         $total_deposits_result = $this->db->get()->row();
         $total_deposits = $total_deposits_result->total_deposits ?? 0;
 
+        // FIXED: Added withdrawals calculation
+        $this->db->select_sum('tdp.jumlah_penarikan', 'total_withdrawals');
+        $this->db->from('tbdetail_penarikan as tdp');
+        $this->db->join('tbsimpanan as ts', 'ts.id = tdp.simpanan_id');
+        $this->db->where('tdp.tanggal_penarikan <=', $end_of_period);
+        $this->db->where('ts.tanggal_simpanan <=', $end_of_period);
+        $total_withdrawals_result = $this->db->get()->row();
+        $total_withdrawals = $total_withdrawals_result->total_withdrawals ?? 0;
+
         $this->db->select_sum('tbt.jumlah_transaksi', 'total_prior_interest');
         $this->db->from('tbtransaksi as tbt');
         $this->db->join('tbsimpanan as ts', 'ts.id = tbt.simpanan_id');
-        $this->db->where('ts.status', 'aktif');
+        // FIXED: Removed status filter
         $this->db->where('ts.tanggal_simpanan <=', $end_of_period);
         $this->db->where('tbt.tanggal_transaksi <', $start_of_period);
         $prior_interest_result = $this->db->get()->row();
@@ -160,7 +176,7 @@ class Rekapitulasi_tabungan_model extends CI_Model
         $this->db->join('tbsimpanan as ts', 'ts.id = simpanan_id');
         $this->db->where('ts.status', 'aktif');
         $this->db->where('ts.tanggal_simpanan <=', $end_of_period);
-        
+
         if ($bulan == 'all') {
             $this->db->where('YEAR(tanggal_transaksi)', $tahun);
             // Also ensure we don't count future interest
@@ -170,12 +186,13 @@ class Rekapitulasi_tabungan_model extends CI_Model
             $this->db->where('YEAR(tanggal_transaksi)', $tahun);
         }
         $bunga_result = $this->db->get()->row();
-        
-        $total_saldo_pokok = $total_deposits + $total_prior_interest;
+
+        // FIXED: Saldo = (Setoran - Penarikan) + Bunga sebelumnya
+        $total_saldo_pokok = ($total_deposits - $total_withdrawals) + $total_prior_interest;
 
         return [
             'total_saldo_pokok' => $total_saldo_pokok,
-            'total_bunga'       => $bunga_result->total_bunga ?? 0,
+            'total_bunga' => $bunga_result->total_bunga ?? 0,
         ];
     }
 }

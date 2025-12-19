@@ -31,18 +31,14 @@ class Deposito extends CI_Controller
         $this->Deposito_model->perpanjang_otomatis();
         $parser = [
             'judul' => "Data Deposito",
-            'isi'   => $this->load->view('deposito/index', '', TRUE)
+            'isi' => $this->load->view('deposito/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
 
     public function fetchData()
     {
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_?');
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($this->input->is_ajax_request() == true) {
             $list = $this->Deposito_model->get_datatables();
             $data = array();
@@ -83,7 +79,7 @@ class Deposito extends CI_Controller
                         <span class=\"badge $badgeClass text-capitalize\" style=\"min-width:100px; display:inline-block;\">{$field->status}</span>
                         </div>";
                 $perpanjangDisabled = ($field->status === 'aktif' || $field->status === 'ditutup') ? 'disabled' : '';
-                $pencairanDisabled  = ($field->status === 'ditutup') ? 'disabled' : '';
+                $pencairanDisabled = ($field->status === 'ditutup') ? 'disabled' : '';
                 $row[] = ' <button type="button" class="btn btn-danger ' . $pencairanDisabled . ' " onclick="window.location=\'' . base_url('pencairan?id=') . safe_base64_encode($field->id) . '\'">Pencairan</button>
                             <button type="button" class="btn btn-primary" ' . $perpanjangDisabled . ' onclick="window.location=\'' . base_url('deposito/perpanjang?id=') . safe_base64_encode($field->id) . '\'">Perpanjang</button>';
                 if ($level == 'Admin') {
@@ -142,7 +138,7 @@ class Deposito extends CI_Controller
 
         $parser = [
             'judul' => " Form Buka Deposito Baru ",
-            'isi'   => $this->load->view('deposito/addForm', $data, TRUE)
+            'isi' => $this->load->view('deposito/addForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -174,15 +170,15 @@ class Deposito extends CI_Controller
             $no_rekening = $this->input->post('nomor_rekening');
 
             $this->form_validation->set_rules('tanggal_deposito', 'Tanggal Deposito', 'required', [
-                'required'   => 'Tanggal deposito wajib diisi.'
+                'required' => 'Tanggal deposito wajib diisi.'
             ]);
 
             $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
-                'required'     => 'Nasabah tidak boleh kosong.'
+                'required' => 'Nasabah tidak boleh kosong.'
             ]);
 
             $this->form_validation->set_rules('jenis_tabungan', 'Jenis Tabungan', 'required', [
-                'required'     => 'Jenis tabungan harus diisi.',
+                'required' => 'Jenis tabungan harus diisi.',
             ]);
 
             $this->form_validation->set_rules('bunga', 'Bunga', 'required', [
@@ -243,19 +239,19 @@ class Deposito extends CI_Controller
             if ($this->form_validation->run() == FALSE) {
                 $msg = [
                     'error' => [
-                        'errorTanggalSimpanan'  => form_error('tanggal_deposito'),
-                        'errorNasabah'          => form_error('nasabah'),
-                        'errorJenisTabungan'    => form_error('jenis_tabungan'),
-                        'errorBunga'            => form_error('bunga'),
-                        'errorBiayaRegistrasi'  => form_error('biaya_registrasi'),
-                        'errorSimpananAwal'     => form_error('simpanan_awal'),
-                        'errorPengendapan'      => form_error('pengendapan'),
-                        'errorPegawai'          => form_error('pegawai_id'),
-                        'errorJenisDenda'       => form_error('jenis_denda'),
-                        'errorJumlahDenda'      => form_error('jumlah_denda'),
-                        'errorJumlahSimpanan'   => form_error('jumlah_deposito'),
-                        'errorNoRekening'       => form_error('nomor_rekening'),
-                        'errorDurasi'           => form_error('durasi'),
+                        'errorTanggalSimpanan' => form_error('tanggal_deposito'),
+                        'errorNasabah' => form_error('nasabah'),
+                        'errorJenisTabungan' => form_error('jenis_tabungan'),
+                        'errorBunga' => form_error('bunga'),
+                        'errorBiayaRegistrasi' => form_error('biaya_registrasi'),
+                        'errorSimpananAwal' => form_error('simpanan_awal'),
+                        'errorPengendapan' => form_error('pengendapan'),
+                        'errorPegawai' => form_error('pegawai_id'),
+                        'errorJenisDenda' => form_error('jenis_denda'),
+                        'errorJumlahDenda' => form_error('jumlah_denda'),
+                        'errorJumlahSimpanan' => form_error('jumlah_deposito'),
+                        'errorNoRekening' => form_error('nomor_rekening'),
+                        'errorDurasi' => form_error('durasi'),
                     ]
                 ];
             } else {
@@ -341,11 +337,7 @@ class Deposito extends CI_Controller
             return;
         }
 
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         // Decode the ID
         $id = safe_base64_decode($encoded_id);
         $data['title'] = "Perpanjang Deposito";
@@ -369,7 +361,7 @@ class Deposito extends CI_Controller
         // Load the new view for renewal
         $parser = [
             'judul' => "Form Perpanjang Deposito",
-            'isi'   => $this->load->view('deposito/perpanjang', $data, TRUE)
+            'isi' => $this->load->view('deposito/perpanjang', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -401,7 +393,7 @@ class Deposito extends CI_Controller
                 $msg = [
                     'error' => [
                         'errorDurasi' => form_error('durasi'),
-                        'errorBunga'  => form_error('bunga'),
+                        'errorBunga' => form_error('bunga'),
                     ]
                 ];
             } else {
@@ -409,10 +401,10 @@ class Deposito extends CI_Controller
 
                 // Data array updated to exclude 'tanggal_jatuh_tempo'
                 $data = [
-                    'tanggal_deposito'    => $tanggal_perpanjangan,
-                    'durasi'              => $durasi,
-                    'rate_bunga'          => $bunga_baru,
-                    'status'              => 'aktif'
+                    'tanggal_deposito' => $tanggal_perpanjangan,
+                    'durasi' => $durasi,
+                    'rate_bunga' => $bunga_baru,
+                    'status' => 'aktif'
                 ];
 
                 $updated = $this->Deposito_model->edit_data($id, $data);
@@ -462,17 +454,14 @@ class Deposito extends CI_Controller
             redirect('unauthorized_403');
         }
 
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($encoded_rek === null) {
             show_custom_404();
             return;
         }
 
-        $no_rekening = safe_base64_decode($encoded_rek);;
+        $no_rekening = safe_base64_decode($encoded_rek);
+        ;
         $deposito = $this->Deposito_model->get_data_by_norek($no_rekening);
         $nasabah = $this->Nasabah_model->get_data_by_id($deposito->nasabah_id);
 
@@ -499,7 +488,7 @@ class Deposito extends CI_Controller
 
         $parser = [
             'judul' => "Form Edit Deposito",
-            'isi'   => $this->load->view('deposito/editForm', $data, TRUE)
+            'isi' => $this->load->view('deposito/editForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -531,15 +520,15 @@ class Deposito extends CI_Controller
             $no_rekening = $this->input->post('nomor_rekening');
 
             $this->form_validation->set_rules('tanggal_deposito', 'Tanggal Simpanan', 'required', [
-                'required'   => 'Tanggal simpanan wajib diisi.'
+                'required' => 'Tanggal simpanan wajib diisi.'
             ]);
 
             $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
-                'required'     => 'Nasabah tidak boleh kosong.'
+                'required' => 'Nasabah tidak boleh kosong.'
             ]);
 
             $this->form_validation->set_rules('jenis_tabungan', 'Jenis Tabungan', 'required', [
-                'required'     => 'Jenis tabungan harus diisi.',
+                'required' => 'Jenis tabungan harus diisi.',
             ]);
 
             $this->form_validation->set_rules('bunga', 'Bunga', 'required', [
@@ -603,18 +592,18 @@ class Deposito extends CI_Controller
             if ($this->form_validation->run() == FALSE) {
                 $msg = [
                     'error' => [
-                        'errorTanggalDeposito'  => form_error('tanggal_deposito'),
-                        'errorNasabah'          => form_error('nasabah'),
-                        'errorJenisTabungan'    => form_error('jenis_tabungan'),
-                        'errorBunga'            => form_error('bunga'),
-                        'errorBiayaRegistrasi'  => form_error('biaya_registrasi'),
-                        'errorSimpananAwal'     => form_error('simpanan_awal'),
-                        'errorPengendapan'      => form_error('pengendapan'),
-                        'errorJenisDenda'       => form_error('jenis_denda'),
-                        'errorJumlahDenda'      => form_error('jumlah_denda'),
-                        'errorJummlahDeposito'  => form_error('jumlah_deposito'),
-                        'errorNoRekening'       => form_error('nomor_rekening'),
-                        'errorDurasi'           => form_error('durasi'),
+                        'errorTanggalDeposito' => form_error('tanggal_deposito'),
+                        'errorNasabah' => form_error('nasabah'),
+                        'errorJenisTabungan' => form_error('jenis_tabungan'),
+                        'errorBunga' => form_error('bunga'),
+                        'errorBiayaRegistrasi' => form_error('biaya_registrasi'),
+                        'errorSimpananAwal' => form_error('simpanan_awal'),
+                        'errorPengendapan' => form_error('pengendapan'),
+                        'errorJenisDenda' => form_error('jenis_denda'),
+                        'errorJumlahDenda' => form_error('jumlah_denda'),
+                        'errorJummlahDeposito' => form_error('jumlah_deposito'),
+                        'errorNoRekening' => form_error('nomor_rekening'),
+                        'errorDurasi' => form_error('durasi'),
                     ]
                 ];
             } else {
@@ -656,24 +645,13 @@ class Deposito extends CI_Controller
             redirect('unauthorized_403');
         }
 
-        if (!function_exists('safe_base64_decode_detail_deposito')) {
-            function safe_base64_decode_detail_deposito($string)
-            {
-                $data = strtr($string, '-_?', '+/=');
-                $mod4 = strlen($data) % 4;
-                if ($mod4) {
-                    $data .= substr('====', $mod4);
-                }
-                return base64_decode($data);
-            }
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($encoded_rek === null) {
             show_404();
             return;
         }
 
-        $no_rekening = safe_base64_decode_detail_deposito($encoded_rek);
+        $no_rekening = safe_base64_decode($encoded_rek);
 
         if ($no_rekening === false || empty(trim($no_rekening))) {
             show_404("Nomor rekening tidak valid.");
@@ -694,33 +672,7 @@ class Deposito extends CI_Controller
         $this->load->model('Pencairan_model');
         $akumulasi_data_penarikan = $this->Pencairan_model->get_akumulasi_penarikan_by_deposito($deposito->id);
 
-        if (!function_exists('format_durasi')) {
-            function format_durasi($bulan)
-            {
-                if ($bulan === null || !is_numeric($bulan) || $bulan <= 0) {
-                    return '-';
-                }
-                $bulan_int = intval($bulan);
-                $tahun = floor($bulan_int / 12);
-                $sisa_bulan = $bulan_int % 12;
-                $output_parts = [];
-                if ($tahun > 0) {
-                    $output_parts[] = "{$tahun} tahun";
-                }
-                if ($sisa_bulan > 0) {
-                    $output_parts[] = "{$sisa_bulan} bulan";
-                }
-                if (empty($output_parts)) {
-                    return "{$bulan_int} bulan";
-                }
-                $output_str = implode(' ', $output_parts);
-                if ($bulan_int >= 12) {
-                    $output_str .= " (Total: {$bulan_int} bulan)";
-                }
-                return $output_str;
-            }
-        }
-
+        // Menggunakan format_durasi dari helper
         $bunga_tersedia = $this->Deposito_model->get_bunga_tersedia_from_log($deposito->id);
         $bunga_sudah_dibayar = $this->Deposito_model->get_bunga_sudah_dibayar_from_log($deposito->id);
         if ($deposito->status == 'ditutup') {
@@ -732,18 +684,18 @@ class Deposito extends CI_Controller
         }
 
         $data = [
-            'deposito'                  => $deposito,
-            'nasabah'                   => $nasabah,
-            'jenis'                     => $jenis_tabungan,
-            'pegawai'                   => $pegawai,
-            'level'                     => $this->session->userdata('level'),
-            'formatted_durasi'          => format_durasi($deposito->durasi ?? null),
+            'deposito' => $deposito,
+            'nasabah' => $nasabah,
+            'jenis' => $jenis_tabungan,
+            'pegawai' => $pegawai,
+            'level' => $this->session->userdata('level'),
+            'formatted_durasi' => format_durasi($deposito->durasi ?? null),
             'total_akumulasi_penarikan' => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_penarikan ?? 0) : 0,
-            'total_akumulasi_denda'     => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_denda ?? 0) : 0,
-            'bunga_tersedia'            => $bunga_tersedia,
-            'bunga_sudah_dibayar'       => $bunga_sudah_dibayar,
-            'hutang_bunga'              => $hutang_bunga_saat_ini,
-            'bunga_sampai_jatuh_tempo'  => $bunga_sampai_jatuh_tempo,
+            'total_akumulasi_denda' => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_denda ?? 0) : 0,
+            'bunga_tersedia' => $bunga_tersedia,
+            'bunga_sudah_dibayar' => $bunga_sudah_dibayar,
+            'hutang_bunga' => $hutang_bunga_saat_ini,
+            'bunga_sampai_jatuh_tempo' => $bunga_sampai_jatuh_tempo,
         ];
 
         // print_r($data);
@@ -755,7 +707,7 @@ class Deposito extends CI_Controller
             'judul' => "<a href=\"" . base_url('deposito') . "\" class=\"btn btn-warning\">
                         <i class=\"fa fa-backward\"></i> Kembali
                     </a>",
-            'isi'   => $this->load->view('deposito/detail', $data, TRUE)
+            'isi' => $this->load->view('deposito/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -773,14 +725,14 @@ class Deposito extends CI_Controller
         $akumulasi_data_penarikan = $this->Deposito_model->get_akumulasi_data_penarikan($id);
 
         $data = [
-            'deposito'        => $deposito,
-            'nasabah'         => $nasabah,
-            'jenis'           => $jenis_tabungan,
-            'pegawai'         => $pegawai,
-            'level'           => $this->session->userdata('level'),
+            'deposito' => $deposito,
+            'nasabah' => $nasabah,
+            'jenis' => $jenis_tabungan,
+            'pegawai' => $pegawai,
+            'level' => $this->session->userdata('level'),
             'formatted_durasi' => format_durasi($deposito->durasi ?? null),
             'total_akumulasi_penarikan' => $akumulasi_data_penarikan->total_akumulasi_penarikan ?? 0,
-            'total_akumulasi_denda'     => $akumulasi_data_penarikan->total_akumulasi_denda ?? 0,
+            'total_akumulasi_denda' => $akumulasi_data_penarikan->total_akumulasi_denda ?? 0,
         ];
 
         $this->load->view('deposito/partials/data_deposito', $data);
@@ -842,11 +794,7 @@ class Deposito extends CI_Controller
 
     public function laporan()
     {
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         $id = $this->input->get('id');
         $no_rek = safe_base64_decode($id);
         $deposito = $this->Deposito_model->get_data_by_norek($no_rek);
@@ -857,17 +805,17 @@ class Deposito extends CI_Controller
 
         $parser = [
             'judul' => "<i class='fa fa-money-check'></i> Laporan Deposito",
-            'isi'   => $this->load->view('deposito/laporan', $data, TRUE)
+            'isi' => $this->load->view('deposito/laporan', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
 
     public function print_laporan()
     {
-        $id             = $this->input->get('id');
-        $tanggal_mulai  = $this->input->get('tanggal_mulai');
-        $tanggal_akhir  = $this->input->get('tanggal_akhir');
-        $jenis_laporan  = $this->input->get('jenis_laporan') ?: '3';
+        $id = $this->input->get('id');
+        $tanggal_mulai = $this->input->get('tanggal_mulai');
+        $tanggal_akhir = $this->input->get('tanggal_akhir');
+        $jenis_laporan = $this->input->get('jenis_laporan') ?: '3';
 
         $deposito = $this->Deposito_model->get_data_by_id($id);
         if (!$deposito) {
@@ -883,7 +831,7 @@ class Deposito extends CI_Controller
 
         // IMPORTANT: default range that won't accidentally exclude bunga
         $start = $tanggal_mulai ?: $deposito->tanggal_deposito;
-        $end   = $tanggal_akhir ?: date('Y-m-d');
+        $end = $tanggal_akhir ?: date('Y-m-d');
 
         $rekening_data = $this->Deposito_model->get_transaksi_by_deposito(
             $deposito->id,
@@ -893,9 +841,9 @@ class Deposito extends CI_Controller
         );
 
         $data = [
-            'deposito'      => $deposito,
-            'nasabah'       => $nasabah,
-            'rekening'      => $rekening_data,
+            'deposito' => $deposito,
+            'nasabah' => $nasabah,
+            'rekening' => $rekening_data,
             'tanggal_mulai' => $start,
             'tanggal_akhir' => $end,
         ];
@@ -922,10 +870,12 @@ class Deposito extends CI_Controller
 
     public function print_sertifikat($id)
     {
-        if (empty($id)) show_error("Error: ID sertifikat tidak boleh kosong.", 400);
+        if (empty($id))
+            show_error("Error: ID sertifikat tidak boleh kosong.", 400);
 
         $sertifikat_data = $this->Deposito_model->get_detail_for_sertifikat($id);
-        if (!$sertifikat_data) show_error('Data sertifikat dengan ID ' . $id . ' tidak ditemukan.', 404);
+        if (!$sertifikat_data)
+            show_error('Data sertifikat dengan ID ' . $id . ' tidak ditemukan.', 404);
         $pegawai = $this->getNamaPegawai();
 
         $tanggal_depo = new DateTime($sertifikat_data->tanggal_deposito);
@@ -941,22 +891,22 @@ class Deposito extends CI_Controller
         $tanggal_jatuh_tempo = $tanggal_mulai->format('Y-m-d');
 
         $data = [
-            'nomor_sertifikat'   => $nomor_sertifikat_lengkap,
-            'nama_nasabah'       => $sertifikat_data->nama_nasabah ?? '',
-            'nama_pegawai'       => $pegawai,
-            'alamat_nasabah'     => $sertifikat_data->alamat_nasabah ?? '',
-            'jumlah_deposito'    => $sertifikat_data->jumlah_deposito ?? 0,
-            'terbilang'          => ucwords($this->terbilang_rupiah($sertifikat_data->jumlah_deposito)),
-            'durasi'             => sprintf('%d (%s)', $durasi, $durasi_terbilang) ?? 0,
-            'tanggal_deposito'   => $sertifikat_data->tanggal_deposito,
+            'nomor_sertifikat' => $nomor_sertifikat_lengkap,
+            'nama_nasabah' => $sertifikat_data->nama_nasabah ?? '',
+            'nama_pegawai' => $pegawai,
+            'alamat_nasabah' => $sertifikat_data->alamat_nasabah ?? '',
+            'jumlah_deposito' => $sertifikat_data->jumlah_deposito ?? 0,
+            'terbilang' => ucwords($this->terbilang_rupiah($sertifikat_data->jumlah_deposito)),
+            'durasi' => sprintf('%d (%s)', $durasi, $durasi_terbilang) ?? 0,
+            'tanggal_deposito' => $sertifikat_data->tanggal_deposito,
             'tanggal_jatuh_tempo' => $tanggal_jatuh_tempo,
             'suku_bunga' => (float) ($sertifikat_data->suku_bunga ?? 0),
-            'nama_pimpinan'      => $sertifikat_data->nama_pimpinan ?? 'N/A',
-            'nama_bendahara'     => $sertifikat_data->nama_bendahara ?? 'N/A',
-            'nik_nasabah'        => $sertifikat_data->nik_nasabah ?? '',
-            'tempat_lahir'       => $sertifikat_data->tempat_lahir ?? '',
-            'tanggal_lahir'      => $sertifikat_data->tanggal_lahir,
-            'telp_nasabah'       => $sertifikat_data->telp_nasabah ?? '',
+            'nama_pimpinan' => $sertifikat_data->nama_pimpinan ?? 'N/A',
+            'nama_bendahara' => $sertifikat_data->nama_bendahara ?? 'N/A',
+            'nik_nasabah' => $sertifikat_data->nik_nasabah ?? '',
+            'tempat_lahir' => $sertifikat_data->tempat_lahir ?? '',
+            'tanggal_lahir' => $sertifikat_data->tanggal_lahir,
+            'telp_nasabah' => $sertifikat_data->telp_nasabah ?? '',
         ];
 
         $html = $this->load->view('deposito/cetak_sertifikat', $data, TRUE);
@@ -986,7 +936,7 @@ class Deposito extends CI_Controller
             return $pegawai ? $pegawai->nama_lengkap : 'N/A';
         }
     }
-    
+
     // TAMBAHKAN FUNGSI BARU INI di dalam controller Deposito.php Anda
     private function _bulan_romawi($bulan)
     {
@@ -1070,8 +1020,8 @@ class Deposito extends CI_Controller
 
             if ($deposito) {
                 $response = [
-                    'status'         => 'success',
-                    'nama_nasabah'   => $deposito->nama_nasabah,
+                    'status' => 'success',
+                    'nama_nasabah' => $deposito->nama_nasabah,
                     'bunga_tersedia' => $bunga_tersedia
                 ];
             }
@@ -1089,7 +1039,7 @@ class Deposito extends CI_Controller
         }
 
         $deposito_id = $this->input->post('deposito_id');
-        $pegawai_id  = $this->input->post('pegawai_id');
+        $pegawai_id = $this->input->post('pegawai_id');
 
         if (empty($deposito_id) || empty($pegawai_id)) {
             $msg = ['error_validation' => 'Rekening dan Pegawai tidak boleh kosong.'];

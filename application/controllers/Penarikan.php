@@ -6,6 +6,9 @@ class Penarikan extends CI_Controller
     public function __construct()
     {
         parent::__construct();
+        // Set timezone di constructor
+        date_default_timezone_set('Asia/Makassar');
+
         $this->load->model('Penarikan_model');
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
@@ -54,19 +57,11 @@ class Penarikan extends CI_Controller
         ];
 
         echo json_encode($output);
-
-        // header('Content-Type: application/json');
-        // echo json_encode($output);
-        // exit;
     }
 
     public function index()
     {
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         $encoded_rek = $this->input->get('id');
         $tabungan = null;
         $combo_value = '';
@@ -88,7 +83,7 @@ class Penarikan extends CI_Controller
             'tabungan' => $tabungan,
             'selected_rekening' => $tabungan->no_rekening ?? null,
             'selected_tabungan' => $tabungan->id ?? null,
-            'selected_nasabah' => $selected_nasabah, // << Tambahkan ini
+            'selected_nasabah' => $selected_nasabah,
             'combo_value' => $combo_value,
             'disabled' => !empty($tabungan),
             'jenis' => $this->Kategori_model->get_data(),
@@ -100,7 +95,7 @@ class Penarikan extends CI_Controller
 
         $parser = [
             'judul' => "Formulir Penarikan Tunai",
-            'isi'   => $this->load->view('penarikan/index', $data, TRUE)
+            'isi' => $this->load->view('penarikan/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -124,9 +119,14 @@ class Penarikan extends CI_Controller
 
     private function _safe_base64_encode($string)
     {
-        return strtr(base64_encode($string), '+/=', '-_?');
+        return safe_base64_encode($string); // Menggunakan helper
     }
 
+    /**
+     * CRITICAL FIX: Proses penarikan dengan FOR UPDATE locking
+     * - Mencegah race condition
+     * - Validasi dan update dalam satu transaksi
+     */
     public function proses()
     {
         // --- Basic setup ---
@@ -134,7 +134,7 @@ class Penarikan extends CI_Controller
         $tanggal_input = $this->input->post('tanggal_penarikan');
         $tanggal_penarikan_input = $tanggal_input . ' ' . $waktu_sekarang;
         $simpanan_id = $this->input->post('tabungan');
-        $jumlah_penarikan_diminta = (float) str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_penarikan') ?? '');
+        $jumlah_penarikan_diminta = (float) str_replace(['.', ','], ['', '.'], (string) ($this->input->post('jumlah_penarikan') ?? ''));
         $pegawai_id = $this->session->userdata('level') == 'Admin' ? $this->input->post('pegawai_id') : $this->session->userdata('pegawai_id');
         $level_user = $this->session->userdata('level');
 
@@ -145,21 +145,11 @@ class Penarikan extends CI_Controller
             $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', ['required' => 'Pegawai wajib dipilih oleh Admin.']);
         }
 
-        // --- Balance and withdrawal validation logic ---
-        if (!empty($simpanan_id)) {
-            $simpanan_data = $this->Penarikan_model->get_simpanan_by_id($simpanan_id);
-            if (!empty($simpanan_data)) {
-                $saldo_pokok = (float) $simpanan_data->jumlah_simpanan;
-                $pengendapan_minimal = (float) $simpanan_data->pengendapan;
-                $validation_params = implode(',', [$saldo_pokok, $pengendapan_minimal]);
-                $this->form_validation->set_rules('jumlah_penarikan', 'Jumlah Penarikan', 'required|callback_valid_jumlah_penarikan[' . $validation_params . ']');
-            }
-        }
-
+        // Basic validation first (without balance check - that happens inside transaction)
         if ($this->form_validation->run() == FALSE) {
             $errors = [
                 'errorSimpanan' => form_error('tabungan'),
-                'errorJumlah'   => form_error('jumlah_penarikan')
+                'errorJumlah' => form_error('jumlah_penarikan')
             ];
             if ($level_user == 'Admin' && form_error('pegawai_id')) {
                 $errors['errorPegawai'] = form_error('pegawai_id');
@@ -168,10 +158,36 @@ class Penarikan extends CI_Controller
             return;
         }
 
-        // --- DATABASE TRANSACTION LOGIC ---
+        // --- DATABASE TRANSACTION LOGIC WITH FOR UPDATE LOCKING ---
         $this->db->trans_start();
 
         try {
+            // CRITICAL: Lock the row first to prevent race conditions
+            $simpanan_locked = $this->db->query(
+                "SELECT ts.id, ts.jumlah_simpanan, jt.pengendapan 
+                 FROM tbsimpanan ts 
+                 JOIN tbjenistabungan jt ON jt.id = ts.jenistabungan_id 
+                 WHERE ts.id = ? FOR UPDATE",
+                [$simpanan_id]
+            )->row();
+
+            if (!$simpanan_locked) {
+                throw new Exception('Data rekening tidak ditemukan.');
+            }
+
+            // Re-validate with locked data
+            $saldo_pokok = (float) $simpanan_locked->jumlah_simpanan;
+            $pengendapan_minimal = (float) $simpanan_locked->pengendapan;
+            $sisa_saldo = $saldo_pokok - $jumlah_penarikan_diminta;
+
+            if ($sisa_saldo < $pengendapan_minimal) {
+                throw new Exception('Penarikan gagal. Saldo tidak mencukupi. Sisa saldo minimal setelah transaksi harus Rp ' . number_format($pengendapan_minimal, 0, ',', '.'));
+            }
+
+            if ($jumlah_penarikan_diminta <= 0) {
+                throw new Exception('Jumlah penarikan harus lebih dari 0.');
+            }
+
             // 1. Check if a withdrawal header already exists for this account on this date
             $penarikan_header = $this->Penarikan_model->get_penarikan_by_date($simpanan_id, $tanggal_input);
             $penarikan_id = 0;
@@ -182,11 +198,11 @@ class Penarikan extends CI_Controller
             } else {
                 // 2b. If not, create a new header record
                 $data_penarikan_header = [
-                    'simpanan_id'       => $simpanan_id,
-                    'pegawai_id'        => $pegawai_id,
+                    'simpanan_id' => $simpanan_id,
+                    'pegawai_id' => $pegawai_id,
                     'tanggal_penarikan' => $tanggal_penarikan_input,
-                    'jumlah_denda'      => 0,
-                    'total_penarikan'   => 0
+                    'jumlah_denda' => 0,
+                    'total_penarikan' => 0
                 ];
                 $penarikan_id = $this->Penarikan_model->simpan_penarikan($data_penarikan_header);
             }
@@ -197,23 +213,30 @@ class Penarikan extends CI_Controller
 
             // 3. Save the withdrawal detail record
             $data_penarikan_detail = [
-                'penarikan_id'      => $penarikan_id, // Link to the header
-                'simpanan_id'       => $simpanan_id,
+                'penarikan_id' => $penarikan_id,
+                'simpanan_id' => $simpanan_id,
                 'tanggal_penarikan' => $tanggal_penarikan_input,
-                'jumlah_penarikan'  => $jumlah_penarikan_diminta,
-                'pegawai_id'        => $pegawai_id,
-                'status'            => 'disetujui'
+                'jumlah_penarikan' => $jumlah_penarikan_diminta,
+                'pegawai_id' => $pegawai_id,
+                'status' => 'disetujui'
             ];
             $this->Penarikan_model->simpan_penarikan_detail($data_penarikan_detail);
 
             // 4. Update the total in the header record by adding the new amount
             $this->Penarikan_model->update_total_penarikan($penarikan_id, $jumlah_penarikan_diminta);
 
-            // 5. Reduce the main balance in the savings account
-            $this->Penarikan_model->kurangi_saldo_pokok($simpanan_id, $jumlah_penarikan_diminta);
+            // 5. Reduce the main balance in the savings account (atomic update)
+            $this->db->set('jumlah_simpanan', 'jumlah_simpanan - ' . (float) $jumlah_penarikan_diminta, FALSE);
+            $this->db->where('id', $simpanan_id);
+            $this->db->update('tbsimpanan');
 
             // If all operations were successful, commit the transaction
-            $this->db->trans_commit();
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception('Transaksi database gagal.');
+            }
+
             echo json_encode(['success' => 'Penarikan berhasil diproses.', 'redirect' => site_url('simpanan')]);
         } catch (Exception $e) {
             // If any operation fails, roll back the transaction
@@ -224,11 +247,10 @@ class Penarikan extends CI_Controller
 
     public function valid_jumlah_penarikan($jumlah_diminta_str, $params)
     {
-        // Parameters are now just saldo and minimum balance
         list($saldo_str, $pengendapan_str) = explode(',', $params);
 
-        $jumlah_diminta      = (float) str_replace(['.', ','], ['', '.'], $jumlah_diminta_str);
-        $saldo_saat_ini      = (float) $saldo_str;
+        $jumlah_diminta = (float) str_replace(['.', ','], ['', '.'], $jumlah_diminta_str);
+        $saldo_saat_ini = (float) $saldo_str;
         $pengendapan_minimal = (float) $pengendapan_str;
 
         if (!is_numeric($jumlah_diminta) || $jumlah_diminta <= 0) {
@@ -236,7 +258,6 @@ class Penarikan extends CI_Controller
             return FALSE;
         }
 
-        // Simplified check: Does the remaining balance meet the minimum?
         $sisa_saldo_setelah_pengurangan = $saldo_saat_ini - $jumlah_diminta;
 
         if ($sisa_saldo_setelah_pengurangan < $pengendapan_minimal) {
@@ -283,11 +304,11 @@ class Penarikan extends CI_Controller
         $data = $this->Penarikan_model->get_simpanan_detail_by_id($id);
 
         if ($data) {
-            $total_saldo = (float)$data->jumlah_simpanan;
+            $total_saldo = (float) $data->jumlah_simpanan;
             echo json_encode([
-                'nama_nasabah'      => $data->nama_lengkap,
-                'jenis_tabungan'    => $data->jenis_tabungan,
-                'saldo'             => $total_saldo
+                'nama_nasabah' => $data->nama_lengkap,
+                'jenis_tabungan' => $data->jenis_tabungan,
+                'saldo' => $total_saldo
             ]);
         } else {
             echo json_encode(['error' => 'Data tidak ditemukan']);
@@ -310,7 +331,7 @@ class Penarikan extends CI_Controller
 
             $this->form_validation->set_rules('total_penarikan', 'Total Penarikan', 'required|numeric', [
                 'required' => 'Total Penarikan wajib diisi.',
-                'numeric'  => 'Total Penarikan harus berupa angka.'
+                'numeric' => 'Total Penarikan harus berupa angka.'
             ]);
 
             if ($this->form_validation->run() == FALSE) {
@@ -343,17 +364,13 @@ class Penarikan extends CI_Controller
             redirect('unauthorized_403');
         }
 
-        function safe_base64_decode_simpanan($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($encoded_rek === null) {
             show_custom_404();
             return;
         }
 
-        $no_rekening = safe_base64_decode_simpanan($encoded_rek);;
+        $no_rekening = safe_base64_decode($encoded_rek);
         $simpanan = $this->Simpanan_model->get_data_by_norek($no_rekening);
 
         if (!$simpanan) {
@@ -367,24 +384,7 @@ class Penarikan extends CI_Controller
 
         $akumulasi_penarikan = $this->Penarikan_model->get_akumulasi_penarikan_by_simpanan($simpanan->id);
 
-        if (!function_exists('format_durasi')) {
-            function format_durasi($bulan)
-            {
-                if (!$bulan || $bulan <= 0) return '-';
-                $tahun = floor($bulan / 12);
-                $sisa_bulan = $bulan % 12;
-
-                $output = "$bulan bulan";
-                if ($tahun > 0) {
-                    $output .= " / {$tahun} tahun";
-                    if ($sisa_bulan > 0) {
-                        $output .= " {$sisa_bulan} bulan";
-                    }
-                }
-                return $output;
-            }
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         $data = [
             'simpanan' => $simpanan,
             'nasabah' => $nasabah,
@@ -399,7 +399,7 @@ class Penarikan extends CI_Controller
             'judul' => "<a href=" . base_url('simpanan') . " class=\"btn btn-warning\">
                             <i class=\"fa fa-backward\"></i> Kembali
                         </a>",
-            'isi'   => $this->load->view('simpanan/detail', $data, TRUE)
+            'isi' => $this->load->view('simpanan/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -408,13 +408,13 @@ class Penarikan extends CI_Controller
     {
         $simpanan_id = $this->input->post('simpanan_id');
 
-        if (empty($simpanan_id) || !ctype_digit((string)$simpanan_id)) {
+        if (empty($simpanan_id) || !ctype_digit((string) $simpanan_id)) {
             echo json_encode([
-                "draw"            => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
-                "recordsTotal"    => 0,
+                "draw" => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
+                "recordsTotal" => 0,
                 "recordsFiltered" => 0,
-                "data"            => [],
-                "error"           => "ID Simpanan tidak valid."
+                "data" => [],
+                "error" => "ID Simpanan tidak valid."
             ]);
             return;
         }
@@ -441,10 +441,10 @@ class Penarikan extends CI_Controller
         }
 
         $output = [
-            "draw"            => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
-            "recordsTotal"    => $this->Penarikan_model->count_all_detail_penarikan($simpanan_id),
+            "draw" => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
+            "recordsTotal" => $this->Penarikan_model->count_all_detail_penarikan($simpanan_id),
             "recordsFiltered" => $this->Penarikan_model->count_filtered_detail_penarikan($simpanan_id),
-            "data"            => $data,
+            "data" => $data,
         ];
 
         header('Content-Type: application/json');
@@ -454,7 +454,7 @@ class Penarikan extends CI_Controller
     public function hapus_detail_penarikan_ajax()
     {
         $penarikan_id = $this->input->post('penarikan_id');
-        if (empty($penarikan_id) || !ctype_digit((string)$penarikan_id)) {
+        if (empty($penarikan_id) || !ctype_digit((string) $penarikan_id)) {
             echo json_encode(['error' => 'ID Penarikan tidak valid.']);
             return;
         }
@@ -471,10 +471,9 @@ class Penarikan extends CI_Controller
 
         // The amount to return is the total from the header
         $simpanan_id = $penarikan_data->simpanan_id;
-        $jumlah_total_kembali = (float)$penarikan_data->total_penarikan;
+        $jumlah_total_kembali = (float) $penarikan_data->total_penarikan;
 
         // 1. Delete all detail records associated with this header
-        // This is important for data integrity
         $this->db->where('penarikan_id', $penarikan_id);
         $this->db->delete('tbdetail_penarikan');
 
@@ -486,8 +485,13 @@ class Penarikan extends CI_Controller
             $this->Penarikan_model->tambah_saldo_pokok($simpanan_id, $jumlah_total_kembali);
 
             // Commit the transaction
-            $this->db->trans_commit();
-            echo json_encode(['success' => 'Data penarikan berhasil dihapus dan saldo telah dikembalikan.']);
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === FALSE) {
+                echo json_encode(['error' => 'Gagal menghapus data penarikan.']);
+            } else {
+                echo json_encode(['success' => 'Data penarikan berhasil dihapus dan saldo telah dikembalikan.']);
+            }
         } else {
             // If deletion fails, roll back
             $this->db->trans_rollback();
@@ -498,7 +502,6 @@ class Penarikan extends CI_Controller
     public function get_combo_rekening_nasabah()
     {
         $search = $this->input->get('q');
-        // $this->load->model('Penarikan_model');
         $result = $this->Penarikan_model->get_combo_rekening_nasabah($search);
         echo json_encode($result);
     }

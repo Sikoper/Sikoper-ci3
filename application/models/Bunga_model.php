@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Bunga_model extends CI_Model
 {
     var $table = 'tbtransaksi';
-    var $column_order = array(null, 'nama_lengkap', 'no_rekening', 'tanggal_transaksi', 'jumlah_transaksi', 'bunga_riil','rate_bunga', null);
+    var $column_order = array(null, 'nama_lengkap', 'no_rekening', 'tanggal_transaksi', 'jumlah_transaksi', 'bunga_riil', 'rate_bunga', null);
     var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbtransaksi.tanggal_transaksi');
     var $order = array('created_at' => 'ASC');
 
@@ -107,10 +107,17 @@ class Bunga_model extends CI_Model
         return true;
     }
 
+    /**
+     * FRAUD PREVENTION: Perhitungan bunga berdasarkan saldo terendah bulan lalu
+     * Ini mencegah nasabah melakukan setoran besar di akhir bulan lalu ditarik
+     * di awal bulan hanya untuk mengejar bunga.
+     */
     public function bunga_proses()
     {
         $today = date('Y-m-d');
         $lastMonth = date('Y-m-d', strtotime('-1 month'));
+        $prevMonthStart = date('Y-m-01', strtotime('-1 month'));
+        $prevMonthEnd = date('Y-m-t', strtotime('-1 month'));
 
         $this->db->select('tbsimpanan.id, tbsimpanan.nasabah_id, tbsimpanan.jumlah_simpanan, tbsimpanan.tanggal_simpanan, tbjenistabungan.bunga as bunga');
         $this->db->from('tbsimpanan');
@@ -122,12 +129,6 @@ class Bunga_model extends CI_Model
 
         foreach ($simpananList as $simpanan) {
             $bungaRate = (float) $simpanan->bunga;
-            $saldo = (float) $simpanan->jumlah_simpanan;
-
-            if ($saldo <= 0) continue;
-
-            $bungaAmount = ($bungaRate / 100) * $saldo;
-            $bungaRiil = $this->round_to_nearest_hundred($bungaAmount);
 
             // Check if bunga already processed this month
             $alreadyGiven = $this->db
@@ -141,16 +142,68 @@ class Bunga_model extends CI_Model
                 continue;
             }
 
-            // Insert bunga transaction
-            $this->db->insert('tbtransaksi', [
-                'simpanan_id'       => $simpanan->id,
-                'tanggal_transaksi' => $today,
-                'jumlah_transaksi'  => $bungaAmount,
-                'bunga_riil'        => $bungaRiil,
-                'rate_bunga'        => $bungaRate
+            // FRAUD PREVENTION: Hitung saldo terendah bulan lalu
+            // Ini mencegah nasabah melakukan setoran besar di akhir bulan
+            $minBalanceQuery = $this->db->query("
+                SELECT COALESCE(MIN(running_balance), 0) as min_saldo
+                FROM (
+                    SELECT 
+                        tanggal,
+                        @running := @running + CASE 
+                            WHEN tipe = 'setor' THEN jumlah 
+                            ELSE -jumlah 
+                        END as running_balance
+                    FROM (
+                        SELECT 'setor' as tipe, jumlah_setoran as jumlah, tanggal_setoran as tanggal
+                        FROM tbdetail_simpanan 
+                        WHERE simpanan_id = ?
+                        AND tanggal_setoran <= ?
+                        
+                        UNION ALL
+                        
+                        SELECT 'tarik' as tipe, jumlah_penarikan as jumlah, tanggal_penarikan as tanggal
+                        FROM tbdetail_penarikan 
+                        WHERE simpanan_id = ? 
+                        AND status = 'disetujui'
+                        AND tanggal_penarikan <= ?
+                    ) transactions, (SELECT @running := 0) r
+                    ORDER BY tanggal, tipe DESC
+                ) daily_balances
+                WHERE DATE(tanggal) BETWEEN ? AND ?
+            ", [
+                $simpanan->id,
+                $prevMonthEnd,
+                $simpanan->id,
+                $prevMonthEnd,
+                $prevMonthStart,
+                $prevMonthEnd
             ]);
 
-            // Update saldo
+            $minBalance = $minBalanceQuery->row();
+            $saldo = ($minBalance && $minBalance->min_saldo > 0) ? (float) $minBalance->min_saldo : 0;
+
+            // Jika tidak ada data transaksi bulan lalu, gunakan saldo saat ini sebagai fallback
+            // (untuk rekening baru yang belum punya history)
+            if ($saldo <= 0) {
+                $saldo = (float) $simpanan->jumlah_simpanan;
+            }
+
+            if ($saldo <= 0)
+                continue;
+
+            $bungaAmount = ($bungaRate / 100) * $saldo;
+            $bungaRiil = $this->round_to_nearest_hundred($bungaAmount);
+
+            // Insert bunga transaction
+            $this->db->insert('tbtransaksi', [
+                'simpanan_id' => $simpanan->id,
+                'tanggal_transaksi' => $today,
+                'jumlah_transaksi' => $bungaAmount,
+                'bunga_riil' => $bungaRiil,
+                'rate_bunga' => $bungaRate
+            ]);
+
+            // Update saldo (atomic update)
             $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaAmount, false);
             $this->db->where('id', $simpanan->id);
             $this->db->update('tbsimpanan');

@@ -1,10 +1,7 @@
 <section class="section">
     <div class="card">
         <?php
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_.');
-        }
+        // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
         $backUrl = $this->input->get('code') == 1
             ? site_url('jenis_tabungan/detail/' . safe_base64_encode($kategori->id))
             : site_url('jenis_tabungan');
@@ -26,7 +23,8 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="nama">Nama</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="nama" name="nama" placeholder="Nama jenis tabungan" value="<?= $kategori->nama ?>">
+                            <input type="text" class="form-control" id="nama" name="nama"
+                                placeholder="Nama jenis tabungan" value="<?= $kategori->nama ?>">
                             <span class="input-group-text"><i class="fa-regular fa-credit-card fa-fw"></i></span>
                         </div>
                         <div id="errorNama" class="invalid-feedback" style="display: none;"></div>
@@ -36,7 +34,8 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="bunga">Bunga</label>
                         <div class="input-group">
-                            <input type="text" id="bunga" name="bunga" class="form-control" placeholder="Bunga untuk jenis tabungan" value="<?= $kategori->bunga ?>">
+                            <input type="text" id="bunga" name="bunga" class="form-control"
+                                placeholder="Bunga untuk jenis tabungan" value="<?= $kategori->bunga ?>">
                             <span class="input-group-text"><i class="fa fa-percent fa-fw"></i></span>
                         </div>
                         <div id="errorBunga" class="invalid-feedback" style="display: none;"></div>
@@ -47,7 +46,8 @@
                         <label for="biaya_registrasi">Biaya Registrasi</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="biaya_registrasi" name="biaya_registrasi" class="form-control text-end" value="<?= $kategori->biaya_registrasi ?>">
+                            <input type="text" id="biaya_registrasi" name="biaya_registrasi"
+                                class="form-control text-end" value="<?= $kategori->biaya_registrasi ?>">
                         </div>
                         <div id="errorBiayaRegistrasi" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -57,7 +57,8 @@
                         <label for="simpanan_awal">Simpanan Awal</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="simpanan_awal" name="simpanan_awal" class="form-control text-end" value="<?= $kategori->simpanan_awal ?>">
+                            <input type="text" id="simpanan_awal" name="simpanan_awal" class="form-control text-end"
+                                value="<?= $kategori->simpanan_awal ?>">
                         </div>
                         <div id="errorSimpananAwal" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -67,7 +68,8 @@
                         <label for="pengendapan">Pengendapan</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="text" id="pengendapan" name="pengendapan" class="form-control text-end" value="<?= $kategori->pengendapan ?>">
+                            <input type="text" id="pengendapan" name="pengendapan" class="form-control text-end"
+                                value="<?= $kategori->pengendapan ?>">
                         </div>
                         <div id="errorPengendapan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -76,7 +78,8 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="tanggal_pembungaan">Tanggal Pembungaan</label>
                         <div class="input-group">
-                            <input type="text" id="tanggal_pembungaan" name="tanggal_pembungaan" value="<?= $kategori->tanggal_bunga ?>" class="form-control">
+                            <input type="text" id="tanggal_pembungaan" name="tanggal_pembungaan"
+                                value="<?= $kategori->tanggal_bunga ?>" class="form-control">
                         </div>
                         <div id="errorTanggalPembungaan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -109,7 +112,8 @@
                     <div class="form-group mb-3" style="height: 80px;">
                         <label for="denda_persen">Pinalti/Denda Penarikan (%)</label>
                         <div class="input-group">
-                            <input type="text" id="denda_persen" name="denda_persen" class="form-control text-end" disabled>
+                            <input type="text" id="denda_persen" name="denda_persen" class="form-control text-end"
+                                disabled>
                             <span class="input-group-text">%</span>
                         </div>
                         <div id="errorDendaPersen" class="invalid-feedback" style="display: none;"></div>
@@ -119,7 +123,8 @@
                     <div class="form-group" style="height: 180px;">
                         <label for="keterangan">Keterangan</label>
                         <div class="input-group">
-                            <textarea class="form-control" id="keterangan" name="keterangan" rows="5"><?= $kategori->keterangan ?></textarea>
+                            <textarea class="form-control" id="keterangan" name="keterangan"
+                                rows="5"><?= $kategori->keterangan ?></textarea>
                         </div>
                         <div id="errorKeterangan" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -127,7 +132,8 @@
 
                     <div class="text-center mt-3">
                         <button type="submit" id="tombol_simpan" class="btn btn-success">Simpan</button>
-                        <button type="button" onclick="window.location='<?= $backUrl ?>'" class="btn btn-danger">Batal</button>
+                        <button type="button" onclick="window.location='<?= $backUrl ?>'"
+                            class="btn btn-danger">Batal</button>
                     </div>
 
                     <?= form_close() ?>
@@ -139,7 +145,7 @@
 </section>
 <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('#bunga').autoNumeric('init', {
             aSep: ',',
             aDec: '.',
@@ -162,7 +168,7 @@
             aDec: ',',
             mDec: '0',
         });
-        $('#tanggal_pembungaan').on('input', function() {
+        $('#tanggal_pembungaan').on('input', function () {
             let value = $(this).val();
 
             value = value.replace(/\D/g, '');
@@ -196,7 +202,7 @@
             maximumValue: '100'
         });
 
-        $('#jenis_denda').on('change', function() {
+        $('#jenis_denda').on('change', function () {
             const value = $(this).val() || '<?= $kategori->jenis_denda ?? '' ?>';
             const dendaValue = '<?= $kategori->jumlah_denda ?? '' ?>';
             const numericValue = parseFloat(dendaValue || 0);
@@ -223,7 +229,7 @@
 
         $('#jenis_denda').trigger('change');
 
-        $('#tombol_simpan').click(function(e) {
+        $('#tombol_simpan').click(function (e) {
             e.preventDefault();
 
             let form = $('#form_simpan')[0];
@@ -237,15 +243,15 @@
                 processData: false,
                 contentType: false,
                 cache: false,
-                beforeSend: function() {
+                beforeSend: function () {
                     $('#tombol_simpan').prop('disabled', true)
                     $('#tombol_simpan').html('<i class="fa fa-spin fa-spinner"></i>')
                 },
-                complete: function() {
+                complete: function () {
                     $('#tombol_simpan').prop('disabled', false)
                     $('#tombol_simpan').html('Save')
                 },
-                success: function(response) {
+                success: function (response) {
                     if (response.error) {
                         let dataError = response.error;
                         if (dataError.errorNama) {
@@ -322,7 +328,7 @@
                         });
                     }
                 },
-                error: function(xhr, thrownError) {
+                error: function (xhr, thrownError) {
                     alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                 }
             });
