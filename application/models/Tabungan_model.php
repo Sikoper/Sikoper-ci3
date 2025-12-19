@@ -47,14 +47,17 @@ class Tabungan_model extends CI_Model
             $this->db->where('trans.simpanan_id', $id);
         }
 
+        // PHP 8.x fix: safely access $_POST with null coalescing
+        $search_value = $_POST['search']['value'] ?? '';
+
         $i = 0;
         foreach ($this->column_search as $item) {
-            if ($_POST['search']['value']) {
+            if (!empty($search_value)) {
                 if ($i === 0) {
                     $this->db->group_start();
-                    $this->db->like($item, $_POST['search']['value']);
+                    $this->db->like($item, $search_value);
                 } else {
-                    $this->db->or_like($item, $_POST['search']['value']);
+                    $this->db->or_like($item, $search_value);
                 }
 
                 if (count($this->column_search) - 1 == $i)
@@ -63,8 +66,8 @@ class Tabungan_model extends CI_Model
             $i++;
         }
 
-        if (isset($_POST['order'])) {
-            $this->db->order_by($this->column_order[$_POST['order']['0']['column']], $_POST['order']['0']['dir']);
+        if (isset($_POST['order'][0]['column']) && isset($_POST['order'][0]['dir'])) {
+            $this->db->order_by($this->column_order[$_POST['order'][0]['column']], $_POST['order'][0]['dir']);
         } else if (isset($this->order)) {
             $order = $this->order;
             $this->db->order_by(key($order), $order[key($order)]);
@@ -74,9 +77,22 @@ class Tabungan_model extends CI_Model
     function get_datatables($id = null)
     {
         $this->_get_datatables_query($id);
-        if ($_POST['length'] != -1)
-            $this->db->limit($_POST['length'], $_POST['start']);
+
+        // PHP 8.x fix: safely access $_POST with null coalescing
+        $length = $_POST['length'] ?? -1;
+        $start = $_POST['start'] ?? 0;
+
+        if ($length != -1) {
+            $this->db->limit($length, $start);
+        }
+
         $query = $this->db->get();
+
+        // Safety check: ensure query succeeded
+        if ($query === false) {
+            return [];
+        }
+
         return $query->result();
     }
 
