@@ -64,7 +64,7 @@ class Rekapitulasi_deposito_model extends CI_Model
 
         $this->db->from('tbdeposito as d');
         $this->db->join('tbnasabah as n', 'n.id = d.nasabah_id');
-        $this->db->where('d.status', 'aktif');
+        // FIXED: Removed status filter to include closed accounts in historical reports
         $this->db->where('d.tanggal_deposito <=', $end_of_period);
 
         // Search and Order logic remains the same
@@ -77,7 +77,8 @@ class Rekapitulasi_deposito_model extends CI_Model
                 } else {
                     $this->db->or_like($item, $_POST['search']['value']);
                 }
-                if (count($this->column_search) - 1 == $i) $this->db->group_end();
+                if (count($this->column_search) - 1 == $i)
+                    $this->db->group_end();
             }
             $i++;
         }
@@ -109,7 +110,8 @@ class Rekapitulasi_deposito_model extends CI_Model
 
     public function count_all()
     {
-        $this->db->from($this->table)->where('status', 'aktif');
+        // FIXED: Removed status filter for count_all to be consistent
+        $this->db->from($this->table);
         return $this->db->count_all_results();
     }
 
@@ -130,13 +132,15 @@ class Rekapitulasi_deposito_model extends CI_Model
 
         // Total Initial Deposits
         $this->db->select_sum('d.jumlah_deposito', 'total_pokok');
-        $this->db->from('tbdeposito d')->where('d.status', 'aktif')->where('d.tanggal_deposito <=', $end_of_period);
+        // FIXED: Removed status filter
+        $this->db->from('tbdeposito d')->where('d.tanggal_deposito <=', $end_of_period);
         $total_pokok = ($this->db->get()->row()->total_pokok ?? 0);
 
         // Total Prior Interest
         $this->db->select_sum('bl.jumlah_bunga', 'total_bunga_sebelumnya');
         $this->db->from('tb_bunga_deposito_log bl')->join('tbdeposito d', 'd.id = bl.deposito_id');
-        $this->db->where('d.status', 'aktif')->where('d.tanggal_deposito <=', $end_of_period)->where('bl.tanggal_perhitungan <', $start_of_period);
+        // FIXED: Removed status filter
+        $this->db->where('d.tanggal_deposito <=', $end_of_period)->where('bl.tanggal_perhitungan <', $start_of_period);
         $total_bunga_sebelumnya = ($this->db->get()->row()->total_bunga_sebelumnya ?? 0);
 
         $total_saldo_awal = $total_pokok + $total_bunga_sebelumnya;
@@ -144,7 +148,8 @@ class Rekapitulasi_deposito_model extends CI_Model
         // ✅ MODIFIED: Total Interest for the Current Period
         $this->db->select_sum('bl.jumlah_bunga', 'total_bunga_bulan_ini');
         $this->db->from('tb_bunga_deposito_log bl')->join('tbdeposito d', 'd.id = bl.deposito_id');
-        $this->db->where('d.status', 'aktif')->where('d.tanggal_deposito <=', $end_of_period);
+        // FIXED: Removed status filter
+        $this->db->where('d.tanggal_deposito <=', $end_of_period);
 
         if ($bulan == 'all') {
             $this->db->where('YEAR(bl.tanggal_perhitungan)', $tahun)->where('bl.tanggal_perhitungan <=', $end_of_period);
@@ -154,7 +159,7 @@ class Rekapitulasi_deposito_model extends CI_Model
         $total_bunga_bulan_ini = ($this->db->get()->row()->total_bunga_bulan_ini ?? 0);
 
         return [
-            'total_saldo_awal'      => $total_saldo_awal,
+            'total_saldo_awal' => $total_saldo_awal,
             'total_bunga_bulan_ini' => $total_bunga_bulan_ini,
         ];
     }

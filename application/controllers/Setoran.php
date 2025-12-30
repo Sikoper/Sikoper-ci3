@@ -6,15 +6,14 @@ class Setoran extends CI_Controller
     public function __construct()
     {
         parent::__construct();
+        // Set timezone di constructor
+        date_default_timezone_set('Asia/Makassar');
+
         $this->load->model('Simpanan_model');
         $this->load->model('Nasabah_model');
         $this->load->model('Kategori_model');
         $this->load->model('Pegawai_model');
         $this->load->model('Setoran_model');
-
-        // echo '<pre>';
-        // print_r($this->session->userdata());
-        // exit;
 
         $allowed_roles = ['Admin', 'Pegawai', 'Direktur'];
         $level = $this->session->userdata('level');
@@ -25,11 +24,7 @@ class Setoran extends CI_Controller
 
     public function index()
     {
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         $encoded_rek = $this->input->get('id');
         $tabungan = null;
 
@@ -53,7 +48,7 @@ class Setoran extends CI_Controller
 
         $parser = [
             'judul' => "Formulir Setoran Tunai",
-            'isi'   => $this->load->view('setoran/index', $data, TRUE)
+            'isi' => $this->load->view('setoran/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -61,20 +56,37 @@ class Setoran extends CI_Controller
 
     public function simpanData()
     {
-        // if ($this->input->is_ajax_request()) {
-        // Set timezone ke Waktu Indonesia Tengah (WITA / UTC+8)
-        date_default_timezone_set('Asia/Makassar');
+        // Ambil tanggal dari input user, jika kosong gunakan server timestamp
+        $tanggal_input = $this->input->post('tanggal_setoran');
 
-        // Ambil tanggal dari form dan gabungkan dengan waktu saat ini
-        $tanggal_dari_form = $this->input->post('tanggal_setoran');
-        $waktu_sekarang = date('H:i:s'); // Mendapatkan waktu saat ini, misal: 09:42:00
-        $tanggal_setoran = $tanggal_dari_form . ' ' . $waktu_sekarang; // Menggabungkan menjadi format DATETIME
+        // Jika tanggal diinput user, validasi dan gunakan. Jika kosong, gunakan waktu server.
+        if (!empty($tanggal_input)) {
+            // Cek apakah tanggal valid
+            $tanggal_parsed = strtotime($tanggal_input);
+            if ($tanggal_parsed === false) {
+                // Tanggal tidak valid, gunakan server timestamp
+                $tanggal_setoran = date('Y-m-d H:i:s');
+            } else {
+                // SECURITY: Cegah tanggal di masa depan
+                if ($tanggal_parsed > time()) {
+                    echo json_encode(['error' => ['errorTanggalSetoran' => 'Tanggal setoran tidak boleh di masa depan.']]);
+                    return;
+                }
+                // Gunakan tanggal yang diinput user + waktu sekarang jika hanya tanggal
+                if (strlen($tanggal_input) <= 10) {
+                    // Hanya tanggal tanpa waktu (YYYY-MM-DD)
+                    $tanggal_setoran = $tanggal_input . ' ' . date('H:i:s');
+                } else {
+                    $tanggal_setoran = $tanggal_input;
+                }
+            }
+        } else {
+            // Default: gunakan server timestamp
+            $tanggal_setoran = date('Y-m-d H:i:s');
+        }
 
         $tabungan = $this->input->post('tabungan');
         $jumlah_setoran = $this->input->post('jumlah_setoran');
-        // echo '<pre>';
-        // print_r($jumlah_setoran);
-        // exit;
         $pegawai_id = $this->input->post('pegawai_id');
 
         if ($this->session->userdata('level') == 'Admin') {
@@ -83,83 +95,64 @@ class Setoran extends CI_Controller
             ]);
         }
 
-        $this->form_validation->set_rules('tanggal_setoran', 'Tanggal Setoran', 'required', [
-            'required'  => 'Tanggal setoran wajib diisi.'
-        ]);
-
         $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
-            'required'  => 'Nasabah wajib diisi.'
+            'required' => 'Nasabah wajib diisi.'
         ]);
 
         $this->form_validation->set_rules('tabungan', 'Tabungan', 'required', [
-            'required'  => 'Tabungan wajib diisi.'
+            'required' => 'Tabungan wajib diisi.'
         ]);
 
         $this->form_validation->set_rules('jumlah_setoran', 'Jumlah Setoran', 'required', [
-            'required'  => 'Jumlah setoran wajib diisi.'
+            'required' => 'Jumlah setoran wajib diisi.'
         ]);
 
         if ($this->form_validation->run() == FALSE) {
             $msg = [
                 'error' => [
-                    'errorTanggalSetoran'   => form_error('tanggal_setoran'),
-                    'errorNasabah'          => form_error('nasabah'),
-                    'errorTabungan'         => form_error('tabungan'),
-                    'errorJumlahSetoran'    => form_error('jumlah_setoran'),
-                    'errorPegawai'          => form_error('pegawai_id')
+                    'errorTanggalSetoran' => form_error('tanggal_setoran'),
+                    'errorNasabah' => form_error('nasabah'),
+                    'errorTabungan' => form_error('tabungan'),
+                    'errorJumlahSetoran' => form_error('jumlah_setoran'),
+                    'errorPegawai' => form_error('pegawai_id')
                 ]
             ];
         } else {
-            // Data yang akan dimasukkan ke database, sekarang dengan datetime lengkap
+            // Data yang akan dimasukkan ke database dengan server timestamp
             $data = [
                 'simpanan_id' => $tabungan,
-                'tanggal_setoran' => $tanggal_setoran, // Menggunakan variabel datetime yang sudah digabung
+                'tanggal_setoran' => $tanggal_setoran,
                 'jumlah_setoran' => $jumlah_setoran,
                 'pegawai_id' => $pegawai_id
             ];
-
-            // Perbaikan: Pastikan fungsi hanya dideklarasikan sekali
-            if (!function_exists('safe_base64_encode')) {
-                function safe_base64_encode($string)
-                {
-                    return strtr(base64_encode($string), '+/=', '-_?');
-                }
-            }
 
             $this->db->trans_start(); // Mulai transaksi
 
             // 1. Masukkan detail setoran
             $this->Setoran_model->insert_data($data);
 
-            // 2. Update saldo di tabel utama
+            // 2. Update saldo di tabel utama (atomic update)
             $sql = "UPDATE tbsimpanan SET jumlah_simpanan = jumlah_simpanan + ? WHERE id = ?";
             $this->db->query($sql, array($jumlah_setoran, $tabungan));
 
             $this->db->trans_complete(); // Selesaikan transaksi
 
             if ($this->db->trans_status() === FALSE) {
-                // Jika transaksi gagal, kirim pesan error
                 $msg = ['error' => 'Gagal menyimpan data karena ada masalah pada database.'];
             } else {
-                // Jika transaksi berhasil
-                $data_simpanan = $this->Simpanan_model->get_data_by_id($tabungan);
                 $msg = [
                     'success' => 'Data berhasil ditambahkan.',
-                    'redirect' => base_url('simpanan/detail/') . safe_base64_encode($data_simpanan->no_rekening)
+                    'redirect' => $_SERVER['HTTP_REFERER']
                 ];
             }
         }
 
         echo json_encode($msg);
-        // }
     }
 
     public function fetchData()
     {
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_?');
-        }
+        // Menggunakan helper function dari secure_helper.php
         $id = $this->input->post('id');
         if ($this->input->is_ajax_request() == true) {
             $list = $this->Setoran_model->get_datatables($id);
@@ -174,7 +167,7 @@ class Setoran extends CI_Controller
                 $row[] = $field->tanggal_setoran;
                 $row[] = "Rp " . number_format($field->jumlah_setoran, 2, ',', '.');
                 $row[] = "Setor";
-                $row[] = $field->pegawai;
+                $row[] = $field->pegawai ?? '-'; // Handle null pegawai
                 $row[] = "<button class=\"btn btn-danger\" onclick=\"deleteSetoran('" . $field->id . "', '" . $field->jumlah_setoran . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
                 $data[] = $row;
             }
@@ -229,7 +222,7 @@ class Setoran extends CI_Controller
                 if ($data_simpanan) {
                     $response = [
                         'status' => 'success',
-                        'saldo'  => $data_simpanan->jumlah_simpanan
+                        'saldo' => $data_simpanan->jumlah_simpanan
                     ];
                 } else {
                     $response = ['status' => 'error', 'message' => 'Data rekening tidak ditemukan.'];
@@ -244,33 +237,84 @@ class Setoran extends CI_Controller
         }
     }
 
+    /**
+     * CRITICAL FIX: Fungsi delete dengan keamanan ketat
+     * - Admin only access
+     * - Database transaction dengan FOR UPDATE locking
+     * - Anti-negative balance validation
+     * - Atomic update
+     */
     public function delete()
     {
-        if ($this->input->is_ajax_request()) {
-            $id = $this->input->post('id');
+        if (!$this->input->is_ajax_request()) {
+            exit('No direct script access allowed');
+        }
 
-            $simpanan_detail = $this->Setoran_model->get_data_by_id($id);
-            $simpanan = $this->Simpanan_model->get_data_by_id($simpanan_detail->simpanan_id);
+        // 1. CEK LEVEL: Hanya Admin yang boleh akses
+        if ($this->session->userdata('level') !== 'Admin') {
+            echo json_encode(['error' => 'Akses ditolak. Hanya Admin yang boleh menghapus data setoran.']);
+            return;
+        }
 
-            $selisih = $simpanan->jumlah_simpanan - $simpanan_detail->jumlah_setoran;
+        $id = $this->input->post('id');
 
-            $delete = $this->Setoran_model->delete_data($id);
-            if ($delete) {
-                $data = [
-                    'jumlah_simpanan' => $selisih
-                ];
+        if (empty($id)) {
+            echo json_encode(['error' => 'ID tidak valid.']);
+            return;
+        }
 
-                $this->Simpanan_model->edit_data($simpanan_detail->simpanan_id, $data);
-                $msg = [
-                    'success' => 'Bunga berhasil dihapus.'
-                ];
-            } else {
-                $msg = [
-                    'error' => 'Bunga gagal dihapus.'
-                ];
-            }
+        // 2. START TRANSAKSI
+        $this->db->trans_start();
 
-            echo json_encode($msg);
+        // 3. LOCKING DATA: Ambil data setoran dengan FOR UPDATE
+        $setoran = $this->db->query(
+            "SELECT * FROM tbdetail_simpanan WHERE id = ? FOR UPDATE",
+            [$id]
+        )->row();
+
+        if (!$setoran) {
+            $this->db->trans_rollback();
+            echo json_encode(['error' => 'Data setoran tidak ditemukan.']);
+            return;
+        }
+
+        // 4. LOCKING: Ambil saldo nasabah saat ini dengan FOR UPDATE
+        $tabungan = $this->db->query(
+            "SELECT * FROM tbsimpanan WHERE id = ? FOR UPDATE",
+            [$setoran->simpanan_id]
+        )->row();
+
+        if (!$tabungan) {
+            $this->db->trans_rollback();
+            echo json_encode(['error' => 'Data rekening tidak ditemukan.']);
+            return;
+        }
+
+        // 5. VALIDASI ANTI-MINUS: Cek apakah saldo mencukupi untuk dikurangi
+        if ((float) $tabungan->jumlah_simpanan < (float) $setoran->jumlah_setoran) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                'error' => 'Gagal! Saldo nasabah tidak mencukupi untuk menghapus setoran ini. Kemungkinan uang sudah ditarik.'
+            ]);
+            return;
+        }
+
+        // 6. EKSEKUSI (Jika Valid):
+        // 6a. Hapus data di tbdetail_simpanan
+        $this->db->delete('tbdetail_simpanan', ['id' => $id]);
+
+        // 6b. Kurangi saldo dengan Atomic Update (bukan kalkulasi PHP)
+        $this->db->set('jumlah_simpanan', 'jumlah_simpanan - ' . (float) $setoran->jumlah_setoran, FALSE);
+        $this->db->where('id', $setoran->simpanan_id);
+        $this->db->update('tbsimpanan');
+
+        // 7. COMMIT: Selesaikan transaksi
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            echo json_encode(['error' => 'Gagal menghapus setoran karena masalah database.']);
+        } else {
+            echo json_encode(['success' => 'Setoran berhasil dihapus.']);
         }
     }
 
@@ -296,10 +340,10 @@ class Setoran extends CI_Controller
     {
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
-            log_message('debug', 'ID yang dikirim: ' . $id); // <--- tambahkan ini
+            log_message('debug', 'ID yang dikirim: ' . $id);
 
             $data = $this->Simpanan_model->get_detail_tabungan_by_id($id);
-            log_message('debug', 'Hasil query: ' . print_r($data, true)); // <---
+            log_message('debug', 'Hasil query: ' . print_r($data, true));
 
             if ($data) {
                 $response = [

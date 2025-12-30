@@ -1,9 +1,6 @@
 <div class="row">
     <?php
-    function safe_base64_encode($string)
-    {
-        return strtr(base64_encode($string), '+/=', '-_.');
-    }
+    // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
     ?>
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
@@ -44,16 +41,21 @@
                         <?php if (!empty($simpanan->nama_ahli_waris)): ?>
                             <tr id="field-ahli-waris">
                                 <th>Ahli Waris</th>
-                                <td>: <?= $simpanan->nama_ahli_waris ?> (<?= $simpanan->hubungan_ahli_waris ?> dari <?= $nasabah->nama_lengkap ?>), <?= $simpanan->telp_ahli_waris ?></td>
+                                <td>: <?= $simpanan->nama_ahli_waris ?> (<?= $simpanan->hubungan_ahli_waris ?> dari
+                                    <?= $nasabah->nama_lengkap ?>), <?= $simpanan->telp_ahli_waris ?>
+                                </td>
                             </tr>
                         <?php endif ?>
                     <?php endif; ?>
                 </table>
                 <div class="d-flex justify-content-end gap-2">
-                    <button onclick="printNasabah('<?= $simpanan->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-primary">
+                    <button onclick="printNasabah('<?= $simpanan->id ?>', '<?= $nasabah->nama_lengkap ?>')"
+                        class="btn btn-primary">
                         Cetak Nasabah <i class="fa fa-file ms-2"></i>
                     </button>
-                    <button onclick="window.location='<?= base_url('simpanan/laporan') . '?id=' . safe_base64_encode($simpanan->no_rekening) . '&code=1' ?>'" class="btn btn-warning">
+                    <button
+                        onclick="window.location='<?= base_url('simpanan/laporan') . '?id=' . safe_base64_encode($simpanan->no_rekening) . '&code=1' ?>'"
+                        class="btn btn-warning">
                         Cetak Laporan <i class="fa fa-file ms-2"></i>
                     </button>
                 </div>
@@ -66,8 +68,12 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail Tabungan</h5>
                 <div>
-                    <button class="btn btn-success" onclick="window.location='<?= base_url('setoran') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Setor Tunai</button>
-                    <button class="btn btn-danger" onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i class="fa fa-credit-card"></i> Tarik Tunai</button>
+                    <button class="btn btn-success"
+                        onclick="window.location='<?= base_url('setoran') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i
+                            class="fa fa-credit-card"></i> Setor Tunai</button>
+                    <button class="btn btn-danger"
+                        onclick="window.location='<?= base_url('penarikan/') . '?id=' . safe_base64_encode($simpanan->no_rekening) ?>'"><i
+                            class="fa fa-credit-card"></i> Tarik Tunai</button>
                 </div>
             </div>
             <div class="card-body">
@@ -157,39 +163,39 @@
         },
 
         "columns": [{
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "orderable": false
-            }
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "orderable": false
+        }
         ],
         language: {
             info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
             infoFiltered: ""
         },
         "columnDefs": [{
-                "targets": 0,
-                "orderable": false,
-                "width": "5%"
-            },
-            {
-                "targets": 5,
-                "visible": userLevel === 'Admin',
-                "orderable": false,
-                "width": "10%"
-            }
+            "targets": 0,
+            "orderable": false,
+            "width": "5%"
+        },
+        {
+            "targets": 5,
+            "visible": userLevel === 'Admin',
+            "orderable": false,
+            "width": "10%"
+        }
         ],
     });
 
@@ -206,49 +212,49 @@
         "ajax": {
             "url": "<?= site_url('bunga/fetchNasabahTabunganBunga') ?>",
             "type": "POST",
-            data: function(d) {
+            data: function (d) {
                 d.no_rekening = noRekening;
             },
-            dataSrc: function(json) {
+            dataSrc: function (json) {
                 $('#total_bunga').text('Rp ' + json.total_bunga);
                 return json.data;
             }
         },
 
         "columns": [{
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "orderable": false
-            }
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "orderable": false
+        }
         ],
         language: {
             info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
             infoFiltered: ""
         },
         "columnDefs": [{
-                "targets": 0,
-                "orderable": false,
-                "width": "5%"
-            },
-            {
-                "targets": 4,
-                "visible": userLevel === 'Admin',
-                "orderable": false,
-                "width": "15%"
-            }
+            "targets": 0,
+            "orderable": false,
+            "width": "5%"
+        },
+        {
+            "targets": 4,
+            "visible": userLevel === 'Admin',
+            "orderable": false,
+            "width": "15%"
+        }
         ],
     });
 
@@ -283,7 +289,7 @@
                         keterangan: keterangan
                     },
                     dataType: "json",
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             Swal.fire({
                                 title: "Success!",
@@ -297,10 +303,23 @@
                                     window.location.reload();
                                 }
                             });
+                        } else if (response.error) {
+                            Swal.fire({
+                                title: "Gagal!",
+                                text: response.error,
+                                icon: "error",
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                allowEnterKey: false
+                            });
                         }
                     },
-                    error: function(xhr, thrownError) {
-                        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
+                    error: function (xhr, thrownError) {
+                        Swal.fire({
+                            title: "Error!",
+                            text: "Terjadi kesalahan pada server. Silakan coba lagi.",
+                            icon: "error"
+                        });
                     }
                 });
             }
@@ -329,7 +348,7 @@
                         penarikan_id: id
                     },
                     dataType: "json",
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             Swal.fire({
                                 title: "Berhasil!",
@@ -347,7 +366,7 @@
                             Swal.fire("Error!", "Terjadi kesalahan yang tidak diketahui.", "error");
                         }
                     },
-                    error: function(xhr, thrownError) {
+                    error: function (xhr, thrownError) {
                         Swal.fire("Error AJAX!", "Terjadi kesalahan: " + xhr.status + " \n" + xhr.responseText + " \n" + thrownError, "error");
                     }
                 });
@@ -377,7 +396,7 @@
                         tipe: tipe
                     },
                     dataType: "json",
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             Swal.fire({
                                 title: "Success!",
@@ -393,7 +412,7 @@
                             });
                         }
                     },
-                    error: function(xhr, thrownError) {
+                    error: function (xhr, thrownError) {
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });

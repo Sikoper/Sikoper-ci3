@@ -153,7 +153,7 @@ class Deposito_model extends CI_Model
     public function kurangi_saldo($id, $jumlah)
     {
         $this->db->where('id', $id);
-        $this->db->set('jumlah_deposito', 'jumlah_deposito - ' . (float)$jumlah, FALSE);
+        $this->db->set('jumlah_deposito', 'jumlah_deposito - ' . (float) $jumlah, FALSE);
         return $this->db->update('tbdeposito');
     }
 
@@ -193,7 +193,7 @@ class Deposito_model extends CI_Model
         $this->db->join('tbjenistabungan', 'tbdeposito.jenistabungan_id = tbjenistabungan.id', 'left');
         $this->db->join('tbnasabah', 'tbdeposito.nasabah_id = tbnasabah.id', 'left');
         $this->db->join('tbpegawai as pegawai', 'tbdeposito.pegawai_id = pegawai.id', 'left');
-        $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'KEPALA BAGIAN TATA USAHA'", 'left');
+        $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'KEPALA BAGIAN KEUANGAN'", 'left');
         $this->db->join('tbpegawai as bendahara', "bendahara.jabatan = 'Bendahara'", 'left');
         $this->db->where('tbdeposito.id', $id);
         $this->db->limit(1);
@@ -299,14 +299,14 @@ class Deposito_model extends CI_Model
         }
 
         $dataP = [
-            'deposito_id'            => $deposito_id,
-            'pegawai_id'             => $pegawai_id,
-            'tanggal_penarikan'      => date('Y-m-d H:i:s'),
-            'jumlah_penarikan'       => $total,
+            'deposito_id' => $deposito_id,
+            'pegawai_id' => $pegawai_id,
+            'tanggal_penarikan' => date('Y-m-d H:i:s'),
+            'jumlah_penarikan' => $total,
             'jumlah_penarikan_pokok' => 0,
             'jumlah_penarikan_bunga' => $total,
-            'jumlah_denda'           => 0,
-            'total_penarikan'        => $total
+            'jumlah_denda' => 0,
+            'total_penarikan' => $total
         ];
         $this->db->insert('tbpenarikan_deposito', $dataP);
         $penarikan_id = $this->db->insert_id();
@@ -342,12 +342,13 @@ class Deposito_model extends CI_Model
         $this->db->where('deposito_id', $deposito_id);
         $this->db->where('status_penarikan', 'sudah_ditarik'); // Hanya hitung yang sudah ditarik
         $result = $this->db->get()->row();
-        return (float)($result->total_bunga ?? 0);
+        return (float) ($result->total_bunga ?? 0);
     }
 
     public function get_detail_bunga_by_id($deposito_id)
     {
-        if (!$deposito_id) return null;
+        if (!$deposito_id)
+            return null;
 
         // Ambil total bunga dari log
         $this->db->select_sum('jumlah_bunga', 'total_bunga');
@@ -366,7 +367,7 @@ class Deposito_model extends CI_Model
             ->get()
             ->row();
 
-        return (object)[
+        return (object) [
             'nama_nasabah' => $nasabah->nama_nasabah ?? 'Tidak ditemukan',
             'bunga_tersedia' => floatval($total_bunga)
         ];
@@ -375,7 +376,7 @@ class Deposito_model extends CI_Model
     public function update_status_jatuh_tempo()
     {
         $today = date('Y-m-d');
-        $file  = APPPATH . 'cache/last_update_deposito.txt';
+        $file = APPPATH . 'cache/last_update_deposito.txt';
 
         $last_run = file_exists($file) ? file_get_contents($file) : null;
 
@@ -413,18 +414,20 @@ class Deposito_model extends CI_Model
             }
             $bunga_terbaru = $jenis->bunga;
 
+            // FIX: Gunakan tanggal jatuh tempo sebelumnya + durasi, bukan NOW()
+            // Ini agar nasabah tidak rugi hari jika cronjob telat berjalan
             $sql = "
                 UPDATE tbdeposito
                 SET 
                     status = 'aktif',
-                    tanggal_deposito = ?, -- The renewal date is today
-                    rate_bunga = ?         -- The new interest rate
+                    tanggal_deposito = DATE_ADD(tanggal_deposito, INTERVAL durasi MONTH),
+                    rate_bunga = ?
                 WHERE
                     status = 'jatuh tempo'
                     AND DATE_ADD(tanggal_deposito, INTERVAL durasi MONTH) <= DATE_SUB(?, INTERVAL 7 DAY)
             ";
 
-            $this->db->query($sql, [$today, $bunga_terbaru, $today]);
+            $this->db->query($sql, [$bunga_terbaru, $today]);
 
             file_put_contents($file, $today);
         }
@@ -437,33 +440,33 @@ class Deposito_model extends CI_Model
 
         if (!$deposito) {
             return [
-                'saldo_awal'  => 0,
+                'saldo_awal' => 0,
                 'total_setor' => 0,
                 'total_tarik' => 0,
                 'total_bunga' => 0,
                 'saldo_akhir' => 0,
-                'transaksi'   => []
+                'transaksi' => []
             ];
         }
 
-        $tgl_mulai_real  = $tanggal_mulai ?: $deposito->tanggal_deposito;
+        $tgl_mulai_real = $tanggal_mulai ?: $deposito->tanggal_deposito;
         $tgl_akhir_query = $tanggal_akhir ?: date('Y-m-d');
 
-        $total_pokok_ditarik = (float)($this->db->select_sum('jumlah_penarikan_pokok', 'total')
+        $total_pokok_ditarik = (float) ($this->db->select_sum('jumlah_penarikan_pokok', 'total')
             ->where('deposito_id', $id)->get('tbpenarikan_deposito')->row()->total ?? 0);
 
-        $setoran_awal_asli = (float)$deposito->jumlah_deposito + $total_pokok_ditarik;
+        $setoran_awal_asli = (float) $deposito->jumlah_deposito + $total_pokok_ditarik;
 
         $pegawai_awal = $this->db->select('nama_lengkap')->where('id', $deposito->pegawai_id)
             ->get('tbpegawai')->row()->nama_lengkap ?? 'SYSTEM';
 
-        $transaksi_setoran_awal = (object)[
-            'tanggal'    => $deposito->tanggal_deposito,
+        $transaksi_setoran_awal = (object) [
+            'tanggal' => $deposito->tanggal_deposito,
             'keterangan' => 'Setoran Awal Deposito',
-            'kredit'     => (float)$setoran_awal_asli,
-            'debit'      => 0.0,
-            'jenis'      => 'setoran',
-            'pegawai'    => $pegawai_awal
+            'kredit' => (float) $setoran_awal_asli,
+            'debit' => 0.0,
+            'jenis' => 'setoran',
+            'pegawai' => $pegawai_awal
         ];
 
         // Penarikan pokok & bunga dari tbpenarikan_deposito
@@ -537,8 +540,8 @@ class Deposito_model extends CI_Model
         $transaksi_periode = [];
 
         foreach ($semua_transaksi as $t) {
-            $t->kredit = (float)$t->kredit;
-            $t->debit  = (float)$t->debit;
+            $t->kredit = (float) $t->kredit;
+            $t->debit = (float) $t->debit;
 
             if ($t->tanggal < $tgl_mulai_real) {
                 $saldo_awal += ($t->kredit - $t->debit);
@@ -550,10 +553,11 @@ class Deposito_model extends CI_Model
             }
 
             $is_kredit = ($t->jenis === 'setoran' || $t->jenis === 'bunga');
-            $is_debit  = ($t->jenis === 'penarikan');
+            $is_debit = ($t->jenis === 'penarikan');
 
-            if (($jenis_laporan === '1' && $is_kredit) ||
-                ($jenis_laporan === '2' && $is_debit)  ||
+            if (
+                ($jenis_laporan === '1' && $is_kredit) ||
+                ($jenis_laporan === '2' && $is_debit) ||
                 $jenis_laporan === '3'
             ) {
                 $transaksi_periode[] = $t;
@@ -570,12 +574,12 @@ class Deposito_model extends CI_Model
         }
 
         return [
-            'saldo_awal'  => $saldo_awal,
+            'saldo_awal' => $saldo_awal,
             'total_setor' => $total_setor,
             'total_tarik' => $total_tarik,
             'total_bunga' => $total_bunga,
             'saldo_akhir' => $saldo_awal + $total_setor - $total_tarik,
-            'transaksi'   => $transaksi_periode
+            'transaksi' => $transaksi_periode
         ];
     }
 }

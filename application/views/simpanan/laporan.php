@@ -2,10 +2,7 @@
     <div class="card-header">
         <h4 class="card-title">
             <?php
-            function safe_base64_encode($string)
-            {
-                return strtr(base64_encode($string), '+/=', '-_.');
-            }
+            // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
             // Asumsi variabel $deposito ada dari controller
             $backUrl = isset($simpanan) && $this->input->get('code') == 1
                 ? site_url('simpanan/detail/' . safe_base64_encode($simpanan->no_rekening))
@@ -24,7 +21,8 @@
                 <div class="form-group mb-3" style="height: 80px;">
                     <label for="tanggal_mulai">Tanggal mulai transaksi</label>
                     <div class="input-group">
-                        <input type="date" id="tanggal_mulai" name="tanggal_mulai" class="form-control" value="<?= date('Y-m-01') ?>">
+                        <input type="date" id="tanggal_mulai" name="tanggal_mulai" class="form-control"
+                            value="<?= date('Y-m-01') ?>">
                     </div>
                 </div>
             </div>
@@ -32,7 +30,8 @@
                 <div class="form-group mb-3" style="height: 80px;">
                     <label for="tanggal_akhir">Tanggal akhir transaksi</label>
                     <div class="input-group">
-                        <input type="date" id="tanggal_akhir" name="tanggal_akhir" class="form-control" value="<?= date('Y-m-t') ?>">
+                        <input type="date" id="tanggal_akhir" name="tanggal_akhir" class="form-control"
+                            value="<?= date('Y-m-t') ?>">
                     </div>
                 </div>
             </div>
@@ -58,8 +57,8 @@
     <?= form_close() ?>
 </div>
 <script>
-    $(document).ready(function() {
-        $('#form_laporan').submit(function(e) {
+    $(document).ready(function () {
+        $('#form_laporan').submit(function (e) {
             e.preventDefault();
             Swal.fire({
                 title: "Cetak data?",

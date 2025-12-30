@@ -1,10 +1,7 @@
 <section class="section">
     <div class="card">
         <?php
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_.');
-        }
+        // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
         $backUrl = $this->input->get('code') == 1
             ? site_url('users/add')
             : site_url('pegawai');
@@ -23,14 +20,16 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="nik">NIK</label>
-                        <input type="text" class="form-control" id="nik" name="nik" placeholder="NIK sesuai KTP" autocomplete="off">
+                        <input type="text" class="form-control" id="nik" name="nik" placeholder="NIK sesuai KTP"
+                            autocomplete="off">
                         <div id="errorNik" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="nama_lengkap">Nama Lengkap</label>
-                        <input type="text" id="nama_lengkap" name="nama_lengkap" class="form-control" placeholder="Nama lengkap sesuai KTP" autocomplete="off">
+                        <input type="text" id="nama_lengkap" name="nama_lengkap" class="form-control"
+                            placeholder="Nama lengkap sesuai KTP" autocomplete="off">
                         <div id="errorNamaLengkap" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -48,7 +47,8 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="tempat_lahir">Tempat Lahir</label>
-                        <input type="text" id="tempat_lahir" name="tempat_lahir" class="form-control" placeholder="Tempat lahir sesuai KTP" autocomplete="off">
+                        <input type="text" id="tempat_lahir" name="tempat_lahir" class="form-control"
+                            placeholder="Tempat lahir sesuai KTP" autocomplete="off">
                         <div id="errorTempatLahir" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -62,21 +62,24 @@
 
                     <div class="form-group" style="height: 80px;">
                         <label for="agama">Agama</label>
-                        <input type="text" id="agama" name="agama" class="form-control" placeholder="Agama sesuai KTP" autocomplete="off">
+                        <input type="text" id="agama" name="agama" class="form-control" placeholder="Agama sesuai KTP"
+                            autocomplete="off">
                         <div id="errorAgama" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="alamat">Alamat</label>
-                        <input type="text" id="alamat" name="alamat" class="form-control" placeholder="Alamat Sesuai KTP" autocomplete="off">
+                        <input type="text" id="alamat" name="alamat" class="form-control"
+                            placeholder="Alamat Sesuai KTP" autocomplete="off">
                         <div id="errorAlamat" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
 
                     <div class="form-group" style="height: 80px;">
                         <label for="telp">Nomer Telpon</label>
-                        <input type="text" id="telp" name="telp" class="form-control" placeholder="Nomer aktif/whatsapp" autocomplete="off">
+                        <input type="text" id="telp" name="telp" class="form-control" placeholder="Nomer aktif/whatsapp"
+                            autocomplete="off">
                         <div id="errorTelp" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -101,7 +104,8 @@
                     </div>
                     <div class="text-center mb-3">
                         <button type="button" id="tombol_simpan" class="btn btn-success">Simpan</button>
-                        <button type="button" onclick="window.location='<?= $backUrl ?>'" class="btn btn-danger">Batal</button>
+                        <button type="button" onclick="window.location='<?= $backUrl ?>'"
+                            class="btn btn-danger">Batal</button>
                     </div>
                     <?= form_close() ?>
                 </div>
@@ -163,26 +167,26 @@
         input.setSelectionRange(0, 0);
     }
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('#rt, #rw').val('000');
 
-        $('#rt, #rw').on('focus click', function() {
+        $('#rt, #rw').on('focus click', function () {
             setCursorToStart(this);
         });
 
-        $('#rt').on('keydown', function(e) {
+        $('#rt').on('keydown', function (e) {
             formatInput($(this), e, 'rw', null);
         });
 
-        $('#rw').on('keydown', function(e) {
+        $('#rw').on('keydown', function (e) {
             formatInput($(this), e, null, 'rt');
         });
     });
 </script>
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
 
-        $('#tombol_simpan').click(function(e) {
+        $('#tombol_simpan').click(function (e) {
             e.preventDefault();
 
             let form = $('#form_simpan')[0];
@@ -196,15 +200,15 @@
                 processData: false,
                 contentType: false,
                 cache: false,
-                beforeSend: function() {
+                beforeSend: function () {
                     $('#tombol_simpan').prop('disabled', true)
                     $('#tombol_simpan').html('<i class="fa fa-spin fa-spinner"></i>')
                 },
-                complete: function() {
+                complete: function () {
                     $('#tombol_simpan').prop('disabled', false)
                     $('#tombol_simpan').html('Save')
                 },
-                success: function(response) {
+                success: function (response) {
                     if (response.error) {
                         let dataError = response.error;
                         if (dataError.errorNik) {
@@ -298,7 +302,7 @@
                         });
                     }
                 },
-                error: function(xhr, thrownError) {
+                error: function (xhr, thrownError) {
                     alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                 }
             });

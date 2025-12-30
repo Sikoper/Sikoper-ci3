@@ -18,7 +18,7 @@ class Kategori extends CI_Controller
     {
         $parser = [
             'judul' => "Jenis Tabungan",
-            'isi'   => $this->load->view('kategori/index', '', TRUE)
+            'isi' => $this->load->view('kategori/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -30,10 +30,7 @@ class Kategori extends CI_Controller
             $data = array();
             $no = $_POST['start'];
             $level = $this->session->userdata('level');
-            function safe_base64_encode($string)
-            {
-                return strtr(base64_encode($string), '+/=', '-_.');
-            }
+            // Menggunakan helper function dari secure_helper.php
 
             foreach ($list as $field) {
                 $no++;
@@ -78,7 +75,7 @@ class Kategori extends CI_Controller
         }
         $parser = [
             'judul' => "Tambah Jenis Tabungan",
-            'isi'   => $this->load->view('kategori/addForm', '', TRUE)
+            'isi' => $this->load->view('kategori/addForm', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -99,38 +96,38 @@ class Kategori extends CI_Controller
 
             $nama = $this->input->post('nama');
             $bunga = str_replace(',', '.', $this->input->post('bunga'));
-            $biaya_registrasi   = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
-            $simpanan_awal      = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
-            $pengendapan        = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
+            $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
+            $simpanan_awal = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
+            $pengendapan = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
             $tanggal_pembungaan = $this->input->post('tanggal_pembungaan');
-            $jenis_denda        = $this->input->post('jenis_denda');
-            $jumlah_denda       = str_replace(
+            $jenis_denda = $this->input->post('jenis_denda');
+            $jumlah_denda = str_replace(
                 ['.', ','],
                 ['', '.'],
                 $this->input->post('denda_idr') ?: $this->input->post('denda_persen') ?? ''
             );
-            $keterangan       = $this->input->post('keterangan');
+            $keterangan = $this->input->post('keterangan');
 
             $this->form_validation->set_rules('nama', 'Nama', 'required', [
-                'required'     => 'Nama wajib diisi.'
+                'required' => 'Nama wajib diisi.'
             ]);
             $this->form_validation->set_rules('bunga', 'Bunga', 'required', [
-                'required'     => 'Bunga wajib diisi.'
+                'required' => 'Bunga wajib diisi.'
             ]);
             $this->form_validation->set_rules('biaya_registrasi', 'Biaya Registrasi', 'required', [
-                'required'     => 'Biaya Registrasi wajib diisi.',
+                'required' => 'Biaya Registrasi wajib diisi.',
             ]);
             $this->form_validation->set_rules('tanggal_pembungaan', 'Tanggal Pembungaan', 'required', [
-                'required'     => 'Tanggal Pembungaan wajib diisi.',
+                'required' => 'Tanggal Pembungaan wajib diisi.',
             ]);
             $this->form_validation->set_rules('simpanan_awal', 'Simpanan Awal', 'required', [
-                'required'     => 'Simpanan awal wajib diisi.',
+                'required' => 'Simpanan awal wajib diisi.',
             ]);
             $this->form_validation->set_rules('pengendapan', 'Pengendapan', 'required', [
-                'required'     => 'Pengendapan wajib diisi.',
+                'required' => 'Pengendapan wajib diisi.',
             ]);
             $this->form_validation->set_rules('keterangan', 'Keterangan', 'required', [
-                'required'     => 'Keterangan wajib diisi.',
+                'required' => 'Keterangan wajib diisi.',
             ]);
 
             if ($this->form_validation->run() == FALSE) {
@@ -204,11 +201,7 @@ class Kategori extends CI_Controller
             redirect('unauthorized_403');
         }
 
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_.', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($encoded_id === null) {
             show_custom_404();
             return;
@@ -227,7 +220,7 @@ class Kategori extends CI_Controller
         ];
         $parser = [
             'judul' => "Form Edit Jenis Tabungan",
-            'isi'   => $this->load->view('kategori/editForm', $data, TRUE)
+            'isi' => $this->load->view('kategori/editForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -250,10 +243,10 @@ class Kategori extends CI_Controller
             $nama = $this->input->post('nama');
             $bunga = str_replace(',', '.', $this->input->post('bunga'));
             $biaya_registrasi = str_replace(['.', ','], ['', '.'], $this->input->post('biaya_registrasi'));
-            $simpanan_awal    = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
-            $pengendapan      = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
+            $simpanan_awal = str_replace(['.', ','], ['', '.'], $this->input->post('simpanan_awal'));
+            $pengendapan = str_replace(['.', ','], ['', '.'], $this->input->post('pengendapan'));
             $tanggal_pembungaan = $this->input->post('tanggal_pembungaan');
-            $jenis_denda      = $this->input->post('jenis_denda');
+            $jenis_denda = $this->input->post('jenis_denda');
             $jumlah_denda = $this->input->post('denda_idr')
                 ? str_replace(['.', ','], ['', '.'], $this->input->post('denda_idr'))
                 : ($this->input->post('denda_persen')
@@ -262,25 +255,25 @@ class Kategori extends CI_Controller
             $keterangan = $this->input->post('keterangan');
 
             $this->form_validation->set_rules('nama', 'Nama', 'required', [
-                'required'     => 'Nama wajib diisi.'
+                'required' => 'Nama wajib diisi.'
             ]);
             $this->form_validation->set_rules('bunga', 'Bunga', 'required', [
-                'required'     => 'Bunga wajib diisi.'
+                'required' => 'Bunga wajib diisi.'
             ]);
             $this->form_validation->set_rules('biaya_registrasi', 'Biaya Registrasi', 'required', [
-                'required'     => 'Biaya Registrasi wajib diisi.',
+                'required' => 'Biaya Registrasi wajib diisi.',
             ]);
             $this->form_validation->set_rules('simpanan_awal', 'Simpanan Awal', 'required', [
-                'required'     => 'Simpanan awal wajib diisi.',
+                'required' => 'Simpanan awal wajib diisi.',
             ]);
             $this->form_validation->set_rules('pengendapan', 'Pengendapan', 'required', [
-                'required'     => 'Pengendapan wajib diisi.',
+                'required' => 'Pengendapan wajib diisi.',
             ]);
             $this->form_validation->set_rules('tanggal_pembungaan', 'Tanggal Pembungaan', 'required', [
-                'required'     => 'Tanggal Pembungaan wajib diisi.',
+                'required' => 'Tanggal Pembungaan wajib diisi.',
             ]);
             $this->form_validation->set_rules('keterangan', 'Keterangan', 'required', [
-                'required'     => 'Keterangan wajib diisi.',
+                'required' => 'Keterangan wajib diisi.',
             ]);
 
             if ($this->form_validation->run() == FALSE) {
@@ -324,17 +317,14 @@ class Kategori extends CI_Controller
 
     public function detail($encoded_id = null)
     {
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_.', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($encoded_id === null) {
             show_custom_404();
             return;
         }
 
-        $id = safe_base64_decode($encoded_id);;
+        $id = safe_base64_decode($encoded_id);
+        ;
         $kategori = $this->Kategori_model->get_data_by_id($id);
 
         if (!$kategori) {
@@ -347,7 +337,7 @@ class Kategori extends CI_Controller
         ];
         $parser = [
             'judul' => "<i class='fa fa-list'></i> Jenis Tabungan",
-            'isi'   => $this->load->view('kategori/detail', $data, TRUE)
+            'isi' => $this->load->view('kategori/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
