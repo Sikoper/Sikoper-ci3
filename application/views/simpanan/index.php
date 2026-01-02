@@ -4,6 +4,9 @@
             <button class="btn btn-primary" onclick="window.location='<?= base_url('simpanan/add') ?>'">
                 <i class="fa fa-plus-circle"></i> Buka Tabungan Baru
             </button>
+            <button class="btn btn-success ms-2" onclick="window.location='<?= base_url('simpanan/import') ?>'">
+                <i class="fa fa-upload"></i> Import Excel
+            </button>
         </h4>
     </div>
     <div class="card-body">
@@ -47,40 +50,40 @@
         },
 
         "columns": [{
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "orderable": false
-            }
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "orderable": false
+        }
         ],
 
         "columnDefs": [{
-                "targets": 0,
-                "orderable": false,
-                "width": "5%"
-            },
-            {
-                "targets": 2,
-                "orderable": false,
-                "width": "10%"
-            },
-            {
-                "targets": 5,
-                "orderable": false,
-                "width": "15%"
-            }
+            "targets": 0,
+            "orderable": false,
+            "width": "5%"
+        },
+        {
+            "targets": 2,
+            "orderable": false,
+            "width": "10%"
+        },
+        {
+            "targets": 5,
+            "orderable": false,
+            "width": "15%"
+        }
         ],
     });
 
@@ -105,7 +108,7 @@
                         id: id
                     },
                     dataType: "json",
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             Swal.fire({
                                 title: "Success!",
@@ -131,7 +134,7 @@
                             });
                         }
                     },
-                    error: function(xhr, thrownError) {
+                    error: function (xhr, thrownError) {
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });
@@ -163,7 +166,7 @@
     });
 
     var channel = pusher.subscribe('simpanan-channel');
-    channel.bind('simpanan-event', function(data) {
+    channel.bind('simpanan-event', function (data) {
         console.log("Received update:", data);
         table.ajax.reload(null, false);
     });

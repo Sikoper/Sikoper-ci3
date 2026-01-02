@@ -334,40 +334,41 @@ class Deposito extends CI_Controller
                 // If tanggal_deposito is in the past, generate bunga logs
                 $tgl_deposito = new DateTime($tanggal_deposito);
                 $today = new DateTime();
-                
+
                 // Reset time to compare dates only
                 $tgl_deposito->setTime(0, 0, 0);
                 $today->setTime(0, 0, 0);
 
                 if ($tgl_deposito < $today && $deposito_id) {
                     $start_date = clone $tgl_deposito;
-                    
+
                     // Logic: Get months difference
                     $interval = DateInterval::createFromDateString('1 month');
                     $period = new DatePeriod($start_date, $interval, $today);
-                    
+
                     $total_accumulated = 0;
                     $bunga_logs = [];
                     // Check user choice: 'akumulasi' (default) or 'ditarik'
                     $withdrawal_mode = $this->input->post('status_bunga_lampau') === 'ditarik';
-                    
+
                     foreach ($period as $dt) {
                         // Skip the start date itself if it exactly matches loop start (DatePeriod behavior varies slightly)
-                        if ($dt == $tgl_deposito) continue;
-                        
+                        if ($dt == $tgl_deposito)
+                            continue;
+
                         // Calculate Monthly Bunga: (Amount * Rate / 100) / 12
                         $amt = floatval(str_replace(['.', ','], ['', '.'], $jumlah_deposito));
                         $bg_rate = floatval($rate_bunga);
-                        
+
                         $bunga_bulanan = ($amt * $bg_rate / 100) / 12;
                         $bunga_bulanan_rounded = round($bunga_bulanan);
-                        
+
                         // Date for calculation log (e.g. 15th of the month)
                         $log_date = $dt->format('Y-m-15');
-                        
+
                         // Determine status based on user choice
                         $status_penarikan = $withdrawal_mode ? 'sudah_ditarik' : 'belum_ditarik';
-                        
+
                         $bunga_logs[] = [
                             'deposito_id' => $deposito_id,
                             'no_rekening' => $no_rekening,
@@ -380,7 +381,7 @@ class Deposito extends CI_Controller
                             'pegawai_id' => $this->session->userdata('pegawai_id'),
                             'keterangan' => 'Bunga otomatis (' . ($withdrawal_mode ? 'Riwayat' : 'Akumulasi') . ') ' . $dt->format('F Y')
                         ];
-                        
+
                         $total_accumulated += $bunga_bulanan_rounded;
 
                         if ($withdrawal_mode) {
@@ -397,14 +398,14 @@ class Deposito extends CI_Controller
                             ]);
                         }
                     }
-                    
+
                     if (!empty($bunga_logs)) {
                         $this->db->insert_batch('tb_bunga_deposito_log', $bunga_logs);
-                        
+
                         // Update Deposito Totals
                         // If withdrawn: total_accumulated increases as a record of earnings, but bunga_belum_ditarik stays 0
                         $bunga_belum_ditarik = $withdrawal_mode ? 0 : $total_accumulated;
-                        
+
                         $this->db->where('id', $deposito_id);
                         $this->db->update('tbdeposito', [
                             'total_bunga_akumulasi' => $total_accumulated,
@@ -1250,4 +1251,79 @@ class Deposito extends CI_Controller
         // Method removed
         show_404();
     }
+
+    /**
+     * Show import form
+     */
+    public function import()
+    {
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
+        $data = [
+            'level' => $level
+        ];
+
+        $parser = [
+            'judul' => "Import Data Deposito dari Excel",
+            'isi' => $this->load->view('deposito/import', $data, TRUE)
+        ];
+        $this->parser->parse('templates/main', $parser);
+    }
+
+    /**
+     * Process import
+     */
+    public function proses_import()
+    {
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            echo json_encode(['success' => false, 'errors' => ['Unauthorized']]);
+            return;
+        }
+
+        // Check file upload
+        if (empty($_FILES['excel_file']['name'])) {
+            echo json_encode(['success' => false, 'errors' => ['File tidak ditemukan']]);
+            return;
+        }
+
+        // Configure upload
+        $config['upload_path'] = './uploads/import/';
+        $config['allowed_types'] = 'xls|xlsx';
+        $config['max_size'] = 102400; // 100MB
+        $config['file_name'] = 'deposito_' . date('YmdHis') . '_' . uniqid();
+
+        // Create directory if not exists
+        if (!is_dir($config['upload_path'])) {
+            mkdir($config['upload_path'], 0755, true);
+        }
+
+        $this->load->library('upload', $config);
+
+        if (!$this->upload->do_upload('excel_file')) {
+            echo json_encode(['success' => false, 'errors' => [$this->upload->display_errors('', '')]]);
+            return;
+        }
+
+        $upload_data = $this->upload->data();
+        $file_path = $upload_data['full_path'];
+
+        // Get pegawai_id from session or use default
+        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+
+        // Get jenistabungan_id for Deposito
+        $jenis = $this->db->like('nama', 'Deposito', 'both')->get('tbjenistabungan')->row();
+        $jenistabungan_id = $jenis ? $jenis->id : 1;
+
+        // Run import
+        $results = $this->Deposito_model->import_full_migration($file_path, $pegawai_id, $jenistabungan_id);
+
+        echo json_encode($results);
+    }
 }
+

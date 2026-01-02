@@ -86,26 +86,32 @@ class Deposito_model extends CI_Model
         if ((empty($data['nama_nasabah']) || empty($data['telp_nasabah'])) && !empty($data['nasabah_id'])) {
             $nasabah = $this->db->select('nama_lengkap, telp')->where('id', $data['nasabah_id'])->get('tbnasabah')->row();
             if ($nasabah) {
-                if (empty($data['nama_nasabah'])) $data['nama_nasabah'] = $nasabah->nama_lengkap;
-                if (empty($data['telp_nasabah'])) $data['telp_nasabah'] = $nasabah->telp;
+                if (empty($data['nama_nasabah']))
+                    $data['nama_nasabah'] = $nasabah->nama_lengkap;
+                if (empty($data['telp_nasabah']))
+                    $data['telp_nasabah'] = $nasabah->telp;
             }
         }
         if (empty($data['nama_pegawai']) && !empty($data['pegawai_id'])) {
             $pegawai = $this->db->select('nama_lengkap')->where('id', $data['pegawai_id'])->get('tbpegawai')->row();
-            if ($pegawai) $data['nama_pegawai'] = $pegawai->nama_lengkap;
+            if ($pegawai)
+                $data['nama_pegawai'] = $pegawai->nama_lengkap;
         }
         if (empty($data['jenis_tabungan']) && !empty($data['jenistabungan_id'])) {
             $jenis = $this->db->select('nama')->where('id', $data['jenistabungan_id'])->get('tbjenistabungan')->row();
-            if ($jenis) $data['jenis_tabungan'] = $jenis->nama;
+            if ($jenis)
+                $data['jenis_tabungan'] = $jenis->nama;
         }
         // Calculate maturity date if not provided
         if (empty($data['tanggal_jatuh_tempo']) && !empty($data['tanggal_deposito']) && !empty($data['durasi'])) {
             $data['tanggal_jatuh_tempo'] = date('Y-m-d', strtotime($data['tanggal_deposito'] . ' + ' . $data['durasi'] . ' months'));
         }
         // Initialize totals to 0
-        if (!isset($data['total_bunga_akumulasi'])) $data['total_bunga_akumulasi'] = 0;
-        if (!isset($data['bunga_belum_ditarik'])) $data['bunga_belum_ditarik'] = 0;
-        
+        if (!isset($data['total_bunga_akumulasi']))
+            $data['total_bunga_akumulasi'] = 0;
+        if (!isset($data['bunga_belum_ditarik']))
+            $data['bunga_belum_ditarik'] = 0;
+
         return $this->db->insert($this->table, $data);
     }
 
@@ -114,8 +120,8 @@ class Deposito_model extends CI_Model
      */
     public function add_to_bunga_totals($deposito_id, $amount)
     {
-        $this->db->set('total_bunga_akumulasi', 'COALESCE(total_bunga_akumulasi, 0) + ' . (float)$amount, false);
-        $this->db->set('bunga_belum_ditarik', 'COALESCE(bunga_belum_ditarik, 0) + ' . (float)$amount, false);
+        $this->db->set('total_bunga_akumulasi', 'COALESCE(total_bunga_akumulasi, 0) + ' . (float) $amount, false);
+        $this->db->set('bunga_belum_ditarik', 'COALESCE(bunga_belum_ditarik, 0) + ' . (float) $amount, false);
         $this->db->where('id', $deposito_id);
         return $this->db->update($this->table);
     }
@@ -125,7 +131,7 @@ class Deposito_model extends CI_Model
      */
     public function subtract_bunga_belum_ditarik($deposito_id, $amount)
     {
-        $this->db->set('bunga_belum_ditarik', 'GREATEST(COALESCE(bunga_belum_ditarik, 0) - ' . (float)$amount . ', 0)', false);
+        $this->db->set('bunga_belum_ditarik', 'GREATEST(COALESCE(bunga_belum_ditarik, 0) - ' . (float) $amount . ', 0)', false);
         $this->db->where('id', $deposito_id);
         return $this->db->update($this->table);
     }
@@ -139,13 +145,13 @@ class Deposito_model extends CI_Model
         $total = $this->db->select_sum('jumlah_bunga')
             ->where('deposito_id', $deposito_id)
             ->get('tb_bunga_deposito_log')->row();
-        
+
         // Calculate bunga_belum_ditarik
         $belum_ditarik = $this->db->select_sum('jumlah_bunga')
             ->where('deposito_id', $deposito_id)
             ->where('status_penarikan', 'belum_ditarik')
             ->get('tb_bunga_deposito_log')->row();
-        
+
         return $this->db->where('id', $deposito_id)->update($this->table, [
             'total_bunga_akumulasi' => $total->jumlah_bunga ?? 0,
             'bunga_belum_ditarik' => $belum_ditarik->jumlah_bunga ?? 0
@@ -394,7 +400,7 @@ class Deposito_model extends CI_Model
         $this->db->update('tb_bunga_deposito_log');
 
         $this->db->trans_complete();
-        
+
         // Return penarikan_id on success for kwitansi printing
         return $this->db->trans_status() ? $penarikan_id : false;
     }
@@ -407,11 +413,11 @@ class Deposito_model extends CI_Model
             ->where('id', $deposito_id)
             ->get('tbdeposito')
             ->row();
-        
+
         if ($deposito && $deposito->bunga_belum_ditarik !== null && $deposito->bunga_belum_ditarik > 0) {
             return (float) $deposito->bunga_belum_ditarik;
         }
-        
+
         // Fallback to calculated value
         $this->db->select_sum('jumlah_bunga');
         $this->db->from('tb_bunga_deposito_log');
@@ -613,8 +619,8 @@ class Deposito_model extends CI_Model
 
         // Merge semua transaksi
         $semua_transaksi = array_merge(
-            [$transaksi_setoran_awal], 
-            $transaksi_bunga, 
+            [$transaksi_setoran_awal],
+            $transaksi_bunga,
             $transaksi_penarikan_pokok,
             $transaksi_penarikan_bunga
         );
@@ -713,28 +719,30 @@ class Deposito_model extends CI_Model
     }
 
     // ========== IMPORT METHODS ==========
-    
+
     /**
      * Find nasabah by name (case-insensitive partial match)
      */
     public function find_nasabah_by_name($nama)
     {
-        if (empty($nama)) return null;
-        
+        if (empty($nama))
+            return null;
+
         // Try exact match first
         $result = $this->db->where('LOWER(nama_lengkap)', strtolower(trim($nama)))
             ->get('tbnasabah')->row();
-        
-        if ($result) return $result;
-        
+
+        if ($result)
+            return $result;
+
         // Try LIKE match
         $result = $this->db->like('nama_lengkap', trim($nama), 'both')
             ->limit(1)
             ->get('tbnasabah')->row();
-        
+
         return $result;
     }
-    
+
     /**
      * Create new nasabah from import data
      */
@@ -754,11 +762,11 @@ class Deposito_model extends CI_Model
             'pegawai_id' => $pegawai_id ?: 1,
             'created_at' => date('Y-m-d H:i:s')
         ];
-        
+
         $this->db->insert('tbnasabah', $data);
         return $this->db->insert_id();
     }
-    
+
     /**
      * Find existing deposito by nasabah name and deposito date
      */
@@ -771,17 +779,18 @@ class Deposito_model extends CI_Model
             ->where('d.tanggal_deposito', $tanggal_deposito)
             ->get()->row();
     }
-    
+
     /**
      * Find existing deposito by no_seri (serial number from Excel)
      */
     public function find_deposito_by_no_seri($no_seri)
     {
-        if (empty($no_seri)) return null;
+        if (empty($no_seri))
+            return null;
         return $this->db->where('no_seri', $no_seri)
             ->get($this->table)->row();
     }
-    
+
     /**
      * Insert or update deposito from import
      * @param array $data Deposito data
@@ -795,18 +804,20 @@ class Deposito_model extends CI_Model
         if (!empty($data['no_seri'])) {
             $existing = $this->find_deposito_by_no_seri($data['no_seri']);
         }
-        
+
         // If not found by no_seri, try by name + date
         if (!$existing && !empty($data['nama_nasabah']) && !empty($data['tanggal_deposito'])) {
             $existing = $this->find_deposito_by_name_date($data['nama_nasabah'], $data['tanggal_deposito']);
         }
-        
+
         if ($existing) {
             if ($update_existing) {
                 // Update existing record
-                $update_data = array_filter($data, function($v) { return $v !== null && $v !== ''; });
+                $update_data = array_filter($data, function ($v) {
+                    return $v !== null && $v !== '';
+                });
                 unset($update_data['nasabah_id']); // Don't update nasabah_id
-                
+
                 $this->db->where('id', $existing->id)->update($this->table, $update_data);
                 return [
                     'action' => 'update',
@@ -821,18 +832,18 @@ class Deposito_model extends CI_Model
                 ];
             }
         }
-        
+
         // Insert new record
         $this->insert_data($data);
         $new_id = $this->db->insert_id();
-        
+
         return [
             'action' => 'insert',
             'id' => $new_id,
             'message' => "Data deposito {$data['nama_nasabah']} berhasil ditambahkan"
         ];
     }
-    
+
     /**
      * Batch import deposito records
      * @param array $rows Array of deposito data
@@ -851,14 +862,14 @@ class Deposito_model extends CI_Model
             'errors' => 0,
             'details' => []
         ];
-        
+
         $this->db->trans_start();
-        
+
         foreach ($rows as $index => $row) {
             try {
                 // Find or create nasabah
                 $nasabah = $this->find_nasabah_by_name($row['nama'] ?? '');
-                
+
                 if (!$nasabah) {
                     // Create new nasabah
                     $nasabah_id = $this->create_nasabah_from_import(
@@ -870,7 +881,7 @@ class Deposito_model extends CI_Model
                 } else {
                     $nasabah_id = $nasabah->id;
                 }
-                
+
                 // Prepare deposito data
                 $deposito_data = [
                     'no_seri' => $row['no_seri'] ?? null,
@@ -888,14 +899,14 @@ class Deposito_model extends CI_Model
                     'import_notes' => $row['keterangan'] ?? null,
                     'status' => $row['status'] ?? 'aktif'
                 ];
-                
+
                 // Calculate jatuh tempo if not provided
                 if (empty($deposito_data['tanggal_jatuh_tempo']) && !empty($deposito_data['tanggal_deposito']) && !empty($deposito_data['durasi'])) {
                     $deposito_data['tanggal_jatuh_tempo'] = date('Y-m-d', strtotime($deposito_data['tanggal_deposito'] . ' + ' . $deposito_data['durasi'] . ' months'));
                 }
-                
+
                 $result = $this->insert_or_update_import($deposito_data, true);
-                
+
                 $results['details'][] = [
                     'row' => $index + 1,
                     'nama' => $row['nama'] ?? 'Unknown',
@@ -903,9 +914,9 @@ class Deposito_model extends CI_Model
                     'message' => $result['message'],
                     'deposito_id' => $result['id']
                 ];
-                
+
                 $results[$result['action'] === 'insert' ? 'inserted' : ($result['action'] === 'update' ? 'updated' : 'skipped')]++;
-                
+
             } catch (Exception $e) {
                 $results['errors']++;
                 $results['details'][] = [
@@ -916,18 +927,18 @@ class Deposito_model extends CI_Model
                 ];
             }
         }
-        
+
         $this->db->trans_complete();
-        
+
         if ($this->db->trans_status() === FALSE) {
             $results['errors'] = $results['total'];
             $results['inserted'] = 0;
             $results['updated'] = 0;
         }
-        
+
         return $results;
     }
-    
+
     /**
      * Generate next rekening number
      */
@@ -938,7 +949,7 @@ class Deposito_model extends CI_Model
         $this->db->order_by('id', 'DESC');
         $this->db->limit(1);
         $query = $this->db->get();
-        
+
         if ($query && $query->num_rows() > 0) {
             $last = $query->row();
             $lastNumber = (int) substr($last->no_rekening, 1);
@@ -946,7 +957,345 @@ class Deposito_model extends CI_Model
         } else {
             $nextNumber = 1;
         }
-        
+
         return 'D' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+
+    // ========== FULL MIGRATION IMPORT ==========
+
+    /**
+     * Import full migration from Excel file
+     * Handles: DAFTAR DEPOSAN, PEMBAYARAN BUNGA, HUTANG BUNGA sheets
+     * 
+     * @param string $file_path Path to Excel file
+     * @param int $pegawai_id Employee ID performing import
+     * @param int $jenistabungan_id Deposit type ID
+     * @return array Import results with details
+     */
+    public function import_full_migration($file_path, $pegawai_id, $jenistabungan_id)
+    {
+        require_once APPPATH . 'third_party/SimpleXLS.php';
+
+        $results = [
+            'success' => false,
+            'batch_id' => 'IMP' . date('YmdHis'),
+            'deposito' => ['inserted' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0],
+            'bunga_log' => ['inserted' => 0, 'errors' => 0],
+            'nasabah' => ['created' => 0, 'found' => 0],
+            'details' => [],
+            'errors' => []
+        ];
+
+        // Parse Excel file
+        $xls = \Shuchkin\SimpleXLS::parse($file_path);
+        if (!$xls) {
+            $results['errors'][] = 'Gagal membaca file Excel: ' . \Shuchkin\SimpleXLS::parseError();
+            return $results;
+        }
+
+        $sheets = $xls->sheetNames();
+        $results['sheets_found'] = $sheets;
+
+        // Find sheet indexes
+        $sheet_deposan = array_search('DAFTAR DEPOSAN', $sheets);
+        $sheet_bunga = array_search('PEMBAYARAN BUNGA DEPOSITO', $sheets);
+        $sheet_hutang = array_search('HUTANG BUNGA', $sheets);
+
+        if ($sheet_deposan === false) {
+            $results['errors'][] = 'Sheet "DAFTAR DEPOSAN" tidak ditemukan';
+            return $results;
+        }
+
+        $this->db->trans_start();
+
+        // Step 1: Import DAFTAR DEPOSAN
+        $rows_deposan = $xls->rows($sheet_deposan);
+        $no_seri_to_deposito_id = []; // Map no_seri to deposito_id for linking bunga
+
+        // Header is at row 3 (index 2), data starts at row 4 (index 3)
+        for ($i = 3; $i < count($rows_deposan); $i++) {
+            $row = $rows_deposan[$i];
+
+            // Skip empty rows
+            $nama = trim($row[1] ?? '');
+            if (empty($nama))
+                continue;
+
+            try {
+                // Extract data from row
+                $no_seri = intval($row[3] ?? 0);
+                $jumlah_deposito = $this->_parse_amount($row[4] ?? 0);
+                $tanggal_deposito = $this->_parse_date($row[5] ?? '');
+                $durasi = intval($row[6] ?? 12);
+                $tanggal_jatuh_tempo = $this->_parse_date($row[7] ?? '');
+                $rate_bunga = $this->_parse_rate($row[8] ?? 0);
+                $telp = trim($row[10] ?? '-');
+                $keterangan = trim($row[11] ?? '');
+                $alamat = trim($row[2] ?? '-');
+
+                // Detect status from keterangan
+                $status = $this->_detect_status($keterangan, $jumlah_deposito);
+
+                // Find or create nasabah
+                $nasabah = $this->find_nasabah_by_name($nama);
+                if (!$nasabah) {
+                    $nasabah_id = $this->create_nasabah_from_import($nama, $alamat, $telp, $pegawai_id);
+                    $results['nasabah']['created']++;
+                } else {
+                    $nasabah_id = $nasabah->id;
+                    $results['nasabah']['found']++;
+                }
+
+                // Check if deposito exists by no_seri
+                $existing = $no_seri > 0 ? $this->find_deposito_by_no_seri($no_seri) : null;
+
+                $deposito_data = [
+                    'no_seri' => $no_seri > 0 ? $no_seri : null,
+                    'nasabah_id' => $nasabah_id,
+                    'pegawai_id' => $pegawai_id,
+                    'jenistabungan_id' => $jenistabungan_id,
+                    'nama_nasabah' => $nama,
+                    'telp_nasabah' => $telp,
+                    'jumlah_deposito' => $jumlah_deposito,
+                    'rate_bunga' => $rate_bunga,
+                    'tanggal_deposito' => $tanggal_deposito ?: date('Y-m-d'),
+                    'durasi' => $durasi,
+                    'tanggal_jatuh_tempo' => $tanggal_jatuh_tempo,
+                    'status' => $status,
+                    'import_batch_id' => $results['batch_id'],
+                    'import_notes' => $keterangan
+                ];
+
+                // Calculate jatuh tempo if not provided
+                if (empty($deposito_data['tanggal_jatuh_tempo']) && !empty($deposito_data['tanggal_deposito']) && $durasi > 0) {
+                    $deposito_data['tanggal_jatuh_tempo'] = date('Y-m-d', strtotime($deposito_data['tanggal_deposito'] . " + $durasi months"));
+                }
+
+                if ($existing) {
+                    // Update existing
+                    unset($deposito_data['nasabah_id']); // Don't change nasabah
+                    $this->db->where('id', $existing->id)->update($this->table, $deposito_data);
+                    $deposito_id = $existing->id;
+                    $results['deposito']['updated']++;
+                    $results['details'][] = ['row' => $i + 1, 'nama' => $nama, 'action' => 'updated', 'no_seri' => $no_seri];
+                } else {
+                    // Insert new
+                    $deposito_data['no_rekening'] = $this->generate_next_rekening();
+                    $this->insert_data($deposito_data);
+                    $deposito_id = $this->db->insert_id();
+                    $results['deposito']['inserted']++;
+                    $results['details'][] = ['row' => $i + 1, 'nama' => $nama, 'action' => 'inserted', 'no_seri' => $no_seri];
+                }
+
+                // Store mapping for bunga import
+                if ($no_seri > 0) {
+                    $no_seri_to_deposito_id[$no_seri] = $deposito_id;
+                }
+
+            } catch (Exception $e) {
+                $results['deposito']['errors']++;
+                $results['errors'][] = "Row " . ($i + 1) . " ($nama): " . $e->getMessage();
+            }
+        }
+
+        // Step 2: Import PEMBAYARAN BUNGA DEPOSITO (if sheet exists)
+        if ($sheet_bunga !== false && count($no_seri_to_deposito_id) > 0) {
+            $rows_bunga = $xls->rows($sheet_bunga);
+
+            // Column mapping: Col 6 = SALDO PINDAHAN, Col 7-30 = monthly payments
+            // Row 2 has headers, Row 3 has sub-headers, data starts at Row 4
+            $months = [
+                7 => '01',
+                9 => '02',
+                11 => '03',
+                13 => '04',
+                15 => '05',
+                17 => '06',
+                19 => '07',
+                21 => '08',
+                23 => '09',
+                25 => '10',
+                27 => '11',
+                29 => '12'
+            ];
+
+            for ($i = 3; $i < count($rows_bunga); $i++) {
+                $row = $rows_bunga[$i];
+                $nin = intval($row[0] ?? 0); // NIN = No Seri
+
+                if ($nin <= 0 || !isset($no_seri_to_deposito_id[$nin]))
+                    continue;
+
+                $deposito_id = $no_seri_to_deposito_id[$nin];
+
+                // Get SALDO PINDAHAN from Col 6 (previous year's balance)
+                $saldo_pindahan = $this->_parse_amount($row[6] ?? 0);
+
+                // Insert previous balance as single entry if > 0
+                if ($saldo_pindahan > 0) {
+                    $this->_insert_bunga_log($deposito_id, $saldo_pindahan, '2024-12-31', 'sudah_ditarik', $results['batch_id'], 'Saldo pindahan');
+                    $results['bunga_log']['inserted']++;
+                }
+
+                // Insert monthly bunga payments
+                foreach ($months as $col => $month) {
+                    $date_col = $col; // Date column
+                    $amount_col = $col + 1; // Amount column
+
+                    $payment_date = $this->_parse_date($row[$date_col] ?? '');
+                    $payment_amount = $this->_parse_amount($row[$amount_col] ?? 0);
+
+                    if ($payment_amount > 0 && $payment_date && $payment_date != '1970-01-01') {
+                        $this->_insert_bunga_log($deposito_id, $payment_amount, $payment_date, 'sudah_ditarik', $results['batch_id'], "Bunga bulan $month");
+                        $results['bunga_log']['inserted']++;
+                    }
+                }
+            }
+        }
+
+        // Step 3: Import HUTANG BUNGA (update bunga_belum_ditarik)
+        if ($sheet_hutang !== false && count($no_seri_to_deposito_id) > 0) {
+            $rows_hutang = $xls->rows($sheet_hutang);
+
+            // Use DES column (Col 15) as current outstanding balance
+            for ($i = 3; $i < count($rows_hutang); $i++) {
+                $row = $rows_hutang[$i];
+                $nin = intval($row[0] ?? 0);
+
+                if ($nin <= 0 || !isset($no_seri_to_deposito_id[$nin]))
+                    continue;
+
+                $deposito_id = $no_seri_to_deposito_id[$nin];
+
+                // Get outstanding balance from DES column (Col 15)
+                $hutang_bunga = $this->_parse_amount($row[15] ?? 0);
+
+                // Hutang bunga is negative in Excel, convert to positive
+                $bunga_belum_ditarik = abs($hutang_bunga);
+
+                if ($bunga_belum_ditarik > 0) {
+                    $this->db->where('id', $deposito_id)
+                        ->update($this->table, ['bunga_belum_ditarik' => $bunga_belum_ditarik]);
+                }
+            }
+        }
+
+        $this->db->trans_complete();
+
+        $results['success'] = $this->db->trans_status();
+
+        return $results;
+    }
+
+    /**
+     * Helper: Parse amount from Excel cell
+     */
+    private function _parse_amount($value)
+    {
+        if (empty($value))
+            return 0;
+        if (is_numeric($value))
+            return floatval($value);
+
+        // Remove currency symbols and formatting
+        $value = str_replace(['$', 'Rp', ',', ' '], '', $value);
+        return floatval($value);
+    }
+
+    /**
+     * Helper: Parse date from Excel cell
+     */
+    private function _parse_date($value)
+    {
+        if (empty($value))
+            return null;
+
+        // Check for invalid dates
+        if (strpos($value, '1970-01-01') !== false)
+            return null;
+        if (strpos($value, '1900-') !== false)
+            return null;
+
+        // If numeric (Excel serial date)
+        if (is_numeric($value)) {
+            $timestamp = strtotime('1899-12-30') + ($value * 86400);
+            return date('Y-m-d', $timestamp);
+        }
+
+        // Try parsing as date string
+        $timestamp = strtotime($value);
+        if ($timestamp && $timestamp > 0) {
+            return date('Y-m-d', $timestamp);
+        }
+
+        return null;
+    }
+
+    /**
+     * Helper: Parse interest rate from Excel cell
+     */
+    private function _parse_rate($value)
+    {
+        if (empty($value))
+            return 0;
+
+        // Remove percentage sign
+        $value = str_replace(['%', ' '], '', $value);
+        $rate = floatval($value);
+
+        // If rate is like 0.007 (0.7%), convert to 0.7
+        if ($rate > 0 && $rate < 0.1) {
+            $rate = $rate * 100;
+        }
+
+        return $rate;
+    }
+
+    /**
+     * Helper: Detect deposit status from keterangan
+     */
+    private function _detect_status($keterangan, $jumlah)
+    {
+        if (empty($keterangan) && $jumlah > 0)
+            return 'aktif';
+        if ($jumlah <= 0)
+            return 'ditutup';
+
+        $ket_lower = strtolower($keterangan);
+
+        if (strpos($ket_lower, 'lunas') !== false)
+            return 'ditutup';
+        if (strpos($ket_lower, 'tarik') !== false && strpos($ket_lower, 'pinalti') !== false)
+            return 'ditutup';
+        if (strpos($ket_lower, 'ditarik') !== false)
+            return 'ditutup';
+
+        return 'aktif';
+    }
+
+    /**
+     * Helper: Insert bunga log entry
+     */
+    private function _insert_bunga_log($deposito_id, $amount, $date, $status, $batch_id, $keterangan = '')
+    {
+        // Get deposito info for denormalized fields
+        $deposito = $this->db->select('no_rekening, nama_nasabah, rate_bunga')
+            ->where('id', $deposito_id)
+            ->get($this->table)->row();
+
+        $data = [
+            'deposito_id' => $deposito_id,
+            'no_rekening' => $deposito ? $deposito->no_rekening : null,
+            'nama_nasabah' => $deposito ? $deposito->nama_nasabah : null,
+            'jumlah_bunga' => $amount,
+            'rate_bunga' => $deposito ? $deposito->rate_bunga : 0,
+            'tanggal_perhitungan' => $date,
+            'status_penarikan' => $status,
+            'input_method' => 'import',
+            'import_batch_id' => $batch_id,
+            'keterangan' => $keterangan
+        ];
+
+        return $this->db->insert('tb_bunga_deposito_log', $data);
     }
 }

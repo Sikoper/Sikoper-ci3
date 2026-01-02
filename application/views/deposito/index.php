@@ -4,6 +4,9 @@
             <button class="btn btn-primary" onclick="window.location='<?= base_url('deposito/add') ?>'">
                 <i class="fa fa-plus-circle"></i> Buka Deposito Baru
             </button>
+            <button class="btn btn-success ms-2" onclick="window.location='<?= base_url('deposito/import') ?>'">
+                <i class="fa fa-upload"></i> Import Excel
+            </button>
         </h4>
     </div>
     <div class="card-body">
@@ -51,63 +54,63 @@
         },
 
         "columns": [{
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "type": "string"
-            },
-            {
-                "orderable": false
-            }
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "type": "string"
+        },
+        {
+            "orderable": false
+        }
         ],
 
         "columnDefs": [{
-                "targets": 0,
-                "orderable": false,
-                "width": "5%"
-            },
-            {
-                "targets": 1,
-                "width": "15%"
-            },
-            {
-                "targets": 2,
-                "width": "10%"
-            },
-            {
-                "targets": 3,
-                "orderable": false,
-                "width": "5%"
-            },
-            {
-                "targets": 5,
-                "width": "10%",
-            },
-            {
-                "targets": 6,
-                "width": "15%",
-                "orderable": false
-            },
-            {
-                "targets": 7,
-                "orderable": false,
-                "width": "15%"
-            }
+            "targets": 0,
+            "orderable": false,
+            "width": "5%"
+        },
+        {
+            "targets": 1,
+            "width": "15%"
+        },
+        {
+            "targets": 2,
+            "width": "10%"
+        },
+        {
+            "targets": 3,
+            "orderable": false,
+            "width": "5%"
+        },
+        {
+            "targets": 5,
+            "width": "10%",
+        },
+        {
+            "targets": 6,
+            "width": "15%",
+            "orderable": false
+        },
+        {
+            "targets": 7,
+            "orderable": false,
+            "width": "15%"
+        }
         ],
     });
 
@@ -132,7 +135,7 @@
                         id: id
                     },
                     dataType: "json",
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             Swal.fire({
                                 title: "Success!",
@@ -155,7 +158,7 @@
                             });
                         }
                     },
-                    error: function(xhr, thrownError) {
+                    error: function (xhr, thrownError) {
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
                 });
@@ -189,7 +192,7 @@
     });
 
     var channel = pusher.subscribe('deposito-channel');
-    channel.bind('deposito-event', function(data) {
+    channel.bind('deposito-event', function (data) {
         console.log("Received update:", data);
         table.ajax.reload(null, false);
     });

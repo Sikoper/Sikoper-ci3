@@ -737,4 +737,79 @@ class Simpanan extends CI_Controller
         // The default behavior is to prompt for download.
         $this->dompdf_lib->stream($filename);
     }
+
+    /**
+     * Show import form
+     */
+    public function import()
+    {
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            redirect('unauthorized_403');
+        }
+
+        $data = [
+            'level' => $level
+        ];
+
+        $parser = [
+            'judul' => "Import Data Tabungan dari Excel",
+            'isi' => $this->load->view('simpanan/import', $data, TRUE)
+        ];
+        $this->parser->parse('templates/main', $parser);
+    }
+
+    /**
+     * Process import
+     */
+    public function proses_import()
+    {
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            echo json_encode(['success' => false, 'errors' => ['Unauthorized']]);
+            return;
+        }
+
+        // Check file upload
+        if (empty($_FILES['excel_file']['name'])) {
+            echo json_encode(['success' => false, 'errors' => ['File tidak ditemukan']]);
+            return;
+        }
+
+        // Configure upload
+        $config['upload_path'] = './uploads/import/';
+        $config['allowed_types'] = 'xls|xlsx';
+        $config['max_size'] = 102400; // 100MB
+        $config['file_name'] = 'tabungan_' . date('YmdHis') . '_' . uniqid();
+
+        // Create directory if not exists
+        if (!is_dir($config['upload_path'])) {
+            mkdir($config['upload_path'], 0755, true);
+        }
+
+        $this->load->library('upload', $config);
+
+        if (!$this->upload->do_upload('excel_file')) {
+            echo json_encode(['success' => false, 'errors' => [$this->upload->display_errors('', '')]]);
+            return;
+        }
+
+        $upload_data = $this->upload->data();
+        $file_path = $upload_data['full_path'];
+
+        // Get pegawai_id from session or use default
+        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+
+        // Get jenistabungan_id for Tabungan
+        $jenis = $this->db->like('nama', 'Tabungan', 'both')->get('tbjenistabungan')->row();
+        $jenistabungan_id = $jenis ? $jenis->id : 1;
+
+        // Run full import (all 12 sheets with daily transactions)
+        $results = $this->Tabungan_model->import_full_migration($file_path, $pegawai_id, $jenistabungan_id);
+
+        echo json_encode($results);
+    }
 }
+

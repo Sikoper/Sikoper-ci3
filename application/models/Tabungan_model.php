@@ -268,4 +268,301 @@ class Tabungan_model extends CI_Model
             'transaksi' => $transaksi
         ];
     }
+
+    /**
+     * Import full migration from Excel file - ALL SHEETS with DAILY transactions
+     * Imports: JAN-DES (12 sheets) with setoran/penarikan per day
+     * 
+     * @param string $file_path Path to Excel file
+     * @param int $pegawai_id Employee ID performing import
+     * @param int $jenistabungan_id Savings type ID
+     * @return array Import results with details
+     */
+    public function import_full_migration($file_path, $pegawai_id, $jenistabungan_id, $sheets_to_import = null)
+    {
+        require_once APPPATH . 'third_party/SimpleXLS.php';
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600); // 10 minutes
+
+        $results = [
+            'success' => false,
+            'batch_id' => 'IMP' . date('YmdHis'),
+            'simpanan' => ['inserted' => 0, 'updated' => 0, 'errors' => 0],
+            'nasabah' => ['created' => 0, 'found' => 0],
+            'setoran' => ['inserted' => 0],
+            'penarikan' => ['inserted' => 0],
+            'details' => [],
+            'errors' => []
+        ];
+
+        // Check if file exists
+        if (!file_exists($file_path)) {
+            $results['errors'][] = 'File tidak ditemukan: ' . $file_path;
+            return $results;
+        }
+
+        // Month mapping for date construction
+        $month_map = [
+            'JAN' => '01',
+            'FEB' => '02',
+            'MAR' => '03',
+            'APR' => '04',
+            'MEI' => '05',
+            'JUNI' => '06',
+            'JULI' => '07',
+            'AGS' => '08',
+            'SEP' => '09',
+            'OKT' => '10',
+            'NOP' => '11',
+            'DES' => '12'
+        ];
+
+        // Parse Excel file
+        $xls = \Shuchkin\SimpleXLS::parse($file_path);
+        if (!$xls) {
+            $results['errors'][] = 'Gagal membaca file Excel: ' . \Shuchkin\SimpleXLS::parseError();
+            return $results;
+        }
+
+        $sheets = $xls->sheetNames();
+        $results['sheets_found'] = $sheets;
+
+        // Track no_rekening to simpanan_id mapping
+        $norek_to_id = [];
+        // Track nama to nasabah_id mapping for deduplication
+        $nama_to_nasabah = [];
+
+        $this->db->trans_start();
+
+        // PHASE 1: Process JAN sheet first to create master data
+        $jan_rows = $xls->rows(0);
+        $results['importing_sheet'] = 'ALL (JAN-DES)';
+
+        for ($i = 3; $i < count($jan_rows); $i++) {
+            $row = $jan_rows[$i];
+
+            $nama = trim($row[1] ?? '');
+            if (empty($nama))
+                continue;
+            if (stripos($nama, 'JUMLAH') !== false || stripos($nama, 'TOTAL') !== false)
+                continue;
+
+            try {
+                $no_urut = intval($row[0] ?? 0);
+                $no_tab = intval($row[2] ?? 0);
+                $alamat = trim($row[3] ?? '-');
+
+                // Generate no_rekening
+                $no_rekening = $no_tab > 0 ? 'S' . str_pad($no_tab, 4, '0', STR_PAD_LEFT) : 'S' . str_pad($no_urut, 4, '0', STR_PAD_LEFT);
+
+                // Find or create nasabah (deduplicate by name)
+                $nama_lower = strtolower(trim($nama));
+                if (isset($nama_to_nasabah[$nama_lower])) {
+                    $nasabah_id = $nama_to_nasabah[$nama_lower];
+                    $results['nasabah']['found']++;
+                } else {
+                    $nasabah = $this->_find_nasabah_by_name($nama);
+                    if ($nasabah) {
+                        $nasabah_id = $nasabah->id;
+                        $results['nasabah']['found']++;
+                    } else {
+                        $nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
+                        $results['nasabah']['created']++;
+                    }
+                    $nama_to_nasabah[$nama_lower] = $nasabah_id;
+                }
+
+                // Check if simpanan exists by no_rekening
+                $existing = $this->db->where('no_rekening', $no_rekening)->get('tbsimpanan')->row();
+
+                if (!$existing) {
+                    // Create simpanan master record
+                    $simpanan_data = [
+                        'no_rekening' => $no_rekening,
+                        'nasabah_id' => $nasabah_id,
+                        'pegawai_id' => $pegawai_id,
+                        'jenistabungan_id' => $jenistabungan_id,
+                        'nama_nasabah' => $nama,
+                        'jumlah_simpanan' => 0,
+                        'jumlah_bunga' => 0,
+                        'tanggal_simpanan' => '2025-01-01', // Start of the year
+                        'status' => 'aktif'
+                    ];
+                    $this->db->insert('tbsimpanan', $simpanan_data);
+                    $simpanan_id = $this->db->insert_id();
+                    $results['simpanan']['inserted']++;
+                } else {
+                    $simpanan_id = $existing->id;
+                    $results['simpanan']['updated']++;
+                }
+
+                $norek_to_id[$no_rekening] = $simpanan_id;
+                $results['details'][] = ['row' => $i + 1, 'nama' => $nama, 'no_rekening' => $no_rekening, 'action' => 'master'];
+
+            } catch (Exception $e) {
+                $results['simpanan']['errors']++;
+                $results['errors'][] = "JAN Row " . ($i + 1) . ": " . $e->getMessage();
+            }
+        }
+
+        // PHASE 2: Process ALL monthly sheets for transactions
+        $year = '2025'; // Adjust based on file name if needed
+
+        for ($sheet_idx = 0; $sheet_idx < 12; $sheet_idx++) {
+            if (!isset($sheets[$sheet_idx]))
+                continue;
+
+            $sheet_name = strtoupper($sheets[$sheet_idx]);
+            if (!isset($month_map[$sheet_name]))
+                continue;
+
+            $month = $month_map[$sheet_name];
+            $rows = $xls->rows($sheet_idx);
+
+            for ($i = 3; $i < count($rows); $i++) {
+                $row = $rows[$i];
+
+                $no_urut = intval($row[0] ?? 0);
+                $no_tab = intval($row[2] ?? 0);
+                $no_rekening = $no_tab > 0 ? 'S' . str_pad($no_tab, 4, '0', STR_PAD_LEFT) : 'S' . str_pad($no_urut, 4, '0', STR_PAD_LEFT);
+
+                if (!isset($norek_to_id[$no_rekening]))
+                    continue;
+                $simpanan_id = $norek_to_id[$no_rekening];
+
+                // Process daily SETORAN (columns 5-35 for days 1-31)
+                for ($day = 1; $day <= 31; $day++) {
+                    $col = 4 + $day; // Column 5 = day 1
+                    $amount = $this->_parse_amount($row[$col] ?? 0);
+
+                    if ($amount > 0) {
+                        $date = sprintf('%s-%s-%02d', $year, $month, $day);
+                        // Validate date
+                        if (checkdate((int) $month, $day, (int) $year)) {
+                            $this->db->insert('tbdetail_simpanan', [
+                                'simpanan_id' => $simpanan_id,
+                                'tanggal_setoran' => $date . ' 12:00:00',
+                                'jumlah_setoran' => $amount,
+                                'pegawai_id' => $pegawai_id
+                            ]);
+                            $results['setoran']['inserted']++;
+                        }
+                    }
+                }
+
+                // Process daily PENARIKAN (columns 36-66 for days 1-31)
+                for ($day = 1; $day <= 31; $day++) {
+                    $col = 35 + $day; // Column 36 = day 1
+                    $amount = $this->_parse_amount($row[$col] ?? 0);
+
+                    if ($amount > 0) {
+                        $date = sprintf('%s-%s-%02d', $year, $month, $day);
+                        // Validate date
+                        if (checkdate((int) $month, $day, (int) $year)) {
+                            $this->db->insert('tbdetail_penarikan', [
+                                'simpanan_id' => $simpanan_id,
+                                'penarikan_id' => 0, // No parent penarikan record
+                                'tanggal_penarikan' => $date . ' 12:00:00',
+                                'jumlah_penarikan' => $amount,
+                                'pegawai_id' => $pegawai_id,
+                                'status' => 'disetujui'
+                            ]);
+                            $results['penarikan']['inserted']++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // PHASE 3: Update final balances from DES sheet
+        $des_rows = $xls->rows(11);
+        for ($i = 3; $i < count($des_rows); $i++) {
+            $row = $des_rows[$i];
+            $no_urut = intval($row[0] ?? 0);
+            $no_tab = intval($row[2] ?? 0);
+            $no_rekening = $no_tab > 0 ? 'S' . str_pad($no_tab, 4, '0', STR_PAD_LEFT) : 'S' . str_pad($no_urut, 4, '0', STR_PAD_LEFT);
+
+            if (!isset($norek_to_id[$no_rekening]))
+                continue;
+
+            $saldo_akhir = $this->_parse_amount($row[102] ?? $row[103] ?? 0);
+            $bunga = $this->_parse_amount($row[99] ?? 0);
+
+            $this->db->where('id', $norek_to_id[$no_rekening])
+                ->update('tbsimpanan', [
+                    'jumlah_simpanan' => $saldo_akhir,
+                    'jumlah_bunga' => $bunga
+                ]);
+        }
+
+        $this->db->trans_complete();
+
+        $results['success'] = $this->db->trans_status();
+        $results['total_processed'] = count($norek_to_id);
+
+        return $results;
+    }
+
+    /**
+     * Helper: Parse amount from Excel cell
+     */
+    private function _parse_amount($value)
+    {
+        if (empty($value))
+            return 0;
+        if (is_numeric($value))
+            return floatval($value);
+
+        // Remove currency symbols and formatting
+        $value = str_replace(['$', 'Rp', ',', ' '], '', $value);
+        return floatval($value);
+    }
+
+    /**
+     * Helper: Find nasabah by name
+     */
+    private function _find_nasabah_by_name($nama)
+    {
+        if (empty($nama))
+            return null;
+
+        // Try exact match first
+        $result = $this->db->where('LOWER(nama_lengkap)', strtolower(trim($nama)))
+            ->get('tbnasabah')->row();
+
+        if ($result)
+            return $result;
+
+        // Try LIKE match
+        $result = $this->db->like('nama_lengkap', trim($nama), 'both')
+            ->limit(1)
+            ->get('tbnasabah')->row();
+
+        return $result;
+    }
+
+    /**
+     * Helper: Create nasabah from import
+     */
+    private function _create_nasabah_from_import($nama, $alamat = '-', $telp = '-', $pegawai_id = null)
+    {
+        $data = [
+            'nik' => 'IMP' . date('YmdHis') . substr(uniqid(), -4),
+            'nama_lengkap' => $nama,
+            'jenis_kelamin' => '?',
+            'tempat_lahir' => '-',
+            'tanggal_lahir' => null,
+            'agama' => '-',
+            'alamat' => $alamat ?: '-',
+            'pekerjaan' => '-',
+            'telp' => $telp ?: '-',
+            'nama_ibu_kandung' => '-',
+            'pegawai_id' => $pegawai_id ?: 1,
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+
+        $this->db->insert('tbnasabah', $data);
+        return $this->db->insert_id();
+    }
 }
+
