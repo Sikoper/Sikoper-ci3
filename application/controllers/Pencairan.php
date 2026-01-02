@@ -21,18 +21,12 @@ class Pencairan extends CI_Controller
 
     public function index()
     {
-        if (!function_exists('safe_base64_decode_pencairan')) {
-            function safe_base64_decode_pencairan($string)
-            {
-                return base64_decode(strtr($string, '-_?', '+/='));
-            }
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         $data_pencairan_awal = null;
         $encoded_id = $this->input->get('id');
 
         if (!empty($encoded_id)) {
-            $deposito_id = safe_base64_decode_pencairan($encoded_id);
+            $deposito_id = safe_base64_decode($encoded_id);
             if ($deposito_id) {
                 $data_pencairan_awal = $this->Deposito_model->get_by_id($deposito_id);
             }
@@ -46,7 +40,7 @@ class Pencairan extends CI_Controller
 
         $parser = [
             'judul' => "Formulir Pencairan Deposito",
-            'isi'   => $this->load->view('pencairan/index', $data, TRUE)
+            'isi' => $this->load->view('pencairan/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -77,15 +71,15 @@ class Pencairan extends CI_Controller
         $tanggal_jatuh_tempo->add(new DateInterval('P' . $deposito->durasi . 'M'));
 
         if (new DateTime() < $tanggal_jatuh_tempo) {
-            $penalty_rate = (float)($jenis_tabungan->jumlah_denda ?? 0);
+            $penalty_rate = (float) ($jenis_tabungan->jumlah_denda ?? 0);
             $denda = round(($penalty_rate / 100) * $deposito->jumlah_deposito);
         }
 
         $response = [
-            'saldo'                 => (float)$deposito->jumlah_deposito,
-            'bunga_tersedia'        => (float)$bunga_tersedia,
-            'calculated_penalty_rp' => (float)$denda,
-            'tenor'                 => $tanggal_jatuh_tempo->format('d-m-Y'),
+            'saldo' => (float) $deposito->jumlah_deposito,
+            'bunga_tersedia' => (float) $bunga_tersedia,
+            'calculated_penalty_rp' => (float) $denda,
+            'tenor' => $tanggal_jatuh_tempo->format('d-m-Y'),
         ];
         echo json_encode($response);
     }
@@ -99,20 +93,20 @@ class Pencairan extends CI_Controller
 
         $this->form_validation->set_rules('deposito_id', 'Rekening Deposito', 'required|numeric', [
             'required' => '%s harus dipilih.',
-            'numeric'  => 'Format %s tidak valid.'
+            'numeric' => 'Format %s tidak valid.'
         ]);
 
         if ($this->session->userdata('level') == 'Admin') {
             $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required|numeric', [
                 'required' => 'Sebagai Admin, Anda wajib memilih pegawai yang memproses.',
-                'numeric'  => 'Format %s tidak valid.'
+                'numeric' => 'Format %s tidak valid.'
             ]);
         }
 
         if ($this->form_validation->run() == FALSE) {
             $errors = [
                 'deposito_id' => form_error('deposito_id'),
-                'pegawai_id'  => form_error('pegawai_id'),
+                'pegawai_id' => form_error('pegawai_id'),
             ];
             echo json_encode(['status' => 'validation_error', 'errors' => $errors]);
             return;
@@ -150,13 +144,13 @@ class Pencairan extends CI_Controller
 
         $deposito_id = $this->input->post('deposito_id');
 
-        if (empty($deposito_id) || !ctype_digit((string)$deposito_id)) {
+        if (empty($deposito_id) || !ctype_digit((string) $deposito_id)) {
             echo json_encode([
-                "draw"            => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
-                "recordsTotal"    => 0,
+                "draw" => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
+                "recordsTotal" => 0,
                 "recordsFiltered" => 0,
-                "data"            => [],
-                "error"           => "ID Deposito tidak valid."
+                "data" => [],
+                "error" => "ID Deposito tidak valid."
             ]);
             return;
         }
@@ -188,13 +182,13 @@ class Pencairan extends CI_Controller
         }
 
         $output = [
-            "draw"            => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
-            "recordsTotal"    => $this->Pencairan_model->count_all_detail_penarikan($deposito_id),
+            "draw" => $this->input->post('draw') ? intval($this->input->post('draw')) : 0,
+            "recordsTotal" => $this->Pencairan_model->count_all_detail_penarikan($deposito_id),
             "recordsFiltered" => $this->Pencairan_model->count_filtered_detail_penarikan($deposito_id),
-            "data"            => $data,
-            "akumulasi"       => [
+            "data" => $data,
+            "akumulasi" => [
                 "jumlah_penarikan" => $akumulasi->total_akumulasi_penarikan,
-                "jumlah_denda"     => $akumulasi->total_akumulasi_denda
+                "jumlah_denda" => $akumulasi->total_akumulasi_denda
             ]
         ];
 

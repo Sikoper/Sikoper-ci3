@@ -290,14 +290,19 @@
                                 Swal.fire({
                                     icon: "success",
                                     title: "Berhasil!",
-                                    html: response.success,
+                                    html: response.success + "<br><br><strong>Cetak kwitansi penarikan?</strong>",
+                                    showCancelButton: true,
+                                    confirmButtonColor: "#28a745",
+                                    confirmButtonText: "Ya, Cetak Kwitansi",
+                                    cancelButtonText: "Tidak, Nanti Saja",
                                     allowOutsideClick: false,
                                     allowEscapeKey: false,
                                     allowEnterKey: false
                                 }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        window.location.reload();
+                                    if (result.isConfirmed && response.penarikan_id) {
+                                        window.open("<?= base_url('penarikan/print_kwitansi/') ?>" + response.penarikan_id, "_blank");
                                     }
+                                    window.location.reload();
                                 });
                             } else {
                                 Swal.fire("Error!", "Terjadi kesalahan yang tidak diketahui saat memproses.", "error");

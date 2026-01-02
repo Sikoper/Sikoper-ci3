@@ -1,9 +1,6 @@
 <div class="row">
     <?php
-    function safe_base64_encode($string)
-    {
-        return strtr(base64_encode($string), '+/=', '-_.');
-    }
+    // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
     ?>
     <div class="col-md-12">
         <div class="card shadow-sm mb-4">
@@ -42,7 +39,8 @@
                     </tr>
                     <tr>
                         <th>Hutang Bunga</th>
-                        <td>: <span style="color: red; font-weight: bold;"> - Rp <?= number_format($hutang_bunga, 2, ',', '.') ?></span></td>
+                        <td>: <span style="color: red; font-weight: bold;"> - Rp
+                                <?= number_format($hutang_bunga, 2, ',', '.') ?></span></td>
                     </tr>
                     <tr>
                         <th>Bunga Tersedia Saat Ini (Bisa Ditarik)</th>
@@ -56,11 +54,13 @@
                         <th class="align-top">Total Diterima Nasabah</th>
                         <td id="totalPenarikanValue" class="align-top">:
                             <span class="fw-bold text-success" style="font-size: 1.1rem;">
-                                Rp <?= number_format($total_akumulasi_penarikan - $total_akumulasi_denda, 2, ',', '.') ?>
+                                Rp
+                                <?= number_format($total_akumulasi_penarikan - $total_akumulasi_denda, 2, ',', '.') ?>
                             </span>
                             <?php if ($total_akumulasi_denda > 0): ?>
                                 <br>
-                                <small class="text-muted">(Total Bruto Rp <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?> dikurangi Denda)</small>
+                                <small class="text-muted">(Total Bruto Rp
+                                    <?= number_format($total_akumulasi_penarikan, 2, ',', '.') ?> dikurangi Denda)</small>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -76,7 +76,8 @@
                         <?php if (!empty($deposito->nama_ahli_waris)): ?>
                             <tr id="field-ahli-waris">
                                 <th>Ahli Waris</th>
-                                <td>: <?= $deposito->nama_ahli_waris ?> (<?= $deposito->hubungan_ahli_waris ?> dari <?= $nasabah->nama_lengkap ?>), <?= $deposito->telp_ahli_waris ?></td>
+                                <td>: <?= $deposito->nama_ahli_waris ?> (<?= $deposito->hubungan_ahli_waris ?> dari
+                                    <?= $nasabah->nama_lengkap ?>), <?= $deposito->telp_ahli_waris ?></td>
                             </tr>
                         <?php endif ?>
                     <?php endif; ?>
@@ -95,12 +96,14 @@
                 </table>
                 <div class="d-flex align-end justify-content-end">
                     <div class="d-flex justify-content-end me-2">
-                        <button onclick="printLaporan('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-warning">
+                        <button onclick="printLaporan('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')"
+                            class="btn btn-warning">
                             Cetak Laporan <i class="fa fa-id-card ms-2"></i>
                         </button>
                     </div>
                     <div class="d-flex justify-content-end gap-2">
-                        <button onclick="printSertifikat('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')" class="btn btn-info">
+                        <button onclick="printSertifikat('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')"
+                            class="btn btn-info">
                             Cetak Sertifikat <i class="fa fa-id-card ms-2"></i>
                         </button>
                     </div>
@@ -140,12 +143,7 @@
                 <h5 class="mb-0"><i class="fa fa-list"></i> Detail Penarikan</h5>
 
                 <?php
-                if (!function_exists('safe_base64_encode')) {
-                    function safe_base64_encode($string)
-                    {
-                        return strtr(base64_encode($string), '+/=', '-_?');
-                    }
-                }
+                // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
                 ?>
 
                 <a href="<?= base_url('pencairan?id=' . safe_base64_encode($deposito->id)) ?>"
@@ -202,42 +200,45 @@
             data: {
                 "deposito_id": depositoId
             },
-            dataSrc: function(json) {
+            dataSrc: function (json) {
                 $('#total_bunga').text('Rp ' + json.total_bunga);
                 return json.data;
             }
         },
         columns: [{
-                data: 0,
-                className: "text-center"
-            },
-            {
-                data: 1,
-                className: "text-center"
-            },
-            {
-                data: 2,
-                className: "text-end"
-            },
-            {
-                data: 3,
-                className: "text-end"
-            },
-            {
-                data: 4,
-                className: "text-center",
-                visible: userLevel === 'Admin'
+            data: 0,
+            className: "text-center"
+        },
+        {
+            data: 1,
+            className: "text-center"
+        },
+        {
+            data: 2,
+            className: "text-end"
+        },
+        {
+            data: 3,
+            className: "text-end"
+        },
+        {
+            data: 4,
+            className: "text-center",
+            visible: userLevel === 'Admin',
+            render: function(data, type, row) {
+                return data; // Render raw HTML
             }
+        }
         ],
         columnDefs: [{
-                targets: 0,
-                orderable: false,
-                width: "5%",
-            },
-            {
-                targets: 4,
-                orderable: false,
-            }
+            targets: 0,
+            orderable: false,
+            width: "5%",
+        },
+        {
+            targets: 4,
+            orderable: false,
+        }
         ]
     });
 
@@ -253,7 +254,7 @@
             "data": {
                 "deposito_id": depositoId
             },
-            "dataSrc": function(json) {
+            "dataSrc": function (json) {
                 if (json.akumulasi) {
                     $('#akumulasi_penarikan').text('Rp ' + parseFloat(json.akumulasi.jumlah_penarikan).toLocaleString('id-ID', {
                         minimumFractionDigits: 2
@@ -266,28 +267,28 @@
             }
         },
         "columns": [{
-                "data": 0,
-                "orderable": false
-            },
-            {
-                "data": 1
-            },
-            {
-                "data": 2,
-                "className": "text-end"
-            },
-            {
-                "data": 3,
-                "className": "text-end"
-            },
-            {
-                "data": 4
-            },
-            {
-                "data": 5,
-                "orderable": false,
-                "visible": userLevel === 'Admin'
-            }
+            "data": 0,
+            "orderable": false
+        },
+        {
+            "data": 1
+        },
+        {
+            "data": 2,
+            "className": "text-end"
+        },
+        {
+            "data": 3,
+            "className": "text-end"
+        },
+        {
+            "data": 4
+        },
+        {
+            "data": 5,
+            "orderable": false,
+            "visible": userLevel === 'Admin'
+        }
         ]
     });
 
@@ -307,14 +308,14 @@
             if (result.isConfirmed) {
                 $.post("<?= site_url('penarikan/hapus_detail_penarikan_ajax') ?>", {
                     penarikan_id: id
-                }, function(response) {
+                }, function (response) {
                     if (response.success) {
                         Swal.fire("Berhasil!", response.success, "success");
                         tabel_penarikan.ajax.reload(null, false);
                     } else {
                         Swal.fire("Gagal!", response.error || "Terjadi kesalahan.", "error");
                     }
-                }, "json").fail(function() {
+                }, "json").fail(function () {
                     Swal.fire("Error", "Tidak dapat terhubung ke server.", "error");
                 });
             }
@@ -340,7 +341,7 @@
                         id: id
                     },
                     dataType: "json",
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             Swal.fire("Berhasil!", response.success, "success");
                             $('#tabel_bunga').DataTable().ajax.reload(null, false);
@@ -349,7 +350,7 @@
                             Swal.fire("Gagal!", response.error, "error");
                         }
                     },
-                    error: function(xhr, status, error) {
+                    error: function (xhr, status, error) {
                         console.error("AJAX Error (Hapus Bunga):", {
                             status,
                             error,

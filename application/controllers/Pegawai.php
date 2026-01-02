@@ -18,18 +18,14 @@ class Pegawai extends CI_Controller
     {
         $parser = [
             'judul' => "Data Pegawai",
-            'isi'   => $this->load->view('pegawai/index', '', TRUE)
+            'isi' => $this->load->view('pegawai/index', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
 
     public function fetchData()
     {
-        function safe_base64_encode($string)
-        {
-            return strtr(base64_encode($string), '+/=', '-_?');
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($this->input->is_ajax_request() == true) {
             $list = $this->Pegawai_model->get_datatables();
             $data = array();
@@ -80,7 +76,7 @@ class Pegawai extends CI_Controller
 
         $parser = [
             'judul' => "<i class='fa fa-user-plus'></i> Pegawai",
-            'isi'   => $this->load->view('pegawai/addForm', '', TRUE)
+            'isi' => $this->load->view('pegawai/addForm', '', TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -110,18 +106,18 @@ class Pegawai extends CI_Controller
             $jabatan = $this->input->post('jabatan');
 
             $this->form_validation->set_rules('nik', 'NIK', 'required', [
-                'required'   => 'NIK wajib diisi.',
+                'required' => 'NIK wajib diisi.',
             ]);
 
             $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]', [
-                'required'     => 'Nama tidak boleh kosong.',
-                'min_length'   => 'Nama minimal 4 karakter.',
-                'max_length'   => 'Nama maksimal 100 karakter.'
+                'required' => 'Nama tidak boleh kosong.',
+                'min_length' => 'Nama minimal 4 karakter.',
+                'max_length' => 'Nama maksimal 100 karakter.'
             ]);
 
             $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'required|max_length[30]', [
-                'required'     => 'Tempat lahir harus diisi.',
-                'max_length'   => 'Tempat lahir maksimal 30 karakter.'
+                'required' => 'Tempat lahir harus diisi.',
+                'max_length' => 'Tempat lahir maksimal 30 karakter.'
             ]);
 
             $this->form_validation->set_rules('tanggal_lahir', 'Tanggal Lahir', 'required', [
@@ -151,30 +147,30 @@ class Pegawai extends CI_Controller
             if ($this->form_validation->run() == FALSE) {
                 $msg = [
                     'error' => [
-                        'errorNik'              => form_error('nik'),
-                        'errorNamaLengkap'      => form_error('nama_lengkap'),
-                        'errorTempatLahir'      => form_error('tempat_lahir'),
-                        'errorTanggalLahir'     => form_error('tanggal_lahir'),
-                        'errorJenisKelamin'     => form_error('jenis_kelamin'),
-                        'errorAlamat'           => form_error('alamat'),
-                        'errorTelp'             => form_error('telp'),
-                        'errorAgama'            => form_error('agama'),
-                        'errorJabatan'          => form_error('jabatan'),
+                        'errorNik' => form_error('nik'),
+                        'errorNamaLengkap' => form_error('nama_lengkap'),
+                        'errorTempatLahir' => form_error('tempat_lahir'),
+                        'errorTanggalLahir' => form_error('tanggal_lahir'),
+                        'errorJenisKelamin' => form_error('jenis_kelamin'),
+                        'errorAlamat' => form_error('alamat'),
+                        'errorTelp' => form_error('telp'),
+                        'errorAgama' => form_error('agama'),
+                        'errorJabatan' => form_error('jabatan'),
                     ]
                 ];
             } else {
 
                 $data = [
-                    'nik'               => $nik,
-                    'nama_lengkap'      => $nama_lengkap,
-                    'alamat'            => $alamat,
-                    'tempat_lahir'      => $tempat_lahir,
-                    'tanggal_lahir'     => $tanggal_lahir,
-                    'jenis_kelamin'     => $kelamin,
-                    'agama'             => $agama,
-                    'telp'              => $telp,
-                    'jabatan'           => $jabatan,
-                    'user_token'        => '1'
+                    'nik' => $nik,
+                    'nama_lengkap' => $nama_lengkap,
+                    'alamat' => $alamat,
+                    'tempat_lahir' => $tempat_lahir,
+                    'tanggal_lahir' => $tanggal_lahir,
+                    'jenis_kelamin' => $kelamin,
+                    'agama' => $agama,
+                    'telp' => $telp,
+                    'jabatan' => $jabatan,
+                    'user_token' => '1'
                 ];
 
                 $inserted = $this->Pegawai_model->insert_data($data);
@@ -224,17 +220,14 @@ class Pegawai extends CI_Controller
             redirect('unauthorized_403');
         }
 
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($encoded_nik === null) {
             show_custom_404();
             return;
         }
 
-        $nik = safe_base64_decode($encoded_nik);;
+        $nik = safe_base64_decode($encoded_nik);
+        ;
         $pegawai = $this->Pegawai_model->get_data_by_nik($nik);
 
         if (!$pegawai) {
@@ -247,7 +240,7 @@ class Pegawai extends CI_Controller
         ];
         $parser = [
             'judul' => "Edit Data Pegawai",
-            'isi'   => $this->load->view('pegawai/editForm', $data, TRUE)
+            'isi' => $this->load->view('pegawai/editForm', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -278,18 +271,18 @@ class Pegawai extends CI_Controller
             $jabatan = $this->input->post('jabatan');
 
             $this->form_validation->set_rules('nik', 'NIK', 'required', [
-                'required'   => 'NIK wajib diisi.',
+                'required' => 'NIK wajib diisi.',
             ]);
 
             $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required|min_length[4]|max_length[100]', [
-                'required'     => 'Nama tidak boleh kosong.',
-                'min_length'   => 'Nama minimal 4 karakter.',
-                'max_length'   => 'Nama maksimal 100 karakter.'
+                'required' => 'Nama tidak boleh kosong.',
+                'min_length' => 'Nama minimal 4 karakter.',
+                'max_length' => 'Nama maksimal 100 karakter.'
             ]);
 
             $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'required|max_length[30]', [
-                'required'     => 'Tempat lahir harus diisi.',
-                'max_length'   => 'Tempat lahir maksimal 30 karakter.'
+                'required' => 'Tempat lahir harus diisi.',
+                'max_length' => 'Tempat lahir maksimal 30 karakter.'
             ]);
 
             $this->form_validation->set_rules('tanggal_lahir', 'Tanggal Lahir', 'required', [
@@ -319,29 +312,29 @@ class Pegawai extends CI_Controller
             if ($this->form_validation->run() == FALSE) {
                 $msg = [
                     'error' => [
-                        'errorNik'              => form_error('nik'),
-                        'errorNamaLengkap'      => form_error('nama_lengkap'),
-                        'errorTempatLahir'      => form_error('tempat_lahir'),
-                        'errorTanggalLahir'     => form_error('tanggal_lahir'),
-                        'errorJenisKelamin'     => form_error('jenis_kelamin'),
-                        'errorAlamat'           => form_error('alamat'),
-                        'errorTelp'             => form_error('telp'),
-                        'errorAgama'            => form_error('agama'),
-                        'errorJabatan'          => form_error('jabatan'),
+                        'errorNik' => form_error('nik'),
+                        'errorNamaLengkap' => form_error('nama_lengkap'),
+                        'errorTempatLahir' => form_error('tempat_lahir'),
+                        'errorTanggalLahir' => form_error('tanggal_lahir'),
+                        'errorJenisKelamin' => form_error('jenis_kelamin'),
+                        'errorAlamat' => form_error('alamat'),
+                        'errorTelp' => form_error('telp'),
+                        'errorAgama' => form_error('agama'),
+                        'errorJabatan' => form_error('jabatan'),
                     ]
                 ];
             } else {
 
                 $data = [
-                    'nik'               => $nik,
-                    'nama_lengkap'      => $nama_lengkap,
-                    'alamat'            => $alamat,
-                    'tempat_lahir'      => $tempat_lahir,
-                    'tanggal_lahir'     => $tanggal_lahir,
-                    'jenis_kelamin'     => $kelamin,
-                    'agama'             => $agama,
-                    'telp'              => $telp,
-                    'jabatan'           => $jabatan
+                    'nik' => $nik,
+                    'nama_lengkap' => $nama_lengkap,
+                    'alamat' => $alamat,
+                    'tempat_lahir' => $tempat_lahir,
+                    'tanggal_lahir' => $tanggal_lahir,
+                    'jenis_kelamin' => $kelamin,
+                    'agama' => $agama,
+                    'telp' => $telp,
+                    'jabatan' => $jabatan
                 ];
 
                 $inserted = $this->Pegawai_model->edit_data($id, $data);
@@ -358,11 +351,7 @@ class Pegawai extends CI_Controller
 
     public function detail($encoded_nik = null)
     {
-        function safe_base64_decode($string)
-        {
-            return base64_decode(strtr($string, '-_?', '+/='));
-        }
-
+        // Menggunakan helper function dari secure_helper.php
         if ($encoded_nik === null) {
             show_custom_404();
             return;
@@ -383,7 +372,7 @@ class Pegawai extends CI_Controller
         ];
         $parser = [
             'judul' => "Detail Data Pegawai",
-            'isi'   => $this->load->view('pegawai/detail', $data, TRUE)
+            'isi' => $this->load->view('pegawai/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -408,8 +397,8 @@ class Pegawai extends CI_Controller
             $last_name = end($parts);
 
             $data[] = [
-                'id'        => $row->id,
-                'text'      => $row->nama_lengkap,
+                'id' => $row->id,
+                'text' => $row->nama_lengkap,
                 'last_name' => $last_name
             ];
         }

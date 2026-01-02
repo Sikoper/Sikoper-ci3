@@ -333,7 +333,7 @@ $formatter->setPattern('d MMMM yyyy');
                                         <th>No</th>
                                         <th>Tgl</th>
                                         <th>Bunga</th>
-                                        <th>No.Bukti</th>
+                                        <th>Jumlah</th>
                                         <th>Paraf</th>
                                     </tr>
                                     <?php for ($i = 1; $i <= 6; $i++) echo "<tr><td>$i</td><td></td><td></td><td></td><td></td></tr>"; ?>
@@ -347,7 +347,7 @@ $formatter->setPattern('d MMMM yyyy');
                                         <th>No</th>
                                         <th>Tgl</th>
                                         <th>Bunga</th>
-                                        <th>No.Bukti</th>
+                                        <th>Jumlah</th>
                                         <th>Paraf</th>
                                     </tr>
                                     <?php for ($i = 7; $i <= 12; $i++) echo "<tr><td>$i</td><td></td><td></td><td></td><td></td></tr>"; ?>

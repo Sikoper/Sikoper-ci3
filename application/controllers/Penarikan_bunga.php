@@ -23,12 +23,12 @@ class Penarikan_bunga extends CI_Controller
         $this->_secure_page();
 
         $data = [
-            'level'   => $this->session->userdata('level'),
+            'level' => $this->session->userdata('level'),
             'pegawai' => $this->Pegawai_model->get_data(),
         ];
         $parser = [
             'judul' => "Formulir Penarikan Bunga Deposito",
-            'isi'   => $this->load->view('penarikan_bunga/form', $data, TRUE)
+            'isi' => $this->load->view('penarikan_bunga/form', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -48,10 +48,10 @@ class Penarikan_bunga extends CI_Controller
         $result = [];
         foreach ($data_from_model as $row) {
             $result[] = [
-                'id'             => $row->id,
-                'text'           => $row->no_rekening . ' - ' . $row->nama_lengkap,
-                'nasabah_id'     => $row->nasabah_id,
-                'nama_nasabah'   => $row->nama_lengkap,
+                'id' => $row->id,
+                'text' => $row->no_rekening . ' - ' . $row->nama_lengkap,
+                'nasabah_id' => $row->nasabah_id,
+                'nama_nasabah' => $row->nama_lengkap,
                 'jenis_tabungan' => $row->jenis_tabungan
             ];
         }
@@ -75,9 +75,9 @@ class Penarikan_bunga extends CI_Controller
 
             if ($rekening) {
                 $response = [
-                    'status'         => 'success',
-                    'nama_nasabah'   => $rekening->nama_nasabah,
-                    'bunga_tersedia' => $rekening->bunga_tersedia
+                    'status' => 'success',
+                    'nama_nasabah' => $rekening->nama_nasabah,
+                    'saldo' => $rekening->bunga_tersedia // Key diubah ke 'saldo' agar konsisten dengan JS
                 ];
                 echo json_encode($response);
             } else {
@@ -103,7 +103,7 @@ class Penarikan_bunga extends CI_Controller
                 echo json_encode(['error_validation' => validation_errors()]);
                 exit();
             }
-            
+
             // 2. Ambil nilai tanggal_penarikan dari form
             $tanggal_penarikan = $this->input->post('tanggal_penarikan');
             $deposito_id = $this->input->post('deposito_id');
@@ -117,11 +117,11 @@ class Penarikan_bunga extends CI_Controller
                 exit();
             }
 
-            if ($jumlah_penarikan > (float)$deposito->bunga_tersedia) {
+            if ($jumlah_penarikan > (float) $deposito->bunga_tersedia) {
                 echo json_encode(['error_save' => 'Gagal! Jumlah penarikan melebihi bunga yang tersedia.']);
                 exit();
             }
-            
+
             // 3. Kirim variabel $tanggal_penarikan ke fungsi model
             $is_success = $this->Deposito_model->tarik_bunga($deposito_id, $jumlah_penarikan, $pegawai_id, $tanggal_penarikan);
 

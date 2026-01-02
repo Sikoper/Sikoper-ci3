@@ -183,4 +183,178 @@ class Bunga extends CI_Controller
         header('Content-Type: application/json');
         echo json_encode($msg);
     }
+
+    /**
+     * Print monthly interest report for Tabungan (Savings)
+     */
+    public function print_laporan_bulanan()
+    {
+        $start_date = $this->input->get('start_date') ?? date('Y-m-01');
+        $end_date = $this->input->get('end_date') ?? date('Y-m-t');
+        
+        // Get data for the report
+        $list = $this->Bunga_model->get_report_data($start_date, $end_date);
+        $total_bunga = $this->Bunga_model->get_total_bunga_filtered($start_date, $end_date);
+        
+        // Format dates for display
+        $formatter = new \IntlDateFormatter('id_ID', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);
+        $formatter->setPattern('MMMM yyyy');
+        $periode = $formatter->format(new DateTime($start_date));
+        
+        $formatter->setPattern('d MMMM yyyy');
+        $tanggal_cetak = $formatter->format(new DateTime());
+        
+        $data = [
+            'list' => $list,
+            'total_bunga' => $total_bunga,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'periode' => $periode,
+            'tanggal_cetak' => $tanggal_cetak,
+            'tipe' => 'Tabungan'
+        ];
+
+        $html = $this->load->view('bunga/cetak_laporan', $data, TRUE);
+
+        $this->load->library('dompdf_lib');
+        $this->dompdf_lib->loadHtml($html);
+        $this->dompdf_lib->setPaper('A4', 'portrait');
+        $this->dompdf_lib->render();
+
+        $filename = "Laporan_Bunga_Tabungan_" . date('Y-m', strtotime($start_date)) . ".pdf";
+        $this->dompdf_lib->stream($filename, false);
+    }
+
+    /**
+     * Search simpanan for Select2 dropdown (AJAX)
+     */
+    public function search_simpanan()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        $search = $this->input->get('q') ?? '';
+        $target_date = $this->input->get('target_date') ?? date('Y-m-d');
+        
+        $month = date('m', strtotime($target_date));
+        $year = date('Y', strtotime($target_date));
+        
+        // Get simpanan that don't have bunga for this month
+        $this->db->select('s.id, s.no_rekening, s.jumlah_simpanan, s.bunga_rate,
+            COALESCE(s.nama_nasabah, n.nama_lengkap) as nama_nasabah');
+        $this->db->from('tbsimpanan s');
+        $this->db->join('tbnasabah n', 'n.id = s.nasabah_id', 'left');
+        $this->db->where('s.status', 'aktif');
+        
+        // Exclude simpanan that already have bunga this month
+        $subquery = $this->db->select('simpanan_id')
+            ->where('MONTH(tanggal_transaksi)', $month)
+            ->where('YEAR(tanggal_transaksi)', $year)
+            ->get_compiled_select('tbtransaksi');
+        $this->db->where("s.id NOT IN ($subquery)", null, false);
+        
+        if (!empty($search)) {
+            $this->db->group_start();
+            $this->db->like('s.no_rekening', $search);
+            $this->db->or_like('s.nama_nasabah', $search);
+            $this->db->or_like('n.nama_lengkap', $search);
+            $this->db->group_end();
+        }
+        
+        $this->db->order_by('s.no_rekening', 'ASC');
+        $this->db->limit(20);
+        
+        $results = $this->db->get()->result();
+
+        $data = [];
+        foreach ($results as $row) {
+            $data[] = [
+                'id' => $row->id,
+                'text' => $row->no_rekening . ' - ' . $row->nama_nasabah,
+                'jumlah_simpanan' => $row->jumlah_simpanan,
+                'bunga_rate' => $row->bunga_rate,
+                'nama_nasabah' => $row->nama_nasabah
+            ];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['results' => $data]);
+    }
+
+    /**
+     * Save manual bunga entry for tabungan (AJAX)
+     */
+    public function simpan_bunga_manual()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        header('Content-Type: application/json');
+
+        // Validation
+        $simpanan_id = $this->input->post('simpanan_id');
+        $tanggal = $this->input->post('tanggal_transaksi');
+        $jumlah_bunga = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_bunga'));
+
+        if (empty($simpanan_id) || empty($tanggal) || empty($jumlah_bunga)) {
+            echo json_encode(['error' => 'Simpanan, tanggal, dan jumlah bunga wajib diisi.']);
+            return;
+        }
+
+        // Check for duplicate (only 1 per month allowed)
+        $month = date('m', strtotime($tanggal));
+        $year = date('Y', strtotime($tanggal));
+        
+        $exists = $this->db->where('simpanan_id', $simpanan_id)
+            ->where('MONTH(tanggal_transaksi)', $month)
+            ->where('YEAR(tanggal_transaksi)', $year)
+            ->count_all_results('tbtransaksi');
+            
+        if ($exists > 0) {
+            $bulan = date('F Y', strtotime($tanggal));
+            echo json_encode(['error' => "Bunga untuk tabungan ini pada bulan $bulan sudah ada."]);
+            return;
+        }
+
+        // Get simpanan details
+        $simpanan = $this->Simpanan_model->get_data_by_id($simpanan_id);
+        if (!$simpanan) {
+            echo json_encode(['error' => 'Data simpanan tidak ditemukan.']);
+            return;
+        }
+
+        // Prepare data
+        $data = [
+            'simpanan_id' => $simpanan_id,
+            'no_rekening' => $simpanan->no_rekening,
+            'nama_nasabah' => $simpanan->nama_nasabah,
+            'tanggal_transaksi' => $tanggal,
+            'jumlah_transaksi' => $jumlah_bunga,
+            'rate_bunga' => $simpanan->bunga_rate,
+            'bunga_riil' => $jumlah_bunga
+        ];
+
+        // Insert into tbtransaksi
+        $this->db->trans_start();
+        
+        $this->db->insert('tbtransaksi', $data);
+        
+        // Update simpanan balance
+        $new_balance = $simpanan->jumlah_simpanan + $jumlah_bunga;
+        $this->db->where('id', $simpanan_id);
+        $this->db->update('tbsimpanan', ['jumlah_simpanan' => $new_balance]);
+        
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status()) {
+            echo json_encode(['success' => 'Bunga manual berhasil disimpan.']);
+        } else {
+            echo json_encode(['error' => 'Gagal menyimpan bunga manual.']);
+        }
+    }
 }
+

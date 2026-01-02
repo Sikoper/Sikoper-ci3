@@ -101,8 +101,8 @@ class Bunga_deposito extends CI_Controller
                 $row[] = "<div class=\"text-center\">{$no}</div>";
                 $row[] = date('d-m-Y', strtotime($field->tanggal_perhitungan));
                 $row[] = "Rp " . number_format($field->jumlah_bunga, 2, ',', '.');
-                $row[] = ($deposito ? $deposito->rate_bunga : '0') . " %";
-                $row[] = "<button class=\"btn btn-sm btn-danger\" onclick=\"deleteItem('{$field->id}', '{$deposito->no_rekening}')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
+                $row[] = ($field->rate_bunga ?? ($deposito ? $deposito->rate_bunga : '0')) . " %";
+                $row[] = "<button class=\"btn btn-sm btn-danger\" onclick=\"deleteRecordBunga('{$field->id}')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
 
                 $data[] = $row;
             }
@@ -128,12 +128,23 @@ class Bunga_deposito extends CI_Controller
             return;
         }
 
+        header('Content-Type: application/json');
+
         $id_log_bunga = $this->input->post('id');
+
+        if (empty($id_log_bunga)) {
+            echo json_encode(['error' => 'ID bunga tidak valid.']);
+            return;
+        }
 
         $log_bunga = $this->Bunga_deposito_model->get_data_by_id($id_log_bunga);
 
-        if ($log_bunga && $log_bunga->status_penarikan == 'sudah_ditarik') {
+        if (!$log_bunga) {
+            echo json_encode(['error' => 'Data bunga tidak ditemukan.']);
+            return;
+        }
 
+        if ($log_bunga->status_penarikan == 'sudah_ditarik') {
             echo json_encode(['error' => 'Gagal! Data bunga ini tidak bisa dihapus karena sudah pernah ditarik oleh nasabah.']);
             return;
         }
@@ -163,5 +174,140 @@ class Bunga_deposito extends CI_Controller
 
         header('Content-Type: application/json');
         echo json_encode($msg);
+    }
+
+    /**
+     * Print monthly interest report for Deposito
+     */
+    public function print_laporan_bulanan()
+    {
+        $start_date = $this->input->get('start_date') ?? date('Y-m-01');
+        $end_date = $this->input->get('end_date') ?? date('Y-m-t');
+        
+        // Get data for the report
+        $list = $this->Bunga_deposito_model->get_report_data($start_date, $end_date);
+        $total_bunga = $this->Bunga_deposito_model->get_total_bunga_filtered($start_date, $end_date);
+        
+        // Format dates for display
+        $formatter = new \IntlDateFormatter('id_ID', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);
+        $formatter->setPattern('MMMM yyyy');
+        $periode = $formatter->format(new DateTime($start_date));
+        
+        $formatter->setPattern('d MMMM yyyy');
+        $tanggal_cetak = $formatter->format(new DateTime());
+        
+        $data = [
+            'list' => $list,
+            'total_bunga' => $total_bunga,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'periode' => $periode,
+            'tanggal_cetak' => $tanggal_cetak,
+            'tipe' => 'Deposito'
+        ];
+
+        $html = $this->load->view('bunga/cetak_laporan', $data, TRUE);
+
+        $this->load->library('dompdf_lib');
+        $this->dompdf_lib->loadHtml($html);
+        $this->dompdf_lib->setPaper('A4', 'portrait');
+        $this->dompdf_lib->render();
+
+        $filename = "Laporan_Bunga_Deposito_" . date('Y-m', strtotime($start_date)) . ".pdf";
+        $this->dompdf_lib->stream($filename, false);
+    }
+
+    /**
+     * Search deposito for Select2 dropdown (AJAX)
+     */
+    public function search_deposito()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        $search = $this->input->get('q') ?? '';
+        $target_date = $this->input->get('target_date') ?? date('Y-m-d');
+        $results = $this->Bunga_deposito_model->get_deposito_dropdown($search, $target_date);
+
+        $data = [];
+        foreach ($results as $row) {
+            $data[] = [
+                'id' => $row->id,
+                'text' => $row->no_rekening . ' - ' . $row->nama_nasabah,
+                'jumlah_deposito' => $row->jumlah_deposito,
+                'rate_bunga' => $row->rate_bunga,
+                'nama_nasabah' => $row->nama_nasabah
+            ];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['results' => $data]);
+    }
+
+    /**
+     * Calculate bunga for single deposito (AJAX)
+     */
+    public function hitung_bunga()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        $deposito_id = $this->input->post('deposito_id');
+        $bunga = $this->Bunga_deposito_model->calculate_bunga_single($deposito_id);
+
+        header('Content-Type: application/json');
+        echo json_encode(['bunga' => $bunga, 'formatted' => number_format($bunga, 0, ',', '.')]);
+    }
+
+    /**
+     * Save manual bunga entry (AJAX)
+     */
+    public function simpan_bunga_manual()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        // Validation
+        $deposito_id = $this->input->post('deposito_id');
+        $tanggal = $this->input->post('tanggal_perhitungan');
+        $jumlah_bunga = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_bunga'));
+        $keterangan = $this->input->post('keterangan');
+
+        if (empty($deposito_id) || empty($tanggal) || empty($jumlah_bunga)) {
+            echo json_encode(['error' => 'Deposito, tanggal, dan jumlah bunga wajib diisi.']);
+            return;
+        }
+
+        // Check for duplicate (only 1 per month allowed)
+        if ($this->Bunga_deposito_model->check_duplicate($deposito_id, $tanggal)) {
+            $bulan = date('F Y', strtotime($tanggal));
+            echo json_encode(['error' => "Bunga untuk deposito ini pada bulan $bulan sudah ada."]);
+            return;
+        }
+
+        // Prepare data
+        $data = [
+            'deposito_id' => $deposito_id,
+            'tanggal_perhitungan' => $tanggal,
+            'jumlah_bunga' => $jumlah_bunga,
+            'input_method' => 'manual',
+            'pegawai_id' => $this->session->userdata('pegawai_id'),
+            'keterangan' => $keterangan
+        ];
+
+        // Insert
+        $inserted = $this->Bunga_deposito_model->insert_bunga_manual($data);
+
+        if ($inserted) {
+            echo json_encode(['success' => 'Bunga manual berhasil disimpan.']);
+        } else {
+            echo json_encode(['error' => 'Gagal menyimpan bunga manual.']);
+        }
     }
 }

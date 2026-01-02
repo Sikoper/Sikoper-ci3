@@ -120,4 +120,45 @@ class Nasabah_model extends CI_Model
         $query = $this->db->get();
         return $query->result();
     }
+
+    /**
+     * Sync denormalized nama_nasabah fields when customer name changes
+     * Call this after updating tbnasabah.nama_lengkap
+     */
+    public function update_nama_in_related_tables($nasabah_id, $new_name)
+    {
+        if (empty($nasabah_id) || empty($new_name)) {
+            return false;
+        }
+
+        $this->db->trans_start();
+
+        // Update tbsimpanan
+        $this->db->where('nasabah_id', $nasabah_id);
+        $this->db->update('tbsimpanan', ['nama_nasabah' => $new_name]);
+
+        // Update tbdeposito
+        $this->db->where('nasabah_id', $nasabah_id);
+        $this->db->update('tbdeposito', ['nama_nasabah' => $new_name]);
+
+        // Update tbtransaksi via JOIN through tbsimpanan
+        $this->db->query("
+            UPDATE tbtransaksi t
+            JOIN tbsimpanan s ON s.id = t.simpanan_id
+            SET t.nama_nasabah = ?
+            WHERE s.nasabah_id = ?
+        ", [$new_name, $nasabah_id]);
+
+        // Update tb_bunga_deposito_log via JOIN through tbdeposito
+        $this->db->query("
+            UPDATE tb_bunga_deposito_log bl
+            JOIN tbdeposito d ON d.id = bl.deposito_id
+            SET bl.nama_nasabah = ?
+            WHERE d.nasabah_id = ?
+        ", [$new_name, $nasabah_id]);
+
+        $this->db->trans_complete();
+
+        return $this->db->trans_status();
+    }
 }

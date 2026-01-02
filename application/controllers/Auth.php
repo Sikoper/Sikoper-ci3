@@ -17,10 +17,10 @@ class Auth extends CI_Controller
             if ($user) {
                 $this->session->set_userdata([
                     'isLoggedIn' => true,
-                    'nama'       => $user->nama,
-                    'uuid'       => $user->uuid,
-                    'id'         => $user->id,
-                    'level'      => $user->level,
+                    'nama' => $user->nama,
+                    'uuid' => $user->uuid,
+                    'id' => $user->id,
+                    'level' => $user->level,
                     'pegawai_id' => $user->pegawai_id,
                 ]);
             }
@@ -55,10 +55,10 @@ class Auth extends CI_Controller
                 if ($auth) {
                     $this->session->set_userdata([
                         'isLoggedIn' => true,
-                        'id'         => $auth->id,
-                        'nama'       => $auth->nama,
-                        'uuid'       => $auth->uuid,
-                        'level'      => $auth->level,
+                        'id' => $auth->id,
+                        'nama' => $auth->nama,
+                        'uuid' => $auth->uuid,
+                        'level' => $auth->level,
                         'pegawai_id' => $auth->pegawai_id,
                     ]);
 
@@ -75,7 +75,12 @@ class Auth extends CI_Controller
 
                     $msg = ['success' => 'Login successful'];
                 } else {
-                    $msg = ['failed' => 'Username or password is incorrect'];
+                    // SECURITY FIX: Return new CSRF token on login failure
+                    // Ini mencegah error token mismatch pada percobaan login berikutnya
+                    $msg = [
+                        'failed' => 'Username or password is incorrect',
+                        'csrf_token' => $this->security->get_csrf_hash()
+                    ];
                 }
             }
 
@@ -90,7 +95,7 @@ class Auth extends CI_Controller
         if ($uuid) {
             $this->db->where('uuid', $uuid);
             $this->db->update('tbuser', ['remember_token' => NULL]);
-            $this->session->set_userdata('isLoggedIn' == false);
+            // BUG FIX: Hapus baris yang salah, sess_destroy() sudah cukup
         }
 
         $this->session->sess_destroy();
