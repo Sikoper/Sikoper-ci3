@@ -4,8 +4,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Rekapitulasi_tabungan_model extends CI_Model
 {
     var $table = 'tbsimpanan';
-    var $column_order = array(null, 'tbsimpanan.no_rekening', 'tbnasabah.nama_lengkap', 'saldo_pokok', 'bunga', null);
-    var $column_search = array('tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening');
+    // OPTIMIZED: Using denormalized columns for faster queries
+    var $column_order = array(null, 'tbsimpanan.no_rekening', 'nama_nasabah', 'saldo_pokok', 'bunga', null);
+    var $column_search = array('tbsimpanan.nama_nasabah', 'tbsimpanan.no_rekening');
     var $order = array('tbsimpanan.no_rekening' => 'ASC');
 
     private function _get_datatables_query($bulan, $tahun)
@@ -66,13 +67,14 @@ class Rekapitulasi_tabungan_model extends CI_Model
         $this->db->select(
             'tbsimpanan.id,
              tbsimpanan.no_rekening, 
-             tbnasabah.nama_lengkap as nama_nasabah,
+             COALESCE(tbsimpanan.nama_nasabah, tbnasabah.nama_lengkap) as nama_nasabah,
              (' . $saldo_pokok_subquery . ') as saldo_pokok,
              ' . $bunga_subquery . ' as bunga'
         );
 
         $this->db->from($this->table);
-        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
+        // OPTIMIZED: Use LEFT JOIN as fallback for records missing denormalized data
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id', 'left');
         // FIXED: Removed status filter to include closed accounts in historical reports
         // Only filter by date registration to show accounts that existed in the period
         $this->db->where('tbsimpanan.tanggal_simpanan <=', $end_of_period);

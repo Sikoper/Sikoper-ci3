@@ -57,13 +57,14 @@ class Rekapitulasi_deposito_model extends CI_Model
         $this->db->select(
             'd.id,
              d.no_rekening, 
-             n.nama_lengkap as nama_nasabah,
+             COALESCE(d.nama_nasabah, n.nama_lengkap) as nama_nasabah,
              (' . $saldo_awal_subquery . ') as saldo_awal,
              (' . $bunga_periode_subquery . ') as bunga_periode'
         );
 
         $this->db->from('tbdeposito as d');
-        $this->db->join('tbnasabah as n', 'n.id = d.nasabah_id');
+        // OPTIMIZED: Use LEFT JOIN as fallback for records missing denormalized data
+        $this->db->join('tbnasabah as n', 'n.id = d.nasabah_id', 'left');
         // FIXED: Removed status filter to include closed accounts in historical reports
         $this->db->where('d.tanggal_deposito <=', $end_of_period);
 

@@ -51,7 +51,9 @@ class Penarikan_model extends CI_Model
             $this->db->where('p.simpanan_id', $simpanan_id);
         }
 
-        $this->db->select('p.id, p.simpanan_id, p.tanggal_penarikan, p.total_penarikan, p.jumlah_denda, pg.nama_lengkap as nama_pegawai');
+        // OPTIMIZED: Use denormalized nama_pegawai when available
+        $this->db->select('p.id, p.simpanan_id, p.tanggal_penarikan, p.total_penarikan, p.jumlah_denda, 
+            COALESCE(p.nama_pegawai, pg.nama_lengkap) as nama_pegawai');
         $this->db->from($this->_table_penarikan_header . ' p');
         $this->db->join('tbpegawai pg', 'p.pegawai_id = pg.id', 'left');
 
@@ -169,9 +171,11 @@ class Penarikan_model extends CI_Model
 
     public function get_rekening_dengan_jenis($nasabah_id)
     {
-        $this->db->select('tbsimpanan.id, tbsimpanan.no_rekening, tbjenistabungan.nama as nama_jenis');
+        // OPTIMIZED: Use denormalized jenis_tabungan from tbsimpanan
+        $this->db->select('tbsimpanan.id, tbsimpanan.no_rekening, 
+            COALESCE(tbsimpanan.jenis_tabungan, tbjenistabungan.nama) as nama_jenis');
         $this->db->from('tbsimpanan');
-        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');
+        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id', 'left');
         $this->db->where('tbsimpanan.nasabah_id', $nasabah_id);
         $query = $this->db->get();
 
@@ -301,10 +305,13 @@ class Penarikan_model extends CI_Model
 
     public function get_simpanan_detail_by_id($id)
     {
-        $this->db->select('ts.*, tn.nama_lengkap, jt.nama as jenis_tabungan');
+        // OPTIMIZED: Use denormalized columns from tbsimpanan
+        $this->db->select('ts.*, 
+            COALESCE(ts.nama_nasabah, tn.nama_lengkap) as nama_lengkap, 
+            COALESCE(ts.jenis_tabungan, jt.nama) as jenis_tabungan');
         $this->db->from('tbsimpanan ts');
-        $this->db->join('tbnasabah tn', 'ts.nasabah_id = tn.id');
-        $this->db->join('tbjenistabungan jt', 'ts.jenistabungan_id = jt.id');
+        $this->db->join('tbnasabah tn', 'ts.nasabah_id = tn.id', 'left');
+        $this->db->join('tbjenistabungan jt', 'ts.jenistabungan_id = jt.id', 'left');
         $this->db->where('ts.id', $id);
         return $this->db->get()->row();
     }

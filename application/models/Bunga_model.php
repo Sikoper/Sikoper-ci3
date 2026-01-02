@@ -10,10 +10,13 @@ class Bunga_model extends CI_Model
 
     private function _get_datatables_query($start_date = null, $end_date = null)
     {
-        $this->db->select('tbtransaksi.*, tbnasabah.nama_lengkap, tbsimpanan.no_rekening');
+        // OPTIMIZED: Use denormalized columns when available, fallback to JOIN
+        $this->db->select('tbtransaksi.*, 
+            COALESCE(tbtransaksi.nama_nasabah, tbnasabah.nama_lengkap) as nama_lengkap, 
+            COALESCE(tbtransaksi.no_rekening, tbsimpanan.no_rekening) as no_rekening');
         $this->db->from($this->table);
         $this->db->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id');
-        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id');
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id', 'left');
 
         // filter tanggal
         if (!empty($start_date) && !empty($end_date)) {
@@ -119,12 +122,14 @@ class Bunga_model extends CI_Model
         $prevMonthStart = date('Y-m-01', strtotime('-1 month'));
         $prevMonthEnd = date('Y-m-t', strtotime('-1 month'));
 
-        $this->db->select('tbsimpanan.id, tbsimpanan.nasabah_id, tbsimpanan.jumlah_simpanan, tbsimpanan.tanggal_simpanan, tbjenistabungan.bunga as bunga');
+        // OPTIMIZED: Use denormalized bunga_rate when available, fallback to JOIN
+        $this->db->select('tbsimpanan.id, tbsimpanan.nasabah_id, tbsimpanan.jumlah_simpanan, tbsimpanan.tanggal_simpanan, 
+            COALESCE(tbsimpanan.bunga_rate, tbjenistabungan.bunga) as bunga');
         $this->db->from('tbsimpanan');
-        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id');
+        $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id', 'left');
         $this->db->where('tbsimpanan.tanggal_simpanan <=', $lastMonth);
         $this->db->where('tbsimpanan.status', 'aktif');
-        $this->db->where('tbjenistabungan.bunga >', '0');
+        $this->db->where('(tbsimpanan.bunga_rate > 0 OR tbjenistabungan.bunga > 0)');
         $simpananList = $this->db->get()->result();
 
         foreach ($simpananList as $simpanan) {
@@ -227,5 +232,27 @@ class Bunga_model extends CI_Model
     function round_to_nearest_hundred($value)
     {
         return floor($value / 100) * 100;
+    }
+
+    /**
+     * Get all interest data for report printing (without pagination)
+     */
+    public function get_report_data($start_date, $end_date)
+    {
+        $this->db->select('tbtransaksi.*, 
+            COALESCE(tbtransaksi.nama_nasabah, tbnasabah.nama_lengkap) as nama_lengkap, 
+            COALESCE(tbtransaksi.no_rekening, tbsimpanan.no_rekening) as no_rekening,
+            tbsimpanan.jumlah_simpanan');
+        $this->db->from($this->table);
+        $this->db->join('tbsimpanan', 'tbsimpanan.id = tbtransaksi.simpanan_id');
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id', 'left');
+        
+        if (!empty($start_date) && !empty($end_date)) {
+            $this->db->where('DATE(tbtransaksi.tanggal_transaksi) >=', $start_date);
+            $this->db->where('DATE(tbtransaksi.tanggal_transaksi) <=', $end_date);
+        }
+        
+        $this->db->order_by('tbtransaksi.tanggal_transaksi', 'ASC');
+        return $this->db->get()->result();
     }
 }

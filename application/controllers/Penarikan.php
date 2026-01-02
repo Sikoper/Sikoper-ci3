@@ -237,7 +237,11 @@ class Penarikan extends CI_Controller
                 throw new Exception('Transaksi database gagal.');
             }
 
-            echo json_encode(['success' => 'Penarikan berhasil diproses.', 'redirect' => site_url('simpanan')]);
+            echo json_encode([
+                'success' => 'Penarikan berhasil diproses.',
+                'redirect' => site_url('simpanan'),
+                'penarikan_id' => $penarikan_id
+            ]);
         } catch (Exception $e) {
             // If any operation fails, roll back the transaction
             $this->db->trans_rollback();
@@ -504,5 +508,86 @@ class Penarikan extends CI_Controller
         $search = $this->input->get('q');
         $result = $this->Penarikan_model->get_combo_rekening_nasabah($search);
         echo json_encode($result);
+    }
+
+    /**
+     * Print kwitansi penarikan
+     */
+    public function print_kwitansi($penarikan_id = null)
+    {
+        if (empty($penarikan_id)) {
+            show_error('ID Penarikan tidak valid.', 400);
+            return;
+        }
+
+        // Get penarikan data with all details
+        $penarikan = $this->db->select('
+                p.id, p.simpanan_id, p.tanggal_penarikan, p.total_penarikan, p.jumlah_denda,
+                s.no_rekening, s.jumlah_simpanan, s.nama_nasabah, s.jenis_tabungan,
+                pg.nama_lengkap as nama_pegawai
+            ')
+            ->from('tbpenarikan p')
+            ->join('tbsimpanan s', 's.id = p.simpanan_id')
+            ->join('tbpegawai pg', 'pg.id = p.pegawai_id', 'left')
+            ->where('p.id', $penarikan_id)
+            ->get()
+            ->row();
+
+        if (!$penarikan) {
+            show_error('Data penarikan tidak ditemukan.', 404);
+            return;
+        }
+
+        // Generate kwitansi number
+        $tanggal = new DateTime($penarikan->tanggal_penarikan);
+        $no_kwitansi = 'KWT/' . $penarikan->no_rekening . '/' . $tanggal->format('dmy') . '/' . str_pad($penarikan_id, 4, '0', STR_PAD_LEFT);
+
+        $data = [
+            'no_kwitansi' => $no_kwitansi,
+            'tanggal_penarikan' => $penarikan->tanggal_penarikan,
+            'no_rekening' => $penarikan->no_rekening,
+            'nama_nasabah' => $penarikan->nama_nasabah,
+            'jenis_tabungan' => $penarikan->jenis_tabungan,
+            'jumlah_penarikan' => $penarikan->total_penarikan,
+            'sisa_saldo' => $penarikan->jumlah_simpanan,
+            'nama_pegawai' => $penarikan->nama_pegawai ?? 'N/A',
+            'terbilang' => $this->_terbilang($penarikan->total_penarikan) . ' rupiah'
+        ];
+
+        $this->load->view('penarikan/cetak_kwitansi', $data);
+    }
+
+    /**
+     * Helper: Convert number to words (Indonesian)
+     */
+    private function _terbilang($angka)
+    {
+        $angka = intval(abs($angka));
+        $baca = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+        $terbilang = '';
+
+        if ($angka < 12) {
+            $terbilang = $baca[$angka];
+        } else if ($angka < 20) {
+            $terbilang = $baca[$angka - 10] . ' belas';
+        } else if ($angka < 100) {
+            $terbilang = $this->_terbilang(intval($angka / 10)) . ' puluh ' . $this->_terbilang($angka % 10);
+        } else if ($angka < 200) {
+            $terbilang = 'seratus ' . $this->_terbilang($angka - 100);
+        } else if ($angka < 1000) {
+            $terbilang = $this->_terbilang(intval($angka / 100)) . ' ratus ' . $this->_terbilang($angka % 100);
+        } else if ($angka < 2000) {
+            $terbilang = 'seribu ' . $this->_terbilang($angka - 1000);
+        } else if ($angka < 1000000) {
+            $terbilang = $this->_terbilang(intval($angka / 1000)) . ' ribu ' . $this->_terbilang($angka % 1000);
+        } else if ($angka < 1000000000) {
+            $terbilang = $this->_terbilang(intval($angka / 1000000)) . ' juta ' . $this->_terbilang($angka % 1000000);
+        } else if ($angka < 1000000000000) {
+            $terbilang = $this->_terbilang(intval($angka / 1000000000)) . ' miliar ' . $this->_terbilang($angka % 1000000000);
+        } else if ($angka < 1000000000000000) {
+            $terbilang = $this->_terbilang(intval($angka / 1000000000000)) . ' triliun ' . $this->_terbilang($angka % 1000000000000);
+        }
+
+        return trim(preg_replace('/\s+/', ' ', $terbilang));
     }
 }

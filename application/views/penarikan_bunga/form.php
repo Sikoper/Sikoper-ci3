@@ -178,7 +178,23 @@
                         complete: () => $('#tombol_simpan').prop('disabled', false).html('Tarik Semua Bunga'),
                         success: function(response) {
                             if (response.success) {
-                                Swal.fire('Berhasil!', response.success, 'success').then(() => window.location.reload());
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Berhasil!",
+                                    html: response.success + "<br><br><strong>Cetak kwitansi penarikan bunga?</strong>",
+                                    showCancelButton: true,
+                                    confirmButtonColor: "#28a745",
+                                    confirmButtonText: "Ya, Cetak Kwitansi",
+                                    cancelButtonText: "Tidak, Nanti Saja",
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    allowEnterKey: false
+                                }).then((result) => {
+                                    if (result.isConfirmed && response.penarikan_id) {
+                                        window.open("<?= base_url('deposito/print_kwitansi_bunga/') ?>" + response.penarikan_id, "_blank");
+                                    }
+                                    window.location.reload();
+                                });
                             } else {
                                 Swal.fire('Gagal!', response.error_save || response.error_validation, 'error');
                             }

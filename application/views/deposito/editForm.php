@@ -166,6 +166,10 @@
                             <option value="24" <?= ($deposito->durasi == 24) ? 'selected' : '' ?>>24 Bulan / 2 Tahun</option>
                             <option value="30" <?= ($deposito->durasi == 30) ? 'selected' : '' ?>>30 Bulan / 2.5 Tahun</option>
                             <option value="36" <?= ($deposito->durasi == 36) ? 'selected' : '' ?>>36 Bulan / 3 Tahun</option>
+                            <option value="42" <?= ($deposito->durasi == 42) ? 'selected' : '' ?>>42 Bulan / 3.5 Tahun</option>
+                            <option value="48" <?= ($deposito->durasi == 48) ? 'selected' : '' ?>>48 Bulan / 4 Tahun</option>
+                            <option value="54" <?= ($deposito->durasi == 54) ? 'selected' : '' ?>>54 Bulan / 4.5 Tahun</option>
+                            <option value="60" <?= ($deposito->durasi == 60) ? 'selected' : '' ?>>60 Bulan / 5 Tahun</option>
                         </select>
                         <div id="errorDurasi" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
@@ -253,7 +257,7 @@
 
             if (jenis_id !== null) {
                 $.ajax({
-                    url: '<?= base_url('deposito/getJenisData') ?>',
+                    url: '<?= base_url('simpanan/getJenisData') ?>',
                     method: 'POST',
                     dataType: 'json',
                     data: {

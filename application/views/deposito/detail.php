@@ -224,7 +224,10 @@
         {
             data: 4,
             className: "text-center",
-            visible: userLevel === 'Admin'
+            visible: userLevel === 'Admin',
+            render: function(data, type, row) {
+                return data; // Render raw HTML
+            }
         }
         ],
         columnDefs: [{

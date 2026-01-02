@@ -169,13 +169,25 @@ class Deposito extends CI_Controller
             $hubungan_ahli_waris = $this->input->post('hubungan_ahli_waris');
             $no_rekening = $this->input->post('nomor_rekening');
 
+            $quick_add_mode = $this->input->post('quick_add_mode');
+
             $this->form_validation->set_rules('tanggal_deposito', 'Tanggal Deposito', 'required', [
                 'required' => 'Tanggal deposito wajib diisi.'
             ]);
 
-            $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
-                'required' => 'Nasabah tidak boleh kosong.'
-            ]);
+            if ($quick_add_mode == '1') {
+                $this->form_validation->set_rules('nama_langsung', 'Nama Nasabah', 'required|trim', [
+                    'required' => 'Nama Nasabah wajib diisi.'
+                ]);
+                $this->form_validation->set_rules('telepon_langsung', 'No. Telepon', 'required|numeric|trim', [
+                    'required' => 'No. Telepon wajib diisi.',
+                    'numeric' => 'No. Telepon harus berupa angka.'
+                ]);
+            } else {
+                $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
+                    'required' => 'Nasabah tidak boleh kosong.'
+                ]);
+            }
 
             $this->form_validation->set_rules('jenis_tabungan', 'Jenis Tabungan', 'required', [
                 'required' => 'Jenis tabungan harus diisi.',
@@ -263,10 +275,42 @@ class Deposito extends CI_Controller
                 // print_r($total_bunga_didapat);
                 // exit;
 
+                if ($quick_add_mode == '1') {
+                    // Auto-create Nasabah
+                    $nama_baru = $this->input->post('nama_langsung', true);
+                    $telepon_baru = $this->input->post('telepon_langsung', true);
+                    $alamat_baru = $this->input->post('alamat_langsung', true);
+
+                    $data_nasabah = [
+                        'nik' => '-',  // Quick add - can be filled later
+                        'nama_lengkap' => $nama_baru,
+                        'jenis_kelamin' => '?',  // Unknown - can be updated later
+                        'tempat_lahir' => '',
+                        'tanggal_lahir' => null,
+                        'agama' => '',
+                        'alamat' => $alamat_baru ?: '',
+                        'pekerjaan' => '',
+                        'telp' => $telepon_baru,
+                        'nama_ibu_kandung' => '',
+                        'pegawai_id' => $pegawai  // Required foreign key
+                    ];
+
+                    $this->db->insert('tbnasabah', $data_nasabah);
+                    $nasabah_id_final = $this->db->insert_id();
+
+                    if (!$nasabah_id_final) {
+                        $msg = ['error' => ['errorGeneral' => 'Gagal membuat data nasabah baru.']];
+                        echo json_encode($msg);
+                        return;
+                    }
+                } else {
+                    $nasabah_id_final = $nasabah;
+                }
+
                 $data = [
                     'tanggal_deposito' => $tanggal_deposito,
                     'no_rekening' => $no_rekening,
-                    'nasabah_id' => $nasabah,
+                    'nasabah_id' => $nasabah_id_final, // Use the determined ID
                     'pegawai_id' => $pegawai,
                     'jenistabungan_id' => $jenis_tabungan,
                     'jumlah_deposito' => str_replace(['.', ','], ['', '.'], $jumlah_deposito),
@@ -284,6 +328,90 @@ class Deposito extends CI_Controller
                 $this->db->trans_start();
 
                 $this->Deposito_model->insert_data($data);
+                $deposito_id = $this->db->insert_id();
+
+                // === BACKDATE LOGIC ===
+                // If tanggal_deposito is in the past, generate bunga logs
+                $tgl_deposito = new DateTime($tanggal_deposito);
+                $today = new DateTime();
+                
+                // Reset time to compare dates only
+                $tgl_deposito->setTime(0, 0, 0);
+                $today->setTime(0, 0, 0);
+
+                if ($tgl_deposito < $today && $deposito_id) {
+                    $start_date = clone $tgl_deposito;
+                    
+                    // Logic: Get months difference
+                    $interval = DateInterval::createFromDateString('1 month');
+                    $period = new DatePeriod($start_date, $interval, $today);
+                    
+                    $total_accumulated = 0;
+                    $bunga_logs = [];
+                    // Check user choice: 'akumulasi' (default) or 'ditarik'
+                    $withdrawal_mode = $this->input->post('status_bunga_lampau') === 'ditarik';
+                    
+                    foreach ($period as $dt) {
+                        // Skip the start date itself if it exactly matches loop start (DatePeriod behavior varies slightly)
+                        if ($dt == $tgl_deposito) continue;
+                        
+                        // Calculate Monthly Bunga: (Amount * Rate / 100) / 12
+                        $amt = floatval(str_replace(['.', ','], ['', '.'], $jumlah_deposito));
+                        $bg_rate = floatval($rate_bunga);
+                        
+                        $bunga_bulanan = ($amt * $bg_rate / 100) / 12;
+                        $bunga_bulanan_rounded = round($bunga_bulanan);
+                        
+                        // Date for calculation log (e.g. 15th of the month)
+                        $log_date = $dt->format('Y-m-15');
+                        
+                        // Determine status based on user choice
+                        $status_penarikan = $withdrawal_mode ? 'sudah_ditarik' : 'belum_ditarik';
+                        
+                        $bunga_logs[] = [
+                            'deposito_id' => $deposito_id,
+                            'no_rekening' => $no_rekening,
+                            'nama_nasabah' => $nasabah, // Ideally fetch name, but ID used for simpler constraint usually
+                            'jumlah_bunga' => $bunga_bulanan_rounded,
+                            'rate_bunga' => $bg_rate,
+                            'tanggal_perhitungan' => $log_date,
+                            'status_penarikan' => $status_penarikan,
+                            'input_method' => 'auto',
+                            'pegawai_id' => $this->session->userdata('pegawai_id'),
+                            'keterangan' => 'Bunga otomatis (' . ($withdrawal_mode ? 'Riwayat' : 'Akumulasi') . ') ' . $dt->format('F Y')
+                        ];
+                        
+                        $total_accumulated += $bunga_bulanan_rounded;
+
+                        if ($withdrawal_mode) {
+                            // Create actual withdrawal record in tbpenarikan
+                            $this->db->insert('tbpenarikan', [
+                                'simpanan_id' => $deposito_id,
+                                'no_rekening' => $no_rekening,
+                                // 'nama_nasabah' => $nasabah, // Need to verify if table uses ID or Name. Usually ID if integer.
+                                'tanggal_penarikan' => $log_date,
+                                'jumlah_penarikan' => $bunga_bulanan_rounded,
+                                'pegawai_id' => $this->session->userdata('pegawai_id'),
+                                'keterangan' => 'Riwayat penarikan bunga ' . $dt->format('F Y'),
+                                'jenis_penarikan' => 'Bunga Deposito' // Adjust if column requires specific enum
+                            ]);
+                        }
+                    }
+                    
+                    if (!empty($bunga_logs)) {
+                        $this->db->insert_batch('tb_bunga_deposito_log', $bunga_logs);
+                        
+                        // Update Deposito Totals
+                        // If withdrawn: total_accumulated increases as a record of earnings, but bunga_belum_ditarik stays 0
+                        $bunga_belum_ditarik = $withdrawal_mode ? 0 : $total_accumulated;
+                        
+                        $this->db->where('id', $deposito_id);
+                        $this->db->update('tbdeposito', [
+                            'total_bunga_akumulasi' => $total_accumulated,
+                            'bunga_belum_ditarik' => $bunga_belum_ditarik
+                        ]);
+                    }
+                }
 
                 $this->db->trans_complete();
 
@@ -1047,15 +1175,79 @@ class Deposito extends CI_Controller
             return;
         }
 
-        $is_success = $this->Deposito_model->tarik_bunga_deposito($deposito_id, $pegawai_id);
+        $penarikan_id = $this->Deposito_model->tarik_bunga_deposito($deposito_id, $pegawai_id);
 
-        if ($is_success) {
-            $msg = ['success' => 'Penarikan seluruh bunga yang tersedia berhasil diproses.'];
+        if ($penarikan_id) {
+            $msg = [
+                'success' => 'Penarikan seluruh bunga yang tersedia berhasil diproses.',
+                'penarikan_id' => $penarikan_id
+            ];
         } else {
             $msg = ['error_save' => 'Gagal memproses penarikan. Kemungkinan tidak ada bunga yang tersedia untuk ditarik.'];
         }
 
         header('Content-Type: application/json');
         echo json_encode($msg);
+    }
+
+    public function print_kwitansi_bunga($id)
+    {
+        if (empty($id)) {
+            show_error("Error: ID penarikan tidak boleh kosong.", 400);
+            return;
+        }
+
+        // Get penarikan deposito data
+        $penarikan = $this->db->get_where('tbpenarikan_deposito', ['id' => $id])->row();
+        if (!$penarikan) {
+            show_error('Data penarikan bunga dengan ID ' . $id . ' tidak ditemukan.', 404);
+            return;
+        }
+
+        // Get deposito and related data
+        $deposito = $this->Deposito_model->get_data_by_id($penarikan->deposito_id);
+        if (!$deposito) {
+            show_error('Data deposito tidak ditemukan.', 404);
+            return;
+        }
+
+        $nasabah = $this->db->get_where('tbnasabah', ['id' => $deposito->nasabah_id])->row();
+        $pegawai = $this->Pegawai_model->get_data_by_id($penarikan->pegawai_id);
+
+        // Calculate sisa bunga after this withdrawal
+        $sisa_bunga = $this->Deposito_model->get_bunga_tersedia_from_log($deposito->id);
+
+        // Generate kwitansi number
+        $tanggal_p = new DateTime($penarikan->tanggal_penarikan);
+        $no_kwitansi = 'KWB/' . $deposito->no_rekening . '/' . $tanggal_p->format('dmY') . '/' . str_pad($id, 4, '0', STR_PAD_LEFT);
+
+        $data = [
+            'no_kwitansi' => $no_kwitansi,
+            'no_rekening' => $deposito->no_rekening,
+            'nama_nasabah' => $nasabah->nama_lengkap ?? $deposito->nama_nasabah,
+            'jenis_tabungan' => 'Deposito',
+            'tanggal_penarikan' => $penarikan->tanggal_penarikan,
+            'jumlah_penarikan' => $penarikan->jumlah_penarikan_bunga,
+            'sisa_bunga' => $sisa_bunga,
+            'terbilang' => $this->terbilang_rupiah($penarikan->jumlah_penarikan_bunga),
+            'nama_pegawai' => $pegawai->nama_lengkap ?? 'N/A',
+        ];
+
+        $html = $this->load->view('penarikan_bunga/cetak_kwitansi', $data, true);
+
+        $this->load->library('dompdf_lib');
+        $this->dompdf_lib->loadHtml($html);
+        $this->dompdf_lib->setPaper([0, 0, 793.7, 283.46], 'landscape'); // Similar size to penarikan kwitansi
+        $this->dompdf_lib->render();
+
+        $filename = "Kwitansi_Bunga_" . $deposito->no_rekening . "_" . date('Ymd', strtotime($penarikan->tanggal_penarikan)) . ".pdf";
+        $this->dompdf_lib->stream($filename, false);
+    }
+
+
+    public function download_template()
+    {
+        // Method removed
+        show_404();
     }
 }

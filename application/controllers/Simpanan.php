@@ -132,13 +132,25 @@ class Simpanan extends CI_Controller
             $jumlah_simpanan = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_simpanan'));
             $no_rekening = $this->input->post('nomor_rekening');
 
+            $quick_add_mode = $this->input->post('quick_add_mode');
+
             $this->form_validation->set_rules('tanggal_simpanan', 'Tanggal Simpanan', 'required', [
                 'required' => 'Tanggal simpanan wajib diisi.'
             ]);
 
-            $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
-                'required' => 'Nasabah tidak boleh kosong.'
-            ]);
+            if ($quick_add_mode == '1') {
+                $this->form_validation->set_rules('nama_langsung', 'Nama Nasabah', 'required|trim', [
+                    'required' => 'Nama Nasabah wajib diisi.'
+                ]);
+                $this->form_validation->set_rules('telepon_langsung', 'No. Telepon', 'required|numeric|trim', [
+                    'required' => 'No. Telepon wajib diisi.',
+                    'numeric' => 'No. Telepon harus berupa angka.'
+                ]);
+            } else {
+                $this->form_validation->set_rules('nasabah', 'Nasabah', 'required', [
+                    'required' => 'Nasabah tidak boleh kosong.'
+                ]);
+            }
 
             $this->form_validation->set_rules('jenis_tabungan', 'Jenis Tabungan', 'required', [
                 'required' => 'Jenis tabungan harus diisi.',
@@ -196,6 +208,8 @@ class Simpanan extends CI_Controller
                     'error' => [
                         'errorTanggalSimpanan' => form_error('tanggal_simpanan'),
                         'errorNasabah' => form_error('nasabah'),
+                        'errorNamaLangsung' => form_error('nama_langsung'),
+                        'errorTeleponLangsung' => form_error('telepon_langsung'),
                         'errorJenisTabungan' => form_error('jenis_tabungan'),
                         'errorBunga' => form_error('bunga'),
                         'errorBiayaRegistrasi' => form_error('biaya_registrasi'),
@@ -209,10 +223,42 @@ class Simpanan extends CI_Controller
                 ];
             } else {
 
+                if ($quick_add_mode == '1') {
+                    // Auto-create Nasabah
+                    $nama_baru = $this->input->post('nama_langsung', true);
+                    $telepon_baru = $this->input->post('telepon_langsung', true);
+                    $alamat_baru = $this->input->post('alamat_langsung', true);
+
+                    $data_nasabah = [
+                        'nik' => '-',  // Quick add - can be filled later
+                        'nama_lengkap' => $nama_baru,
+                        'jenis_kelamin' => '?',  // Unknown - can be updated later
+                        'tempat_lahir' => '',
+                        'tanggal_lahir' => null,
+                        'agama' => '',
+                        'alamat' => $alamat_baru ?: '',
+                        'pekerjaan' => '',
+                        'telp' => $telepon_baru,
+                        'nama_ibu_kandung' => '',
+                        'pegawai_id' => $pegawai  // Required foreign key
+                    ];
+
+                    $this->db->insert('tbnasabah', $data_nasabah);
+                    $nasabah_id_final = $this->db->insert_id();
+
+                    if (!$nasabah_id_final) {
+                        $msg = ['error' => ['errorGeneral' => 'Gagal membuat data nasabah baru.']];
+                        echo json_encode($msg);
+                        return;
+                    }
+                } else {
+                    $nasabah_id_final = $nasabah;
+                }
+
                 $data = [
                     'tanggal_simpanan' => $tanggal_simpanan,
                     'no_rekening' => $no_rekening,
-                    'nasabah_id' => $nasabah,
+                    'nasabah_id' => $nasabah_id_final,
                     'pegawai_id' => $pegawai,
                     'jenistabungan_id' => $jenis_tabungan,
                     'jumlah_simpanan' => $jumlah_simpanan,

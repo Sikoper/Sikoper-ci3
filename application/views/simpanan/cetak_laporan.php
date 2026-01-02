@@ -1,48 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 
 <head>
-    <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
     <meta charset="UTF-8">
-    <title>Laporan Rekening Koran</title>
+    <title>Laporan Rekening Koran - <?= htmlspecialchars($nasabah->nama_lengkap, ENT_QUOTES, 'UTF-8') ?></title>
     <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.5cm;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            font-size: 10px;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 10pt;
+            margin: 0;
+            padding: 0;
             color: #333;
         }
 
-        .container {
-            width: 100%;
-            margin: 0 auto;
+        .content-wrapper {
+            padding: 0.5cm;
+            box-sizing: border-box;
         }
 
-        .header,
-        .footer {
+        .logo-left {
+            position: absolute;
+            width: 60px;
+            left: 30px;
+            top: 20px;
+            height: 60px;
+        }
+
+        .logo-right {
+            position: absolute;
+            right: 30px;
+            top: 20px;
+            width: 60px;
+            height: 60px;
+        }
+
+        .kop {
             text-align: center;
-            margin-bottom: 20px;
+            line-height: 1.3;
+            margin-bottom: 10px;
+            border-bottom: 3px double #000;
+            padding-bottom: 10px;
         }
 
-        .header h2 {
+        .kop h2 {
+            font-size: 14pt;
             margin: 0;
-            padding: 0;
-            font-size: 18px;
         }
 
-        .header p {
-            margin: 2px 0;
-            font-size: 12px;
+        .kop h3 {
+            font-size: 12pt;
+            margin: 0;
         }
 
-        .account-details,
-        .summary-details {
+        .kop p {
+            font-size: 9pt;
+            margin: 0;
+        }
+
+        .judul-laporan {
+            text-align: center;
+            margin: 20px 0 15px 0;
+        }
+
+        .judul-laporan h2 {
+            font-size: 14pt;
+            margin: 0;
+            text-decoration: underline;
+        }
+
+        .judul-laporan p {
+            font-size: 10pt;
+            margin: 5px 0 0 0;
+        }
+
+        .account-details {
             width: 100%;
             margin-bottom: 15px;
             border-collapse: collapse;
+            font-size: 10pt;
         }
 
-        .account-details td,
-        .summary-details td {
+        .account-details td {
             padding: 4px;
             vertical-align: top;
         }
@@ -51,35 +94,55 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
+            font-size: 9pt;
         }
 
         .transactions th,
         .transactions td {
-            border: 1px solid #999;
-            padding: 5px;
+            border: 1px solid #000;
+            padding: 5px 8px;
             text-align: left;
             vertical-align: top;
         }
 
         .transactions th {
-            background-color: #f2f2f2;
+            background-color: #f0f0f0;
             font-weight: bold;
+            text-align: center;
         }
 
         .text-right {
             text-align: right;
         }
 
-        .footer-summary {
+        .text-center {
+            text-align: center;
+        }
+
+        .summary-section {
             margin-top: 20px;
-            float: right;
+            width: 100%;
+        }
+
+        .summary-table {
             width: 45%;
+            float: right;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+
+        .summary-table td {
+            padding: 4px 8px;
+        }
+
+        .summary-table .label {
+            font-weight: bold;
         }
 
         .badge {
             display: inline-block;
-            padding: 2px 6px;
-            font-size: 10px;
+            padding: 2px 8px;
+            font-size: 9pt;
             font-weight: bold;
             border-radius: 4px;
             color: #fff;
@@ -94,7 +157,7 @@
         }
 
         .badge-bunga {
-            background-color: rgb(90, 90, 90);
+            background-color: #6c757d;
         }
 
         .clearfix::after {
@@ -102,29 +165,69 @@
             clear: both;
             display: table;
         }
+
+        .footer-info {
+            margin-top: 25px;
+            font-size: 9pt;
+            clear: both;
+        }
+
+        .tanda-tangan {
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        .tanda-tangan td {
+            width: 33%;
+            text-align: center;
+            vertical-align: top;
+            padding: 10px;
+        }
+
+        .tanda-tangan .nama {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-top: 60px;
+        }
+
+        .tanda-tangan .jabatan {
+            font-size: 9pt;
+        }
     </style>
+    <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
 </head>
+<?php
+$formatter = new \IntlDateFormatter('id_ID', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);
+$formatter->setPattern('d MMMM yyyy');
+$tanggal_cetak = $formatter->format(new DateTime());
+?>
 
 <body>
+    <div class="content-wrapper">
+        <img class="logo-left" src="<?= base_url('assets') ?>/images/logo/desa-culik.jpg" alt="logo-desa">
+        <img class="logo-right" src="<?= base_url('assets') ?>/images/logo/koperasi.jpg" alt="logo-koperasi">
 
-    <div class="container">
-        <div class="header">
-            <h2>Laporan Transaksi</h2>
-            <p>LPD Desa Adat Culik</p>
+        <div class="kop">
+            <h2>USAHA SIMPAN PINJAM BALI SEJAHTERA</h2>
+            <h3>DESA ADAT CULIK</h3>
+            <p>Jln. Ketut Natih, Br Dinas Gerit, Desa Culik, Kec. Abang, Kab. Karangasem</p>
+        </div>
+
+        <div class="judul-laporan">
+            <h2>LAPORAN REKENING KORAN</h2>
+            <p>Periode: <?= date('d M Y', strtotime($tanggal_mulai)) ?> s/d <?= date('d M Y', strtotime($tanggal_akhir)) ?></p>
         </div>
 
         <table class="account-details">
             <tr>
-                <td width="15%"><strong>Nama Nasabah</strong></td>
-                <td width="35%">: <?= htmlspecialchars($nasabah->nama_lengkap, ENT_QUOTES, 'UTF-8') ?></td>
-                <td width="15%"><strong>Nomor Rekening</strong></td>
-                <td width="35%">: <?= htmlspecialchars($tabungan->no_rekening, ENT_QUOTES, 'UTF-8') ?></td>
+                <td width="18%"><strong>Nama Nasabah</strong></td>
+                <td width="32%">: <?= htmlspecialchars($nasabah->nama_lengkap, ENT_QUOTES, 'UTF-8') ?></td>
+                <td width="18%"><strong>Nomor Rekening</strong></td>
+                <td width="32%">: <?= htmlspecialchars($tabungan->no_rekening, ENT_QUOTES, 'UTF-8') ?></td>
             </tr>
             <tr>
                 <td><strong>Alamat</strong></td>
-                <td>: <?= htmlspecialchars($nasabah->alamat, ENT_QUOTES, 'UTF-8') ?></td>
-                <td><strong>Periode</strong></td>
-                <td>: <?= date('d M Y', strtotime($tanggal_mulai)) ?> s/d <?= date('d M Y', strtotime($tanggal_akhir)) ?></td>
+                <td colspan="3">: <?= htmlspecialchars($nasabah->alamat, ENT_QUOTES, 'UTF-8') ?></td>
             </tr>
         </table>
 
@@ -132,11 +235,11 @@
             <thead>
                 <tr>
                     <th width="5%">No</th>
-                    <th width="15%">Tanggal</th>
-                    <th class="text-right">Jumlah</th>
-                    <th>Keterangan</th>
-                    <th>Pegawai</th>
-                    <th class="text-right">Saldo</th>
+                    <th width="12%">Tanggal</th>
+                    <th width="18%" class="text-right">Jumlah</th>
+                    <th width="15%">Keterangan</th>
+                    <th width="20%">Pegawai</th>
+                    <th width="18%" class="text-right">Saldo</th>
                 </tr>
             </thead>
             <tbody>
@@ -147,6 +250,7 @@
                     foreach ($rekening['transaksi'] as $t) :
                         $running_balance += ($t->kredit - $t->debit);
                         $jenis = 'Bunga';
+                        $badge_class = 'badge-bunga';
 
                         if ($t->keterangan == 'Setoran Tunai') {
                             $jenis = 'Setor';
@@ -161,48 +265,66 @@
                         $jumlah = ($t->kredit > 0) ? $t->kredit : $t->debit;
                 ?>
                         <tr>
-                            <td><?= $no++ ?></td>
-                            <td><?= date('d-m-Y', strtotime($t->tanggal)) ?></td>
-                            <td class="text-right">Rp. <?= number_format($jumlah, 0, ',', '.') ?></td>
-                            <td><span class="badge <?= $badge_class ?>"><?= $jenis ?></span></td>
+                            <td class="text-center"><?= $no++ ?></td>
+                            <td class="text-center"><?= date('d-m-Y', strtotime($t->tanggal)) ?></td>
+                            <td class="text-right">Rp <?= number_format($jumlah, 0, ',', '.') ?></td>
+                            <td class="text-center"><span class="badge <?= $badge_class ?>"><?= $jenis ?></span></td>
                             <td><?= htmlspecialchars($t->pegawai) ?></td>
-                            <td class="text-right"><?= number_format($running_balance, 0, ',', '.') ?></td>
+                            <td class="text-right">Rp <?= number_format($running_balance, 0, ',', '.') ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else : ?>
                     <tr>
-                        <td colspan="6" style="text-align:center; padding: 20px;">Tidak ada data transaksi pada periode ini.</td>
+                        <td colspan="6" class="text-center" style="padding: 20px;">Tidak ada data transaksi pada periode ini.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
         </table>
 
-        <div class="footer-summary clearfix">
-            <table class="summary-details">
+        <div class="summary-section clearfix">
+            <table class="summary-table">
                 <tr>
-                    <td><strong>Saldo Awal</strong></td>
+                    <td class="label">Saldo Awal</td>
                     <td class="text-right">:</td>
-                    <td class="text-right" style="font-weight: bold;"><?= number_format($rekening['saldo_awal'], 0, ',', '.') ?></td>
+                    <td class="text-right">Rp <?= number_format($rekening['saldo_awal'], 0, ',', '.') ?></td>
                 </tr>
                 <tr>
-                    <td><strong>Total Setoran</strong></td>
+                    <td class="label">Total Setoran</td>
                     <td class="text-right">:</td>
-                    <td class="text-right"><?= number_format($rekening['total_setor'], 0, ',', '.') ?></td>
+                    <td class="text-right">Rp <?= number_format($rekening['total_setor'], 0, ',', '.') ?></td>
                 </tr>
                 <tr>
-                    <td><strong>Total Penarikan</strong></td>
+                    <td class="label">Total Penarikan</td>
                     <td class="text-right">:</td>
-                    <td class="text-right"><?= number_format($rekening['total_tarik'], 0, ',', '.') ?></td>
+                    <td class="text-right">Rp <?= number_format($rekening['total_tarik'], 0, ',', '.') ?></td>
                 </tr>
-                <tr>
-                    <td><strong>SALDO AKHIR</strong></td>
+                <tr style="border-top: 1px solid #000;">
+                    <td class="label"><strong>SALDO AKHIR</strong></td>
                     <td class="text-right">:</td>
-                    <td class="text-right"><strong><?= number_format($rekening['saldo_akhir'], 0, ',', '.') ?></strong></td>
+                    <td class="text-right"><strong>Rp <?= number_format($rekening['saldo_akhir'], 0, ',', '.') ?></strong></td>
                 </tr>
             </table>
         </div>
-    </div>
 
+        <div class="footer-info">
+            <p>Dicetak pada: <?= $tanggal_cetak ?></p>
+        </div>
+
+        <table class="tanda-tangan">
+            <tr>
+                <td>
+                    <p>Nasabah,</p>
+                    <p class="nama" style="margin-top: 60px;"><?= htmlspecialchars($nasabah->nama_lengkap, ENT_QUOTES, 'UTF-8') ?></p>
+                </td>
+                <td></td>
+                <td>
+                    <p>Culik, <?= $tanggal_cetak ?></p>
+                    <p class="jabatan">Petugas,</p>
+                    <p class="nama" style="margin-top: 40px;">____________________</p>
+                </td>
+            </tr>
+        </table>
+    </div>
 </body>
 
 </html>

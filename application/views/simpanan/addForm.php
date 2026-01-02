@@ -26,16 +26,48 @@
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
                     
-                    <div class="form-group" style="height: 80px;">
+                    <div class="form-group mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="quick_add_mode" name="quick_add_mode" value="1">
+                            <label class="form-check-label" for="quick_add_mode"><strong>Input Nasabah Baru (Langsung)</strong></label>
+                            <small class="d-block text-muted">Centang jika nasabah belum terdaftar. Anda bisa input data langsung di sini.</small>
+                        </div>
+                    </div>
+
+                    <!-- Mode: Pilih Nasabah Lama -->
+                    <div id="nasabah_lama_section" class="form-group" style="height: 80px;">
                         <label for="nasabah">Pilih Nasabah</label>
                         <div class="d-flex align-items-center">
                             <select id="nasabah" class="form-control select2" name="nasabah" style="width: auto; flex: 1;"></select>
-                            <button type="button" onclick="window.location='<?= base_url('nasabah/add') . '?code=1' ?>'" class="btn btn-primary ml-2">
+                            <button type="button" onclick="window.location='<?= base_url('nasabah/add') . '?code=1' ?>'" class="btn btn-primary ml-2" title="Tambah Menu Lengkap">
                                 <i class="fa fa-circle-plus"></i>
                             </button>
                         </div>
                         <div id="errorNasabah" class="invalid-feedback" style="display: none;"></div>
-                        <div class="valid-feedback" style="display: none;"></div>
+                    </div>
+
+                    <!-- Mode: Input Nasabah Baru -->
+                    <div id="nasabah_baru_section" style="display: none;">
+                        <div class="form-group mb-3">
+                            <label class="form-label required">Nama Lengkap</label>
+                            <input type="text" class="form-control" name="nama_langsung" id="nama_langsung" placeholder="Nama Nasabah Baru">
+                            <div id="errorNamaLangsung" class="invalid-feedback" style="display: none;"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label required">No. Telepon / WA</label>
+                                    <input type="text" class="form-control" name="telepon_langsung" id="telepon_langsung" placeholder="08..." onkeypress="return isNumber(event)">
+                                    <div id="errorTeleponLangsung" class="invalid-feedback" style="display: none;"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Alamat Singkat</label>
+                                    <input type="text" class="form-control" name="alamat_langsung" id="alamat_langsung" placeholder="Alamat Domisili">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group" style="height: auto;">
@@ -379,6 +411,20 @@
                             $('#errorNasabah').fadeOut();
                             $('#nasabah').removeClass('is-invalid').addClass('is-valid');
                         }
+                        if (dataError.errorNamaLangsung) {
+                            $('#errorNamaLangsung').html(dataError.errorNamaLangsung).show();
+                            $('#nama_langsung').addClass('is-invalid');
+                        } else {
+                            $('#errorNamaLangsung').fadeOut();
+                            $('#nama_langsung').removeClass('is-invalid').addClass('is-valid');
+                        }
+                        if (dataError.errorTeleponLangsung) {
+                            $('#errorTeleponLangsung').html(dataError.errorTeleponLangsung).show();
+                            $('#telepon_langsung').addClass('is-invalid');
+                        } else {
+                            $('#errorTeleponLangsung').fadeOut();
+                            $('#telepon_langsung').removeClass('is-invalid').addClass('is-valid');
+                        }
                         if (dataError.errorJenisTabungan) {
                             $('#errorJenisTabungan').html(dataError.errorJenisTabungan).show();
                             $('#jenis_tabungan').addClass('is-invalid');
@@ -481,4 +527,35 @@
         let id = e.params.data.id;
         $('#nasabah_id').val(id);
     });
+
+    // Quick Add Mode Toggle
+    $('#quick_add_mode').on('change', function() {
+        if ($(this).is(':checked')) {
+            // Switch to Quick Add
+            $('#nasabah_lama_section').slideUp();
+            $('#nasabah_baru_section').slideDown();
+            
+            // Clear Select2 to avoid validation conflicts
+            $('#nasabah').val(null).trigger('change');
+        } else {
+            // Switch back to Select
+            $('#nasabah_lama_section').slideDown();
+            $('#nasabah_baru_section').slideUp();
+            
+            // Clear inputs
+            $('#nama_langsung').val('');
+            $('#telepon_langsung').val('');
+            $('#alamat_langsung').val('');
+        }
+    });
+
+    // Validasi Angka helper
+    function isNumber(evt) {
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+        return true;
+    }
 </script>

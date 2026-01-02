@@ -353,6 +353,9 @@ class Nasabah extends CI_Controller
                 $inserted = $this->Nasabah_model->edit_data($id, $data);
 
                 if ($inserted) {
+                    // DENORMALIZED: Sync nama_nasabah in related tables
+                    $this->Nasabah_model->update_nama_in_related_tables($id, $nama_lengkap);
+                    
                     echo json_encode(['success' => 'Data berhasil disimpan.']);
                 } else {
                     echo json_encode(['error' => 'Gagal menyimpan data ke database.']);
