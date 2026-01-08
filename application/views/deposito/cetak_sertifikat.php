@@ -220,10 +220,15 @@ $formatter->setPattern('d MMMM yyyy');
                         <td style="font-style: italic; white-space: pre-wrap;"><?= $terbilang ?></td>
                     </tr>
                 </table>
-                <p style="margin-top: 15px; line-height: 1.6;">Untuk Simpanan Berjangka dalam waktu <?= $durasi ?> bulan,
-                    mulai tanggal <?= $formatter->format(new DateTime($tanggal_deposito)) ?> sampai dengan tanggal
-                    <?= $formatter->format(new DateTime($tanggal_jatuh_tempo)) ?>, bunga <?= $suku_bunga ?>% perbulan,
-                    dengan syarat-syarat yang telah ditentukan oleh <b>Usaha Simpan Pinjam Bali Sejahtera Desa Adat Culik.</b></p>
+                <p style="margin-top: 15px; line-height: 1.6;">Untuk Simpanan Berjangka dalam waktu <?= $durasi ?>
+                    bulan,
+                    mulai tanggal <?= $tanggal_deposito ? $formatter->format(new DateTime($tanggal_deposito)) : '-' ?>
+                    sampai dengan tanggal
+                    <?= $tanggal_jatuh_tempo ? $formatter->format(new DateTime($tanggal_jatuh_tempo)) : '-' ?>, bunga
+                    <?= $suku_bunga ?>% perbulan,
+                    dengan syarat-syarat yang telah ditentukan oleh <b>Usaha Simpan Pinjam Bali Sejahtera Desa Adat
+                        Culik.</b>
+                </p>
             </div>
             <div class="tanda-tangan-area">
                 <div class="tanda-tangan-box" style="float: right;">
@@ -239,7 +244,9 @@ $formatter->setPattern('d MMMM yyyy');
             </div>
             <div class="kwitansi">
                 <h3 style="font-weight: bold; text-decoration: underline;">KWITANSI</h3>
-                <p style="line-height: 1.6;">Telah diterima Simpanan Berjangka No. <?= $nomor_sertifikat ?>. <br /> Yang bertandatangan dibawah ini, menyatakan telah menerima sejumlah uang Simpanan Berjangka seperti disebut diatas dari Usaha <b>Simpan Pinjam Bali Sejahtera Desa Adat Culik.</b>
+                <p style="line-height: 1.6;">Telah diterima Simpanan Berjangka No. <?= $nomor_sertifikat ?>. <br /> Yang
+                    bertandatangan dibawah ini, menyatakan telah menerima sejumlah uang Simpanan Berjangka seperti
+                    disebut diatas dari Usaha <b>Simpan Pinjam Bali Sejahtera Desa Adat Culik.</b>
                 </p>
             </div>
             <br />
@@ -262,26 +269,40 @@ $formatter->setPattern('d MMMM yyyy');
                 <tr style="vertical-align: top;">
                     <td style="width: 50%; padding-right: 15px;">
                         <div class="ketentuan">
-                            <h3 style="text-decoration: underline; font-weight: bold; margin:0; margin-bottom: 5px; font-size: 8.5pt;">Ketentuan Deposito:</h3>
+                            <h3
+                                style="text-decoration: underline; font-weight: bold; margin:0; margin-bottom: 5px; font-size: 8.5pt;">
+                                Ketentuan Deposito:</h3>
                             <ol>
                                 <li>Saldo Minimal Deposito sebesar Rp. 5.000.000,-</li>
                                 <li>Biaya Administrasi Rp. 50.000,-</li>
-                                <li>Jangka waktu Deposito minimal 6 Bulan dan maksimal 3 Tahun dengan suku bunga 0,8%/bulan atau 9,6%/tahun.</li>
-                                <li>Penarikan kembali simpanan Deposito sebelum jangka waktu berakhir dikenakan pinalti atau denda sebesar 5% dari nominal Deposito dan Bunga berjalan tidak dibayar.</li>
+                                <li>Jangka waktu Deposito minimal 6 Bulan dan maksimal 3 Tahun dengan suku bunga
+                                    0,8%/bulan atau 9,6%/tahun.</li>
+                                <li>Penarikan kembali simpanan Deposito sebelum jangka waktu berakhir dikenakan pinalti
+                                    atau denda sebesar 5% dari nominal Deposito dan Bunga berjalan tidak dibayar.</li>
                                 <li>Bunga Simpanan Deposito dibayarkan setiap bulan sesuai tanggal penempatan.</li>
-                                <li>Deposito ini dapat diperpanjang secara otomatis apabila tidak ditarik Deposan dalam jangka waktu 7 (tujuh) hari kalender dari tanggal jatuh tempo, dengan suku bunga yang berlaku saat perpanjangan.</li>
+                                <li>Deposito ini dapat diperpanjang secara otomatis apabila tidak ditarik Deposan dalam
+                                    jangka waktu 7 (tujuh) hari kalender dari tanggal jatuh tempo, dengan suku bunga
+                                    yang berlaku saat perpanjangan.</li>
                                 <li>Deposito dapat dipindahtangankan sesuai prosedur Usaha SPBS Desa Adat Culik.</li>
-                                <li>Apabila Deposan meninggal dunia, uang simpanan dan bunga akan dibayarkan kepada ahli waris, sesuai surat pernyataan ahli waris yang disepakati Deposan.</li>
-                                <li>Deposito ini dijamin dengan seluruh Harta dan Kekayaan yang dimiliki Usaha SPBS Desa Adat Culik.</li>
-                                <li>Deposan wajib melaporkan setiap perubahan Nama, Alamat, Ahli waris dan Tandatangan ke Kantor Usaha Simpan Pinjam Bali Sejahtera.</li>
-                                <li>Dalam hal terjadi kehilangan Bukti Deposito, maka Deposan harus segera melaporkan kepada Pihak Berwajib dan memberitahukan ke Kantor SPBS Desa Adat Culik.</li>
-                                <li>Suku bunga Deposito dapat berubah sewaktu-waktu sesuai dengan keadaan Pasar, yang ditetapkan oleh rapat/musyawarah bersama (Penanggung Jawab, Pemeriksa, dan Kepala).</li>
+                                <li>Apabila Deposan meninggal dunia, uang simpanan dan bunga akan dibayarkan kepada ahli
+                                    waris, sesuai surat pernyataan ahli waris yang disepakati Deposan.</li>
+                                <li>Deposito ini dijamin dengan seluruh Harta dan Kekayaan yang dimiliki Usaha SPBS Desa
+                                    Adat Culik.</li>
+                                <li>Deposan wajib melaporkan setiap perubahan Nama, Alamat, Ahli waris dan Tandatangan
+                                    ke Kantor Usaha Simpan Pinjam Bali Sejahtera.</li>
+                                <li>Dalam hal terjadi kehilangan Bukti Deposito, maka Deposan harus segera melaporkan
+                                    kepada Pihak Berwajib dan memberitahukan ke Kantor SPBS Desa Adat Culik.</li>
+                                <li>Suku bunga Deposito dapat berubah sewaktu-waktu sesuai dengan keadaan Pasar, yang
+                                    ditetapkan oleh rapat/musyawarah bersama (Penanggung Jawab, Pemeriksa, dan Kepala).
+                                </li>
                             </ol>
                         </div>
                     </td>
                     <td style="width: 50%;">
                         <div class="surat-pernyataan-box">
-                            <h3 style="text-align: center; text-decoration: underline; font-weight: bold; margin-top:0;">SURAT PERNYATAAN</h3>
+                            <h3
+                                style="text-align: center; text-decoration: underline; font-weight: bold; margin-top:0;">
+                                SURAT PERNYATAAN</h3>
                             <p>Yang bertandatangan di bawah ini:</p>
                             <table>
                                 <tr>
@@ -297,7 +318,9 @@ $formatter->setPattern('d MMMM yyyy');
                                 <tr>
                                     <td>Tempat, Tanggal Lahir</td>
                                     <td>:</td>
-                                    <td><?= $tempat_lahir ?>, <?= $formatter->format(new DateTime($tanggal_lahir)); ?></td>
+                                    <td><?= $tempat_lahir ?>,
+                                        <?= $tanggal_lahir ? $formatter->format(new DateTime($tanggal_lahir)) : '-'; ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>Alamat</td>
@@ -310,10 +333,16 @@ $formatter->setPattern('d MMMM yyyy');
                                     <td><?= $telp_nasabah ?></td>
                                 </tr>
                             </table>
-                            <p style="margin-top: 10px; line-height: 1.5;">Dalam hal ini bertindak untuk dan atas nama Pemegang Simpanan Berjangka Nomor Seri <?= $nomor_sertifikat ?>, menyatakan telah menyetujui / menerima baik syarat-syarat yang telah ditetapkan oleh Usaha Simpan Pinjam Bali Sejahtera Desa Adat Culik.</p>
+                            <p style="margin-top: 10px; line-height: 1.5;">Dalam hal ini bertindak untuk dan atas nama
+                                Pemegang Simpanan Berjangka Nomor Seri <?= $nomor_sertifikat ?>, menyatakan telah
+                                menyetujui / menerima baik syarat-syarat yang telah ditetapkan oleh Usaha Simpan Pinjam
+                                Bali Sejahtera Desa Adat Culik.</p>
                             <div style="clear:both;"></div>
-                            <div class="tanda-tangan-nasabah" style="width: 250px; margin-left: auto; margin-right: 0; text-align: center;">
-                                <p>Culik, <?= $formatter->format(new DateTime($tanggal_deposito)); ?></p>
+                            <div class="tanda-tangan-nasabah"
+                                style="width: 250px; margin-left: auto; margin-right: 0; text-align: center;">
+                                <p>Culik,
+                                    <?= $tanggal_deposito ? $formatter->format(new DateTime($tanggal_deposito)) : date('d F Y'); ?>
+                                </p>
                                 <p>Yang tersebut di atas</p>
                                 <div class="materai-box">MATERAI TEMPEL</div>
                                 <p class="nama"><?= $nama_nasabah ?></p>
@@ -336,7 +365,8 @@ $formatter->setPattern('d MMMM yyyy');
                                         <th>Jumlah</th>
                                         <th>Paraf</th>
                                     </tr>
-                                    <?php for ($i = 1; $i <= 6; $i++) echo "<tr><td>$i</td><td></td><td></td><td></td><td></td></tr>"; ?>
+                                    <?php for ($i = 1; $i <= 6; $i++)
+                                        echo "<tr><td>$i</td><td></td><td></td><td></td><td></td></tr>"; ?>
                                 </tbody>
                             </table>
                         </td>
@@ -350,7 +380,8 @@ $formatter->setPattern('d MMMM yyyy');
                                         <th>Jumlah</th>
                                         <th>Paraf</th>
                                     </tr>
-                                    <?php for ($i = 7; $i <= 12; $i++) echo "<tr><td>$i</td><td></td><td></td><td></td><td></td></tr>"; ?>
+                                    <?php for ($i = 7; $i <= 12; $i++)
+                                        echo "<tr><td>$i</td><td></td><td></td><td></td><td></td></tr>"; ?>
                                 </tbody>
                             </table>
                         </td>

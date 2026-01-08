@@ -397,6 +397,19 @@ class Tabungan_model extends CI_Model
                 }
 
                 $norek_to_id[$no_rekening] = $simpanan_id;
+
+                // INSERT SALDO AWAL (JAN) AS INITIAL DEPOSIT
+                $saldo_awal = $this->_parse_amount($row[4] ?? 0);
+                if ($saldo_awal > 0) {
+                    $this->db->insert('tbdetail_simpanan', [
+                        'simpanan_id' => $simpanan_id,
+                        'tanggal_setoran' => '2025-01-01 00:00:01',
+                        'jumlah_setoran' => $saldo_awal,
+                        'pegawai_id' => $pegawai_id
+                    ]);
+                    $results['setoran']['inserted']++;
+                }
+
                 $results['details'][] = ['row' => $i + 1, 'nama' => $nama, 'no_rekening' => $no_rekening, 'action' => 'master'];
 
             } catch (Exception $e) {
@@ -634,8 +647,8 @@ class Tabungan_model extends CI_Model
             return $results;
         }
 
-        $results['importing_sheet'] = 'DES (Desember 2026)';
-        $year = '2026';
+        $results['importing_sheet'] = 'DES (Desember 2025)';
+        $year = '2025';
         $month = '12';
 
         $this->db->trans_start();
@@ -746,6 +759,17 @@ class Tabungan_model extends CI_Model
 
                 $norek_to_id[$no_rekening] = $simpanan_id;
 
+                // INSERT SALDO SEBELUM AS INITIAL DEPOSIT
+                if ($saldo_sebelum > 0) {
+                    $this->db->insert('tbdetail_simpanan', [
+                        'simpanan_id' => $simpanan_id,
+                        'tanggal_setoran' => $year . '-12-01 00:00:01', // Anfang des Monats
+                        'jumlah_setoran' => $saldo_sebelum,
+                        'pegawai_id' => $pegawai_id
+                    ]);
+                    $results['setoran']['inserted']++;
+                }
+
                 // Process daily SETORAN (columns 5-35 for days 1-31)
                 for ($day = 1; $day <= 31; $day++) {
                     $col = 4 + $day; // Column 5 = day 1
@@ -807,6 +831,207 @@ class Tabungan_model extends CI_Model
                     'saldo_akhir' => $saldo_akhir,
                     'action' => 'imported'
                 ];
+
+            } catch (Exception $e) {
+                $results['simpanan']['errors']++;
+                $results['errors'][] = "Row " . ($i + 1) . ": " . $e->getMessage();
+            }
+        }
+
+        $this->db->trans_complete();
+
+        $results['success'] = $this->db->trans_status();
+        $results['total_processed'] = count($norek_to_id);
+
+        return $results;
+    }
+
+    /**
+     * Import using DES sheet + REKAP BUNGA sheet
+     * Creates complete tabungan records with annual interest
+     * 
+     * @param string $file_path Path to TABUNGAN 2026.xls file
+     * @param int $pegawai_id Employee ID
+     * @param int $jenistabungan_id Savings type ID
+     * @param bool $delete_existing Delete existing data first
+     * @return array Results
+     */
+    public function import_with_rekap_bunga($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true)
+    {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+
+        $results = [
+            'success' => false,
+            'batch_id' => 'FULL' . date('YmdHis'),
+            'simpanan' => ['inserted' => 0, 'errors' => 0],
+            'nasabah' => ['created' => 0, 'found' => 0],
+            'bunga' => ['total' => 0, 'count' => 0],
+            'deleted' => [],
+            'errors' => []
+        ];
+
+        if (!file_exists($file_path)) {
+            $results['errors'][] = 'File tidak ditemukan: ' . $file_path;
+            return $results;
+        }
+
+        // Use SimpleXLS for .xls files
+        require_once APPPATH . 'third_party/SimpleXLS.php';
+        $xls = \Shuchkin\SimpleXLS::parse($file_path);
+
+        if (!$xls) {
+            $results['errors'][] = 'Gagal membaca file: ' . \Shuchkin\SimpleXLS::parseError();
+            return $results;
+        }
+
+        $sheets = $xls->sheetNames();
+        $results['sheets_found'] = $sheets;
+
+        // Find DES sheet (index 11) and REKAP BUNGA sheet (index 12)
+        $des_idx = array_search('DES', $sheets);
+        $rekap_idx = null;
+        foreach ($sheets as $idx => $name) {
+            if (stripos($name, 'REKAP') !== false) {
+                $rekap_idx = $idx;
+                break;
+            }
+        }
+
+        if ($des_idx === false) {
+            $results['errors'][] = 'Sheet DES tidak ditemukan';
+            return $results;
+        }
+        if ($rekap_idx === null) {
+            $results['errors'][] = 'Sheet REKAP BUNGA tidak ditemukan';
+            return $results;
+        }
+
+        $des_rows = $xls->rows($des_idx);
+        $rekap_rows = $xls->rows($rekap_idx);
+
+        // Build bunga lookup from REKAP BUNGA sheet (by NO.TAB)
+        // Structure: Col 2 = NO.TAB, Col 15 = Total Bunga
+        $bunga_lookup = [];
+        for ($i = 4; $i < count($rekap_rows); $i++) {
+            $row = $rekap_rows[$i];
+            $no_tab = trim((string) ($row[2] ?? ''));
+            $total_bunga = $this->_parse_amount($row[15] ?? 0);
+            if (!empty($no_tab) && $total_bunga > 0) {
+                $bunga_lookup[$no_tab] = $total_bunga;
+            }
+        }
+        $results['bunga_lookup_count'] = count($bunga_lookup);
+
+        $this->db->trans_start();
+
+        // Delete existing if requested
+        if ($delete_existing) {
+            $this->db->query("DELETE FROM tbtransaksi WHERE simpanan_id IN (SELECT id FROM tbsimpanan)");
+            $results['deleted']['transaksi'] = $this->db->affected_rows();
+            $this->db->query("DELETE FROM tbdetail_penarikan WHERE simpanan_id IN (SELECT id FROM tbsimpanan)");
+            $this->db->query("DELETE FROM tbpenarikan WHERE simpanan_id IN (SELECT id FROM tbsimpanan)");
+            $this->db->query("DELETE FROM tbdetail_simpanan WHERE simpanan_id IN (SELECT id FROM tbsimpanan)");
+            $results['deleted']['setoran'] = $this->db->affected_rows();
+            $this->db->query("DELETE FROM tbsimpanan");
+            $results['deleted']['simpanan'] = $this->db->affected_rows();
+            $this->db->query("DELETE FROM tbnasabah WHERE id NOT IN (SELECT DISTINCT nasabah_id FROM tbdeposito)");
+            $results['deleted']['nasabah'] = $this->db->affected_rows();
+        }
+
+        $nama_to_nasabah = [];
+        $norek_to_id = [];
+        $year = '2025'; // Data is for 2025
+
+        // Process DES sheet starting from row 3 (data rows)
+        for ($i = 3; $i < count($des_rows); $i++) {
+            $row = $des_rows[$i];
+
+            $nama = trim($row[1] ?? '');
+            if (empty($nama))
+                continue;
+            if (stripos($nama, 'JUMLAH') !== false || stripos($nama, 'TOTAL') !== false)
+                continue;
+
+            try {
+                $no_tab = trim((string) ($row[2] ?? ''));
+                $alamat = trim($row[3] ?? '-');
+                $saldo_awal = $this->_parse_amount($row[4] ?? 0);
+                $saldo_akhir = $this->_parse_amount($row[102] ?? 0);
+
+                // Get bunga from lookup
+                $bunga = $bunga_lookup[$no_tab] ?? 0;
+
+                // Generate no_rekening: T + 3 digit padded
+                $no_rekening = 'T' . str_pad($no_tab, 3, '0', STR_PAD_LEFT);
+
+                // Find or create nasabah
+                $nama_lower = strtolower(trim($nama));
+                if (isset($nama_to_nasabah[$nama_lower])) {
+                    $nasabah_id = $nama_to_nasabah[$nama_lower];
+                    $results['nasabah']['found']++;
+                } else {
+                    $nasabah = $this->_find_nasabah_by_name($nama);
+                    if ($nasabah) {
+                        $nasabah_id = $nasabah->id;
+                        $results['nasabah']['found']++;
+                    } else {
+                        $nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
+                        $results['nasabah']['created']++;
+                    }
+                    $nama_to_nasabah[$nama_lower] = $nasabah_id;
+                }
+
+                // Check if simpanan exists
+                $existing = $this->db->where('no_rekening', $no_rekening)->get('tbsimpanan')->row();
+
+                if (!$existing) {
+                    $simpanan_data = [
+                        'no_rekening' => $no_rekening,
+                        'nasabah_id' => $nasabah_id,
+                        'pegawai_id' => $pegawai_id,
+                        'jenistabungan_id' => $jenistabungan_id,
+                        'nama_nasabah' => $nama,
+                        'jumlah_simpanan' => $saldo_akhir,
+                        'jumlah_bunga' => $bunga,
+                        'tanggal_simpanan' => $year . '-01-01',
+                        'status' => 'aktif'
+                    ];
+                    $this->db->insert('tbsimpanan', $simpanan_data);
+                    $simpanan_id = $this->db->insert_id();
+                    $results['simpanan']['inserted']++;
+                } else {
+                    $simpanan_id = $existing->id;
+                    $this->db->where('id', $simpanan_id)->update('tbsimpanan', [
+                        'jumlah_simpanan' => $saldo_akhir,
+                        'jumlah_bunga' => $bunga
+                    ]);
+                }
+                $norek_to_id[$no_rekening] = $simpanan_id;
+
+                // Insert saldo awal as opening balance transaction
+                if ($saldo_awal > 0) {
+                    $this->db->insert('tbdetail_simpanan', [
+                        'simpanan_id' => $simpanan_id,
+                        'tanggal_setoran' => $year . '-01-01 00:00:01',
+                        'jumlah_setoran' => $saldo_awal,
+                        'pegawai_id' => $pegawai_id
+                    ]);
+                }
+
+                // Insert bunga as end-of-year transaction
+                if ($bunga > 0) {
+                    $this->db->insert('tbtransaksi', [
+                        'simpanan_id' => $simpanan_id,
+                        'tanggal_transaksi' => $year . '-12-31',
+                        'jenis_transaksi' => 'Bunga Tahunan',
+                        'jumlah_transaksi' => $bunga,
+                        'rate_bunga' => 0,
+                        'bunga_riil' => $bunga
+                    ]);
+                    $results['bunga']['total'] += $bunga;
+                    $results['bunga']['count']++;
+                }
 
             } catch (Exception $e) {
                 $results['simpanan']['errors']++;

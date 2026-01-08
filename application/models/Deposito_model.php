@@ -1022,16 +1022,32 @@ class Deposito_model extends CI_Model
                 continue;
 
             try {
-                // Extract data from row
-                $no_seri = intval($row[3] ?? 0);
-                $jumlah_deposito = $this->_parse_amount($row[4] ?? 0);
-                $tanggal_deposito = $this->_parse_date($row[5] ?? '');
-                $durasi = intval($row[6] ?? 12);
-                $tanggal_jatuh_tempo = $this->_parse_date($row[7] ?? '');
-                $rate_bunga = $this->_parse_rate($row[8] ?? 0);
+                // Excel Column Mapping for DAFTAR DEPOSAN sheet (0-indexed):
+                // 0=NO, 1=NAMA, 2=ALAMAT, 3=NO.SERI, 4=JUMLAH DEPOSITO, 5=TGL DEPOSITO
+                // 6=JANGKA WAKTU, 7=JATUH TEMPO, 8=SUKU BUNGA, 9=BUNGA(calc), 10=TELP, 11=KET
+
+                // Parse NO.SERI as integer (handles 1.0 -> 1)
+                $no_seri = $this->_parse_int_safe($row[3] ?? 0) ?? 0;
+
+                // Parse amounts with safe handling for #NUM!, -, empty
+                $jumlah_deposito = $this->_parse_amount_safe($row[4] ?? 0);
+
+                // Parse dates with safe handling for #NUM! and invalid dates
+                $tanggal_deposito = $this->_parse_date_safe($row[5] ?? '');
+                $tanggal_jatuh_tempo = $this->_parse_date_safe($row[7] ?? '');
+
+                // Parse duration - default to 12 if invalid
+                $durasi = $this->_parse_int_safe($row[6] ?? 12) ?? 12;
+                if ($durasi <= 0)
+                    $durasi = 12;
+
+                // Parse rate from Excel (0.6, 0.7, 0.8)
+                $rate_bunga = $this->_parse_rate_from_excel($row[8] ?? 0);
+
+                // Other fields
+                $alamat = trim($row[2] ?? '-');
                 $telp = trim($row[10] ?? '-');
                 $keterangan = trim($row[11] ?? '');
-                $alamat = trim($row[2] ?? '-');
 
                 // Detect status from keterangan
                 $status = $this->_detect_status($keterangan, $jumlah_deposito);
@@ -1099,11 +1115,15 @@ class Deposito_model extends CI_Model
         }
 
         // Step 2: Import PEMBAYARAN BUNGA DEPOSITO (if sheet exists)
+        // This sheet tracks interest payments history
+        // Col 6 = SALDO PINDAHAN (outstanding balance from previous year) - belum_ditarik
+        // Cols 7-30 = monthly payments (date + amount pairs) - these are sudah_ditarik
         if ($sheet_bunga !== false && count($no_seri_to_deposito_id) > 0) {
             $rows_bunga = $xls->rows($sheet_bunga);
 
-            // Column mapping: Col 6 = SALDO PINDAHAN, Col 7-30 = monthly payments
-            // Row 2 has headers, Row 3 has sub-headers, data starts at Row 4
+            // Column mapping: Col 7 onwards are monthly payment pairs (TGL, Amount)
+            // Jan=7,8 Feb=9,10 Mar=11,12 Apr=13,14 May=15,16 Jun=17,18
+            // Jul=19,20 Aug=21,22 Sep=23,24 Oct=25,26 Nov=27,28 Dec=29,30
             $months = [
                 7 => '01',
                 9 => '02',
@@ -1128,36 +1148,42 @@ class Deposito_model extends CI_Model
 
                 $deposito_id = $no_seri_to_deposito_id[$nin];
 
-                // Get SALDO PINDAHAN from Col 6 (previous year's balance)
-                $saldo_pindahan = $this->_parse_amount($row[6] ?? 0);
+                // Get SALDO PINDAHAN from Col 6
+                // Based on Excel KWITANSI BUNGA DEPOSITO, this represents "YG SUDAH DI BAYAR"
+                // (interest that has ALREADY been paid in previous periods)
+                // So status should be 'sudah_ditarik' NOT 'belum_ditarik'
+                $saldo_pindahan = $this->_parse_amount_safe($row[6] ?? 0);
 
-                // Insert previous balance as single entry if > 0
+                // Insert previous balance as PAID interest if > 0
                 if ($saldo_pindahan > 0) {
-                    $this->_insert_bunga_log($deposito_id, $saldo_pindahan, '2024-12-31', 'sudah_ditarik', $results['batch_id'], 'Saldo pindahan');
+                    $this->_insert_bunga_log($deposito_id, $saldo_pindahan, '2024-12-31', 'sudah_ditarik', $results['batch_id'], 'Saldo pindahan (bunga sudah dibayar)');
                     $results['bunga_log']['inserted']++;
                 }
 
-                // Insert monthly bunga payments
+                // Insert monthly bunga payments (these ARE payments = sudah_ditarik)
                 foreach ($months as $col => $month) {
-                    $date_col = $col; // Date column
-                    $amount_col = $col + 1; // Amount column
+                    $date_col = $col;
+                    $amount_col = $col + 1;
 
-                    $payment_date = $this->_parse_date($row[$date_col] ?? '');
-                    $payment_amount = $this->_parse_amount($row[$amount_col] ?? 0);
+                    $payment_date = $this->_parse_date_safe($row[$date_col] ?? '');
+                    $payment_amount = $this->_parse_amount_safe($row[$amount_col] ?? 0);
 
-                    if ($payment_amount > 0 && $payment_date && $payment_date != '1970-01-01') {
-                        $this->_insert_bunga_log($deposito_id, $payment_amount, $payment_date, 'sudah_ditarik', $results['batch_id'], "Bunga bulan $month");
+                    // Only insert if we have valid date AND amount > 0
+                    if ($payment_amount > 0 && $payment_date) {
+                        $this->_insert_bunga_log($deposito_id, $payment_amount, $payment_date, 'sudah_ditarik', $results['batch_id'], "Pembayaran bunga bulan $month");
                         $results['bunga_log']['inserted']++;
                     }
                 }
             }
         }
 
-        // Step 3: Import HUTANG BUNGA (update bunga_belum_ditarik)
+        // Step 3: Import HUTANG BUNGA (outstanding interest balances)
+        // This updates the denormalized bunga_belum_ditarik field
+        // #NUM! values should be skipped (return 0 from _parse_amount_safe)
         if ($sheet_hutang !== false && count($no_seri_to_deposito_id) > 0) {
             $rows_hutang = $xls->rows($sheet_hutang);
 
-            // Use DES column (Col 15) as current outstanding balance
+            // Use DES column (Col 15 = December) as current outstanding balance
             for ($i = 3; $i < count($rows_hutang); $i++) {
                 $row = $rows_hutang[$i];
                 $nin = intval($row[0] ?? 0);
@@ -1168,9 +1194,11 @@ class Deposito_model extends CI_Model
                 $deposito_id = $no_seri_to_deposito_id[$nin];
 
                 // Get outstanding balance from DES column (Col 15)
-                $hutang_bunga = $this->_parse_amount($row[15] ?? 0);
+                // Use _parse_amount_safe to handle #NUM! errors
+                $hutang_bunga = $this->_parse_amount_safe($row[15] ?? 0);
 
                 // Hutang bunga is negative in Excel, convert to positive
+                // If it's 0 or #NUM!, we skip the update
                 $bunga_belum_ditarik = abs($hutang_bunga);
 
                 if ($bunga_belum_ditarik > 0) {
@@ -1200,6 +1228,82 @@ class Deposito_model extends CI_Model
         // Remove currency symbols and formatting
         $value = str_replace(['$', 'Rp', ',', ' '], '', $value);
         return floatval($value);
+    }
+
+    /**
+     * Helper: Parse amount from Excel cell with SAFE handling
+     * Handles #NUM!, empty cells, dashes, and other invalid values
+     * 
+     * @param mixed $value The cell value
+     * @return float Returns 0 for invalid values, otherwise the parsed amount
+     */
+    private function _parse_amount_safe($value)
+    {
+        // Handle empty, null, 0
+        if ($value === null || $value === '' || $value === 0 || $value === '0')
+            return 0.0;
+
+        // Convert to string for pattern checking
+        $str_value = trim((string) $value);
+
+        // Handle Excel error values: #NUM!, #VALUE!, #REF!, #DIV/0!, etc.
+        if (strpos($str_value, '#') === 0) {
+            return 0.0;
+        }
+
+        // Handle dash (often used for empty/null in Excel)
+        if ($str_value === '-') {
+            return 0.0;
+        }
+
+        // If already numeric, return as float
+        if (is_numeric($value)) {
+            return floatval($value);
+        }
+
+        // Remove currency symbols, thousands separators, and spaces
+        $cleaned = str_replace(['$', 'Rp', ',', ' ', '.'], '', $str_value);
+
+        // Handle negative values in parentheses: (1000) => -1000
+        if (preg_match('/^\((.+)\)$/', $cleaned, $matches)) {
+            $cleaned = '-' . $matches[1];
+        }
+
+        // Try to parse as float
+        if (is_numeric($cleaned)) {
+            return floatval($cleaned);
+        }
+
+        // Default to 0 for any other invalid value
+        return 0.0;
+    }
+
+    /**
+     * Helper: Parse integer/ID from Excel cell (NO, NO.SERI, NIN)
+     * Handles float values like 1.0 -> 1
+     * 
+     * @param mixed $value The cell value
+     * @return int|null Returns null for invalid values (should skip row)
+     */
+    private function _parse_int_safe($value)
+    {
+        if ($value === null || $value === '' || $value === '-')
+            return null;
+
+        // Convert to string for pattern checking
+        $str_value = trim((string) $value);
+
+        // Handle Excel error values
+        if (strpos($str_value, '#') === 0) {
+            return null;
+        }
+
+        // If numeric, cast to int (removes .0)
+        if (is_numeric($value)) {
+            return intval(floatval($value));
+        }
+
+        return null;
     }
 
     /**
@@ -1252,23 +1356,147 @@ class Deposito_model extends CI_Model
     }
 
     /**
+     * Helper: Parse date from Excel cell with safe handling for #NUM! and invalid dates
+     */
+    private function _parse_date_safe($value)
+    {
+        if (empty($value))
+            return null;
+
+        // Handle Excel error values like #NUM!, #VALUE!, #REF!, etc
+        if (is_string($value) && strpos($value, '#') === 0) {
+            return null;
+        }
+
+        // Handle dash or minus which Excel sometimes shows for empty dates
+        if (trim($value) === '-' || trim($value) === '') {
+            return null;
+        }
+
+        // Handle invalid dates (1900-based Excel errors or 1970)
+        $value_str = (string) $value;
+        if (strpos($value_str, '1900') !== false || strpos($value_str, '1899') !== false) {
+            return null;
+        }
+        if (strpos($value_str, '1970-01-01') !== false) {
+            return null;
+        }
+
+        // If numeric (Excel serial date)
+        if (is_numeric($value)) {
+            $serial = intval($value);
+            // Excel dates are days since 1899-12-30
+            // Ignore very small numbers (likely invalid)
+            if ($serial < 36526) { // Before year 2000
+                return null;
+            }
+            $timestamp = strtotime('1899-12-30') + ($serial * 86400);
+            $year = (int) date('Y', $timestamp);
+            // Validate year is reasonable (2000-2100)
+            if ($year < 2000 || $year > 2100) {
+                return null;
+            }
+            return date('Y-m-d', $timestamp);
+        }
+
+        // Try parsing as date string (e.g., "11/15/2025", "2025-11-15")
+        $timestamp = strtotime($value);
+        if ($timestamp && $timestamp > 0) {
+            $year = (int) date('Y', $timestamp);
+            if ($year < 2000 || $year > 2100) {
+                return null;
+            }
+            return date('Y-m-d', $timestamp);
+        }
+
+        return null;
+    }
+
+    /**
+     * Helper: Parse interest rate from Excel cell (uses Excel values directly: 0.60%, 0.70%, 0.80%)
+     * Stores the rate as displayed in Excel (e.g., 0.6 for 0.6% per month)
+     */
+    private function _parse_rate_from_excel($value)
+    {
+        if (empty($value))
+            return 0.6; // Default to 0.6% if empty
+
+        // Handle Excel error values
+        if (is_string($value) && strpos($value, '#') === 0) {
+            return 0.6; // Default on error
+        }
+
+        // Remove percentage sign and spaces
+        $cleaned = str_replace(['%', ' '], '', (string) $value);
+        $rate = floatval($cleaned);
+
+        // Excel rate formats:
+        // 0.006 or 0.007 or 0.008 (raw decimal, need *100)
+        // 0.60% or 0.70% or 0.80% (percentage string, already good after removing %)
+        // 0.6 or 0.7 or 0.8 (already correct)
+
+        // If value is very small like 0.006, convert to 0.6
+        if ($rate > 0 && $rate < 0.1) {
+            $rate = $rate * 100;
+        }
+
+        // If value is like 60 or 70 (percentage as whole number), divide by 100
+        if ($rate > 10) {
+            $rate = $rate / 100;
+        }
+
+        // Ensure rate is within reasonable bounds for monthly rate (0.1% - 5%)
+        if ($rate <= 0 || $rate > 5) {
+            return 0.6; // Default to 0.6% if out of bounds
+        }
+
+        return $rate;
+    }
+
+    /**
      * Helper: Detect deposit status from keterangan
+     * Patterns from Excel: LUNAS, tarik, ditarik, pinalti, pembaharuan, pokok ditarik, etc.
      */
     private function _detect_status($keterangan, $jumlah)
     {
+        // If no keterangan and has amount, it's active
         if (empty($keterangan) && $jumlah > 0)
             return 'aktif';
+
+        // If no amount, it's closed
         if ($jumlah <= 0)
             return 'ditutup';
 
-        $ket_lower = strtolower($keterangan);
+        $ket_lower = strtolower(trim($keterangan));
 
-        if (strpos($ket_lower, 'lunas') !== false)
+        // Check for closed/withdrawn patterns
+        $closed_patterns = [
+            'lunas',
+            'ditarik',
+            'pokok ditarik',
+            'pokok sudah ditarik',
+            'pokok sdh ditarik',
+            'tarik tgl',
+            'tarik 12/',  // e.g., "tarik 12/6/25"
+            'tarik perpanjang'
+        ];
+
+        foreach ($closed_patterns as $pattern) {
+            if (strpos($ket_lower, $pattern) !== false) {
+                return 'ditutup';
+            }
+        }
+
+        // Pinalti withdrawal means closed
+        if (strpos($ket_lower, 'tarik') !== false && strpos($ket_lower, 'pinalti') !== false) {
             return 'ditutup';
-        if (strpos($ket_lower, 'tarik') !== false && strpos($ket_lower, 'pinalti') !== false)
-            return 'ditutup';
-        if (strpos($ket_lower, 'ditarik') !== false)
-            return 'ditutup';
+        }
+
+        // Pembaharuan (renewal) usually means the deposit was renewed - still active
+        // BARU also means new/active
+        if (strpos($ket_lower, 'baru') !== false || strpos($ket_lower, 'pembaharuan') !== false) {
+            return 'aktif';
+        }
 
         return 'aktif';
     }

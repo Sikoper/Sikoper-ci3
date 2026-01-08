@@ -169,12 +169,15 @@ class Nasabah extends CI_Controller
                     ]
                 ]);
             } else {
+                // Handle empty tanggal_lahir - save as NULL instead of empty string
+                $tanggal_lahir_save = !empty($tanggal_lahir) ? $tanggal_lahir : null;
+
                 $data = [
                     'nik' => $nik,
                     'nama_lengkap' => $nama_lengkap,
                     'jenis_kelamin' => $kelamin,
                     'tempat_lahir' => $tempat_lahir,
-                    'tanggal_lahir' => $tanggal_lahir,
+                    'tanggal_lahir' => $tanggal_lahir_save,
                     'agama' => $agama,
                     'pekerjaan' => $pekerjaan,
                     'nama_ibu_kandung' => $nama_ibu_kandung,
@@ -333,12 +336,15 @@ class Nasabah extends CI_Controller
                     ]
                 ]);
             } else {
+                // Handle empty tanggal_lahir - save as NULL instead of empty string
+                $tanggal_lahir_save = !empty($tanggal_lahir) ? $tanggal_lahir : null;
+
                 $data = [
                     'nik' => $nik,
                     'nama_lengkap' => $nama_lengkap,
                     'jenis_kelamin' => $kelamin,
                     'tempat_lahir' => $tempat_lahir,
-                    'tanggal_lahir' => $tanggal_lahir,
+                    'tanggal_lahir' => $tanggal_lahir_save,
                     'agama' => $agama,
                     'pekerjaan' => $pekerjaan,
                     'nama_ibu_kandung' => $nama_ibu_kandung,
@@ -355,7 +361,7 @@ class Nasabah extends CI_Controller
                 if ($inserted) {
                     // DENORMALIZED: Sync nama_nasabah in related tables
                     $this->Nasabah_model->update_nama_in_related_tables($id, $nama_lengkap);
-                    
+
                     echo json_encode(['success' => 'Data berhasil disimpan.']);
                 } else {
                     echo json_encode(['error' => 'Gagal menyimpan data ke database.']);

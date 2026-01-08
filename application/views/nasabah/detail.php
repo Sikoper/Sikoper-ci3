@@ -20,7 +20,8 @@
             </tr>
             <tr>
                 <th>Tempat / Tanggal Lahir</th>
-                <td><?= $nasabah->tempat_lahir ?> / <?= date('d-m-Y', strtotime($nasabah->tanggal_lahir)) ?></td>
+                <td><?= $nasabah->tempat_lahir ?> /
+                    <?= $nasabah->tanggal_lahir ? date('d-m-Y', strtotime($nasabah->tanggal_lahir)) : '-' ?></td>
             </tr>
             <tr>
                 <th>Agama</th>
@@ -44,7 +45,7 @@
             </tr>
             <tr>
                 <th>Tanggal dan Jam Dibuat</th>
-                <td><?= date('d-m-Y H:i', strtotime($nasabah->created_at)) ?></td>
+                <td><?= $nasabah->created_at ? date('d-m-Y H:i', strtotime($nasabah->created_at)) : '-' ?></td>
             </tr>
         </table>
         <?php

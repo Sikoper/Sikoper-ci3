@@ -4,55 +4,32 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Rekapitulasi_tabungan_model extends CI_Model
 {
     var $table = 'tbsimpanan';
-    // OPTIMIZED: Using denormalized columns for faster queries
     var $column_order = array(null, 'tbsimpanan.no_rekening', 'nama_nasabah', 'saldo_pokok', 'bunga', null);
     var $column_search = array('tbsimpanan.nama_nasabah', 'tbsimpanan.no_rekening');
     var $order = array('tbsimpanan.no_rekening' => 'ASC');
 
     private function _get_datatables_query($bulan, $tahun)
     {
-        // ✅ CORRECTED: Date range logic now handles the current year correctly
+        // Set date range for queries
         if ($bulan == 'all') {
             $start_of_period = date('Y-01-01', strtotime("$tahun-01-01"));
-            if ($tahun == date('Y')) {
-                // For the current year, use today's date as the end date
-                $end_of_period = date('Y-m-d');
-            } else {
-                // For past years, use the end of the year
-                $end_of_period = date('Y-12-31', strtotime("$tahun-12-31"));
-            }
+            $end_of_period = date('Y-12-31', strtotime("$tahun-12-31"));
         } else {
             $start_of_period = date('Y-m-01', strtotime("$tahun-$bulan-01"));
             $end_of_period = date('Y-m-t', strtotime($start_of_period));
         }
 
-        // Subquery for SALDO POKOK: (Setoran - Penarikan) + Bunga sebelumnya
-        // FIXED: Now includes withdrawals in the calculation
-        $saldo_pokok_subquery = "
-            COALESCE((SELECT SUM(tds.jumlah_setoran) 
-                        FROM tbdetail_simpanan tds 
-                        WHERE tds.simpanan_id = tbsimpanan.id 
-                        AND tds.tanggal_setoran <= " . $this->db->escape($end_of_period) . "), 0)
-            - 
-            COALESCE((SELECT SUM(tdp.jumlah_penarikan) 
-                        FROM tbdetail_penarikan tdp 
-                        WHERE tdp.simpanan_id = tbsimpanan.id 
-                        AND tdp.tanggal_penarikan <= " . $this->db->escape($end_of_period) . "), 0)
-            + 
-            COALESCE((SELECT SUM(tbt.jumlah_transaksi) 
-                        FROM tbtransaksi tbt 
-                        WHERE tbt.simpanan_id = tbsimpanan.id 
-                        AND tbt.tanggal_transaksi < " . $this->db->escape($start_of_period) . "), 0)
-        ";
+        // SALDO POKOK: Simply use jumlah_simpanan from tbsimpanan
+        // This is the balance that was imported or calculated
+        $saldo_pokok_subquery = "COALESCE(tbsimpanan.jumlah_simpanan, 0)";
 
-        // Subquery for BUNGA: This logic was already correct and adapts to the dates
+        // BUNGA: Sum of interest transactions for the selected period
         if ($bulan == 'all') {
             $bunga_subquery = "
                 (SELECT SUM(tbtransaksi.jumlah_transaksi) 
                  FROM tbtransaksi 
                  WHERE tbtransaksi.simpanan_id = tbsimpanan.id 
-                 AND YEAR(tbtransaksi.tanggal_transaksi) = " . $this->db->escape($tahun) . "
-                 AND tbtransaksi.tanggal_transaksi <= " . $this->db->escape($end_of_period) . ")
+                 AND YEAR(tbtransaksi.tanggal_transaksi) = " . $this->db->escape($tahun) . ")
             ";
         } else {
             $bunga_subquery = "
@@ -73,16 +50,15 @@ class Rekapitulasi_tabungan_model extends CI_Model
         );
 
         $this->db->from($this->table);
-        // OPTIMIZED: Use LEFT JOIN as fallback for records missing denormalized data
         $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id', 'left');
-        // FIXED: Removed status filter to include closed accounts in historical reports
-        // Only filter by date registration to show accounts that existed in the period
-        $this->db->where('tbsimpanan.tanggal_simpanan <=', $end_of_period);
 
-        // --- Search and Order logic remains unchanged ---
+        // NO DATE FILTER - Show all accounts regardless of when they were opened
+        // This ensures imported data from previous year carries forward
+
+        // Search logic
         $i = 0;
         foreach ($this->column_search as $item) {
-            if ($_POST['search']['value']) {
+            if (isset($_POST['search']['value']) && $_POST['search']['value']) {
                 if ($i === 0) {
                     $this->db->group_start();
                     $this->db->like($item, $_POST['search']['value']);
@@ -95,6 +71,7 @@ class Rekapitulasi_tabungan_model extends CI_Model
             $i++;
         }
 
+        // Order logic
         if (isset($_POST['order'])) {
             $this->db->order_by($this->column_order[$_POST['order']['0']['column']], $_POST['order']['0']['dir']);
         } else if (isset($this->order)) {
@@ -103,11 +80,10 @@ class Rekapitulasi_tabungan_model extends CI_Model
         }
     }
 
-    // No changes needed in these functions
     function get_datatables($bulan, $tahun)
     {
         $this->_get_datatables_query($bulan, $tahun);
-        if ($_POST['length'] != -1)
+        if (isset($_POST['length']) && $_POST['length'] != -1)
             $this->db->limit($_POST['length'], $_POST['start']);
         $query = $this->db->get();
         return $query->result();
@@ -123,74 +99,30 @@ class Rekapitulasi_tabungan_model extends CI_Model
     public function count_all()
     {
         $this->db->from($this->table);
-        // FIXED: Removed status filter for count_all to be consistent
         return $this->db->count_all_results();
     }
 
     public function get_summary_data($bulan, $tahun)
     {
-        // ✅ CORRECTED: Date range logic now handles the current year correctly
-        if ($bulan == 'all') {
-            $start_of_period = date('Y-01-01', strtotime("$tahun-01-01"));
-            if ($tahun == date('Y')) {
-                // For the current year, use today's date as the end date
-                $end_of_period = date('Y-m-d');
-            } else {
-                // For past years, use the end of the year
-                $end_of_period = date('Y-12-31', strtotime("$tahun-12-31"));
-            }
-        } else {
-            $start_of_period = date('Y-m-01', strtotime("$tahun-$bulan-01"));
-            $end_of_period = date('Y-m-t', strtotime($start_of_period));
-        }
+        // SIMPLIFIED: Just sum jumlah_simpanan from all accounts
+        // This gives us the total balance regardless of date filtering
 
-        // --- All queries below now use the correct dates ---
+        $this->db->select_sum('jumlah_simpanan', 'total_saldo');
+        $this->db->from('tbsimpanan');
+        $total_saldo_result = $this->db->get()->row();
+        $total_saldo_pokok = $total_saldo_result->total_saldo ?? 0;
 
-        $this->db->select_sum('tds.jumlah_setoran', 'total_deposits');
-        $this->db->from('tbdetail_simpanan as tds');
-        $this->db->join('tbsimpanan as ts', 'ts.id = tds.simpanan_id');
-        // FIXED: Removed status filter
-        $this->db->where('tds.tanggal_setoran <=', $end_of_period);
-        $this->db->where('ts.tanggal_simpanan <=', $end_of_period);
-        $total_deposits_result = $this->db->get()->row();
-        $total_deposits = $total_deposits_result->total_deposits ?? 0;
-
-        // FIXED: Added withdrawals calculation
-        $this->db->select_sum('tdp.jumlah_penarikan', 'total_withdrawals');
-        $this->db->from('tbdetail_penarikan as tdp');
-        $this->db->join('tbsimpanan as ts', 'ts.id = tdp.simpanan_id');
-        $this->db->where('tdp.tanggal_penarikan <=', $end_of_period);
-        $this->db->where('ts.tanggal_simpanan <=', $end_of_period);
-        $total_withdrawals_result = $this->db->get()->row();
-        $total_withdrawals = $total_withdrawals_result->total_withdrawals ?? 0;
-
-        $this->db->select_sum('tbt.jumlah_transaksi', 'total_prior_interest');
-        $this->db->from('tbtransaksi as tbt');
-        $this->db->join('tbsimpanan as ts', 'ts.id = tbt.simpanan_id');
-        // FIXED: Removed status filter
-        $this->db->where('ts.tanggal_simpanan <=', $end_of_period);
-        $this->db->where('tbt.tanggal_transaksi <', $start_of_period);
-        $prior_interest_result = $this->db->get()->row();
-        $total_prior_interest = $prior_interest_result->total_prior_interest ?? 0;
-
+        // Sum bunga for the period
         $this->db->select_sum('jumlah_transaksi', 'total_bunga');
         $this->db->from('tbtransaksi');
-        $this->db->join('tbsimpanan as ts', 'ts.id = simpanan_id');
-        $this->db->where('ts.status', 'aktif');
-        $this->db->where('ts.tanggal_simpanan <=', $end_of_period);
 
         if ($bulan == 'all') {
             $this->db->where('YEAR(tanggal_transaksi)', $tahun);
-            // Also ensure we don't count future interest
-            $this->db->where('tanggal_transaksi <=', $end_of_period);
         } else {
             $this->db->where('MONTH(tanggal_transaksi)', $bulan);
             $this->db->where('YEAR(tanggal_transaksi)', $tahun);
         }
         $bunga_result = $this->db->get()->row();
-
-        // FIXED: Saldo = (Setoran - Penarikan) + Bunga sebelumnya
-        $total_saldo_pokok = ($total_deposits - $total_withdrawals) + $total_prior_interest;
 
         return [
             'total_saldo_pokok' => $total_saldo_pokok,

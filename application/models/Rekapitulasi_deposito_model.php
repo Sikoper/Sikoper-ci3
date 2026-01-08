@@ -160,7 +160,8 @@ class Rekapitulasi_deposito_model extends CI_Model
         $total_bunga_bulan_ini = ($this->db->get()->row()->total_bunga_bulan_ini ?? 0);
 
         return [
-            'total_saldo_awal' => $total_saldo_awal,
+            'total_pokok' => $total_pokok, // NEW: Pure deposit amounts only
+            'total_saldo_awal' => $total_saldo_awal, // Deposits + prior interest
             'total_bunga_bulan_ini' => $total_bunga_bulan_ini,
         ];
     }

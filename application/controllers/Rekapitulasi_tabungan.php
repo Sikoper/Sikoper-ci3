@@ -25,9 +25,10 @@ class Rekapitulasi_tabungan extends CI_Controller
         $query = $this->db->get('tbsimpanan');
         $result = $query->row();
 
-        // 2. Determine the start year. Default to the current year if no records exist.
+        // 2. Determine the start year. Minimum is 2025 to ensure imported historical data is accessible.
         $current_year = date('Y');
-        $start_year = $result && $result->start_year ? $result->start_year : $current_year;
+        $db_start_year = $result && $result->start_year ? $result->start_year : $current_year;
+        $start_year = min($db_start_year, 2025); // Always include 2025 as minimum
 
         // 3. Generate the array of years from the start year to the current year.
         $years = [];
@@ -38,13 +39,13 @@ class Rekapitulasi_tabungan extends CI_Controller
         // --- Prepare data for the view ---
         $data_view = [
             'selected_month' => date('n'), // 'n' for month number without leading zeros (1-12)
-            'selected_year'  => $current_year,
-            'years'          => $years,
+            'selected_year' => $current_year,
+            'years' => $years,
         ];
 
         $parser = [
             'judul' => "Rekapitulasi Tabungan",
-            'isi'   => $this->load->view('rekapitulasi_tabungan/index', $data_view, TRUE)
+            'isi' => $this->load->view('rekapitulasi_tabungan/index', $data_view, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -84,12 +85,12 @@ class Rekapitulasi_tabungan extends CI_Controller
         $recordsTotal = $this->Rekapitulasi_tabungan_model->count_all(); // count_all also benefits from the change
 
         $output = array(
-            "draw"              => $_POST['draw'],
-            "recordsTotal"      => $recordsTotal,
-            "recordsFiltered"   => $recordsFiltered,
-            "data"              => $data,
+            "draw" => $_POST['draw'],
+            "recordsTotal" => $recordsTotal,
+            "recordsFiltered" => $recordsFiltered,
+            "data" => $data,
             "total_saldo_pokok" => "Rp " . number_format($summary['total_saldo_pokok'] ?? 0, 0, ',', '.'),
-            "total_bunga"       => "Rp " . number_format($summary['total_bunga'] ?? 0, 0, ',', '.'),
+            "total_bunga" => "Rp " . number_format($summary['total_bunga'] ?? 0, 0, ',', '.'),
         );
 
         header('Content-Type: application/json');

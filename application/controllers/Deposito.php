@@ -801,9 +801,11 @@ class Deposito extends CI_Controller
         $this->load->model('Pencairan_model');
         $akumulasi_data_penarikan = $this->Pencairan_model->get_akumulasi_penarikan_by_deposito($deposito->id);
 
-        // Menggunakan format_durasi dari helper
-        $bunga_tersedia = $this->Deposito_model->get_bunga_tersedia_from_log($deposito->id);
+        // Get bunga values from log
+        $bunga_tersedia_from_log = $this->Deposito_model->get_bunga_tersedia_from_log($deposito->id);
         $bunga_sudah_dibayar = $this->Deposito_model->get_bunga_sudah_dibayar_from_log($deposito->id);
+
+        // Calculate bunga sampai jatuh tempo
         if ($deposito->status == 'ditutup') {
             $hutang_bunga_saat_ini = 0;
             $bunga_sampai_jatuh_tempo = $bunga_sudah_dibayar;
@@ -812,6 +814,23 @@ class Deposito extends CI_Controller
             $hutang_bunga_saat_ini = $bunga_sampai_jatuh_tempo - $bunga_sudah_dibayar;
         }
 
+        // Calculate bunga_tersedia (available interest to withdraw)
+        // = Total bunga earned so far - bunga already paid
+        // Calculate months since deposit started
+        $start_date = new DateTime($deposito->tanggal_deposito);
+        $now = new DateTime();
+        $interval = $start_date->diff($now);
+        $months_elapsed = ($interval->y * 12) + $interval->m;
+        if ($months_elapsed > $deposito->durasi) {
+            $months_elapsed = $deposito->durasi; // Cap at duration
+        }
+
+        $bunga_earned_so_far = $deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $months_elapsed;
+        $bunga_tersedia = max(0, $bunga_earned_so_far - $bunga_sudah_dibayar);
+
+        // Total Diterima = Bunga Yang Sudah Dibayar (what customer has received)
+        $total_diterima_nasabah = $bunga_sudah_dibayar;
+
         $data = [
             'deposito' => $deposito,
             'nasabah' => $nasabah,
@@ -819,7 +838,7 @@ class Deposito extends CI_Controller
             'pegawai' => $pegawai,
             'level' => $this->session->userdata('level'),
             'formatted_durasi' => format_durasi($deposito->durasi ?? null),
-            'total_akumulasi_penarikan' => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_penarikan ?? 0) : 0,
+            'total_akumulasi_penarikan' => $total_diterima_nasabah, // Now equals bunga_sudah_dibayar
             'total_akumulasi_denda' => $akumulasi_data_penarikan ? ($akumulasi_data_penarikan->total_akumulasi_denda ?? 0) : 0,
             'bunga_tersedia' => $bunga_tersedia,
             'bunga_sudah_dibayar' => $bunga_sudah_dibayar,

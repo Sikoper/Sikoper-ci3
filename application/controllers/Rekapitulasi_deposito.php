@@ -38,13 +38,13 @@ class Rekapitulasi_deposito extends CI_Controller
         // --- Prepare data for the view ---
         $data_view = [
             'selected_month' => date('n'), // 'n' for month number without leading zeros (1-12)
-            'selected_year'  => $current_year,
-            'years'          => $years,
+            'selected_year' => $current_year,
+            'years' => $years,
         ];
 
         $parser = [
             'judul' => "Rekapitulasi Deposito",
-            'isi'   => $this->load->view('rekapitulasi_deposito/index', $data_view, TRUE)
+            'isi' => $this->load->view('rekapitulasi_deposito/index', $data_view, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -84,11 +84,12 @@ class Rekapitulasi_deposito extends CI_Controller
         $recordsTotal = $this->Rekapitulasi_deposito_model->count_all();
 
         $output = array(
-            "draw"                  => isset($_POST['draw']) ? (int)$_POST['draw'] : 1,
-            "recordsTotal"          => $recordsTotal,
-            "recordsFiltered"       => $recordsFiltered,
-            "data"                  => $data,
-            "total_saldo_awal"      => "Rp " . number_format($summary['total_saldo_awal'], 0, ',', '.'),
+            "draw" => isset($_POST['draw']) ? (int) $_POST['draw'] : 1,
+            "recordsTotal" => $recordsTotal,
+            "recordsFiltered" => $recordsFiltered,
+            "data" => $data,
+            // Use total_pokok for "Total Saldo Pokok" display (matches Excel JUMLAH)
+            "total_saldo_awal" => "Rp " . number_format($summary['total_pokok'] ?? 0, 0, ',', '.'),
             "total_bunga_bulan_ini" => "Rp " . number_format($summary['total_bunga_bulan_ini'], 0, ',', '.'),
         );
 
