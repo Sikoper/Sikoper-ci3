@@ -15,6 +15,9 @@ class Rekapitulasi_harian_model extends CI_Model
     var $penarikan_column_search = array('TIME(tanggal_penarikan)', 'jumlah_penarikan', 'tn.nama_lengkap');
     var $penarikan_order = array('tanggal_penarikan' => 'desc');
 
+    // Selected date for filtering
+    private $selected_date = null;
+
     public function __construct()
     {
         parent::__construct();
@@ -25,20 +28,20 @@ class Rekapitulasi_harian_model extends CI_Model
     // DEPOSIT (SETORAN) FUNCTIONS
     // ====================================================================
 
-    private function _get_setoran_datatables_query()
+    private function _get_setoran_datatables_query($tanggal = null)
     {
-        // PERFORMANCE FIX: Gunakan range comparison bukan DATE() function
-        // Ini memungkinkan index database digunakan
-        $today_start = date('Y-m-d 00:00:00');
-        $today_end = date('Y-m-d 23:59:59');
+        // Use selected date or default to today
+        $tanggal = $tanggal ?? date('Y-m-d');
+        $date_start = $tanggal . ' 00:00:00';
+        $date_end = $tanggal . ' 23:59:59';
 
         // UX FIX: JOIN ke nasabah untuk menampilkan nama
         $this->db->select('tds.*, ts.no_rekening, tn.nama_lengkap as nama_nasabah');
         $this->db->from($this->setoran_table . ' tds');
         $this->db->join('tbsimpanan ts', 'ts.id = tds.simpanan_id', 'left');
         $this->db->join('tbnasabah tn', 'tn.id = ts.nasabah_id', 'left');
-        $this->db->where('tds.tanggal_setoran >=', $today_start);
-        $this->db->where('tds.tanggal_setoran <=', $today_end);
+        $this->db->where('tds.tanggal_setoran >=', $date_start);
+        $this->db->where('tds.tanggal_setoran <=', $date_end);
 
         if (isset($_POST['search']['value']) && !empty($_POST['search']['value'])) {
             $search_value = $_POST['search']['value'];
@@ -61,42 +64,45 @@ class Rekapitulasi_harian_model extends CI_Model
         }
     }
 
-    function get_setoran_datatables()
+    function get_setoran_datatables($tanggal = null)
     {
-        $this->_get_setoran_datatables_query();
+        $this->selected_date = $tanggal;
+        $this->_get_setoran_datatables_query($tanggal);
         if ($_POST['length'] != -1)
             $this->db->limit($_POST['length'], $_POST['start']);
         return $this->db->get()->result();
     }
 
-    function count_filtered_setoran()
+    function count_filtered_setoran($tanggal = null)
     {
-        $this->_get_setoran_datatables_query();
+        $this->_get_setoran_datatables_query($tanggal);
         return $this->db->get()->num_rows();
     }
 
-    public function count_all_setoran()
+    public function count_all_setoran($tanggal = null)
     {
-        // PERFORMANCE FIX: Range comparison
-        $today_start = date('Y-m-d 00:00:00');
-        $today_end = date('Y-m-d 23:59:59');
+        // Use selected date or default to today
+        $tanggal = $tanggal ?? date('Y-m-d');
+        $date_start = $tanggal . ' 00:00:00';
+        $date_end = $tanggal . ' 23:59:59';
 
         $this->db->from($this->setoran_table);
-        $this->db->where('tanggal_setoran >=', $today_start);
-        $this->db->where('tanggal_setoran <=', $today_end);
+        $this->db->where('tanggal_setoran >=', $date_start);
+        $this->db->where('tanggal_setoran <=', $date_end);
         return $this->db->count_all_results();
     }
 
-    public function get_setoran_summary()
+    public function get_setoran_summary($tanggal = null)
     {
-        // PERFORMANCE FIX: Range comparison
-        $today_start = date('Y-m-d 00:00:00');
-        $today_end = date('Y-m-d 23:59:59');
+        // Use selected date or default to today
+        $tanggal = $tanggal ?? date('Y-m-d');
+        $date_start = $tanggal . ' 00:00:00';
+        $date_end = $tanggal . ' 23:59:59';
 
         $this->db->select_sum('jumlah_setoran', 'total_setoran');
         $this->db->from($this->setoran_table);
-        $this->db->where('tanggal_setoran >=', $today_start);
-        $this->db->where('tanggal_setoran <=', $today_end);
+        $this->db->where('tanggal_setoran >=', $date_start);
+        $this->db->where('tanggal_setoran <=', $date_end);
         return $this->db->get()->row();
     }
 
@@ -104,19 +110,20 @@ class Rekapitulasi_harian_model extends CI_Model
     // WITHDRAWAL (PENARIKAN) FUNCTIONS
     // ====================================================================
 
-    private function _get_penarikan_datatables_query()
+    private function _get_penarikan_datatables_query($tanggal = null)
     {
-        // PERFORMANCE FIX: Gunakan range comparison bukan DATE() function
-        $today_start = date('Y-m-d 00:00:00');
-        $today_end = date('Y-m-d 23:59:59');
+        // Use selected date or default to today
+        $tanggal = $tanggal ?? date('Y-m-d');
+        $date_start = $tanggal . ' 00:00:00';
+        $date_end = $tanggal . ' 23:59:59';
 
         // UX FIX: JOIN ke nasabah untuk menampilkan nama
         $this->db->select('tdp.*, ts.no_rekening, tn.nama_lengkap as nama_nasabah');
         $this->db->from($this->penarikan_table . ' tdp');
         $this->db->join('tbsimpanan ts', 'ts.id = tdp.simpanan_id', 'left');
         $this->db->join('tbnasabah tn', 'tn.id = ts.nasabah_id', 'left');
-        $this->db->where('tdp.tanggal_penarikan >=', $today_start);
-        $this->db->where('tdp.tanggal_penarikan <=', $today_end);
+        $this->db->where('tdp.tanggal_penarikan >=', $date_start);
+        $this->db->where('tdp.tanggal_penarikan <=', $date_end);
         $this->db->where('tdp.status', 'disetujui'); // Only count approved withdrawals
 
         if (isset($_POST['search']['value']) && !empty($_POST['search']['value'])) {
@@ -140,43 +147,45 @@ class Rekapitulasi_harian_model extends CI_Model
         }
     }
 
-    function get_penarikan_datatables()
+    function get_penarikan_datatables($tanggal = null)
     {
-        $this->_get_penarikan_datatables_query();
+        $this->_get_penarikan_datatables_query($tanggal);
         if ($_POST['length'] != -1)
             $this->db->limit($_POST['length'], $_POST['start']);
         return $this->db->get()->result();
     }
 
-    function count_filtered_penarikan()
+    function count_filtered_penarikan($tanggal = null)
     {
-        $this->_get_penarikan_datatables_query();
+        $this->_get_penarikan_datatables_query($tanggal);
         return $this->db->get()->num_rows();
     }
 
-    public function count_all_penarikan()
+    public function count_all_penarikan($tanggal = null)
     {
-        // PERFORMANCE FIX: Range comparison
-        $today_start = date('Y-m-d 00:00:00');
-        $today_end = date('Y-m-d 23:59:59');
+        // Use selected date or default to today
+        $tanggal = $tanggal ?? date('Y-m-d');
+        $date_start = $tanggal . ' 00:00:00';
+        $date_end = $tanggal . ' 23:59:59';
 
         $this->db->from($this->penarikan_table);
-        $this->db->where('tanggal_penarikan >=', $today_start);
-        $this->db->where('tanggal_penarikan <=', $today_end);
+        $this->db->where('tanggal_penarikan >=', $date_start);
+        $this->db->where('tanggal_penarikan <=', $date_end);
         $this->db->where('status', 'disetujui');
         return $this->db->count_all_results();
     }
 
-    public function get_penarikan_summary()
+    public function get_penarikan_summary($tanggal = null)
     {
-        // PERFORMANCE FIX: Range comparison
-        $today_start = date('Y-m-d 00:00:00');
-        $today_end = date('Y-m-d 23:59:59');
+        // Use selected date or default to today
+        $tanggal = $tanggal ?? date('Y-m-d');
+        $date_start = $tanggal . ' 00:00:00';
+        $date_end = $tanggal . ' 23:59:59';
 
         $this->db->select_sum('jumlah_penarikan', 'total_penarikan');
         $this->db->from($this->penarikan_table);
-        $this->db->where('tanggal_penarikan >=', $today_start);
-        $this->db->where('tanggal_penarikan <=', $today_end);
+        $this->db->where('tanggal_penarikan >=', $date_start);
+        $this->db->where('tanggal_penarikan <=', $date_end);
         $this->db->where('status', 'disetujui');
         return $this->db->get()->row();
     }

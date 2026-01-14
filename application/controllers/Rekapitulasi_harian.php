@@ -25,7 +25,7 @@ class Rekapitulasi_harian extends CI_Controller
 
         $parser = [
             'judul' => "Rekapitulasi Harian",
-            'isi'   => $this->load->view('rekapitulasi_harian/index', $data, TRUE)
+            'isi' => $this->load->view('rekapitulasi_harian/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -35,8 +35,11 @@ class Rekapitulasi_harian extends CI_Controller
      */
     public function fetch_setoran_data()
     {
-        $list = $this->Rekapitulasi_harian_model->get_setoran_datatables();
-        $summary = $this->Rekapitulasi_harian_model->get_setoran_summary();
+        // Get selected date from POST, default to today
+        $tanggal = $this->input->post('tanggal') ?? date('Y-m-d');
+
+        $list = $this->Rekapitulasi_harian_model->get_setoran_datatables($tanggal);
+        $summary = $this->Rekapitulasi_harian_model->get_setoran_summary($tanggal);
 
         $data = array();
         $no = $this->input->post('start');
@@ -52,9 +55,9 @@ class Rekapitulasi_harian extends CI_Controller
         $total_setoran = $summary->total_setoran ?? 0;
 
         $output = array(
-            "draw" => (int)$this->input->post('draw'),
-            "recordsTotal" => $this->Rekapitulasi_harian_model->count_all_setoran(),
-            "recordsFiltered" => $this->Rekapitulasi_harian_model->count_filtered_setoran(),
+            "draw" => (int) $this->input->post('draw'),
+            "recordsTotal" => $this->Rekapitulasi_harian_model->count_all_setoran($tanggal),
+            "recordsFiltered" => $this->Rekapitulasi_harian_model->count_filtered_setoran($tanggal),
             "data" => $data,
             "total_setoran" => 'Rp ' . number_format($total_setoran, 0, ',', '.'),
         );
@@ -69,8 +72,11 @@ class Rekapitulasi_harian extends CI_Controller
      */
     public function fetch_penarikan_data()
     {
-        $list = $this->Rekapitulasi_harian_model->get_penarikan_datatables();
-        $summary = $this->Rekapitulasi_harian_model->get_penarikan_summary();
+        // Get selected date from POST, default to today
+        $tanggal = $this->input->post('tanggal') ?? date('Y-m-d');
+
+        $list = $this->Rekapitulasi_harian_model->get_penarikan_datatables($tanggal);
+        $summary = $this->Rekapitulasi_harian_model->get_penarikan_summary($tanggal);
 
         $data = array();
         $no = $this->input->post('start');
@@ -86,9 +92,9 @@ class Rekapitulasi_harian extends CI_Controller
         $total_penarikan = $summary->total_penarikan ?? 0;
 
         $output = array(
-            "draw" => (int)$this->input->post('draw'),
-            "recordsTotal" => $this->Rekapitulasi_harian_model->count_all_penarikan(),
-            "recordsFiltered" => $this->Rekapitulasi_harian_model->count_filtered_penarikan(),
+            "draw" => (int) $this->input->post('draw'),
+            "recordsTotal" => $this->Rekapitulasi_harian_model->count_all_penarikan($tanggal),
+            "recordsFiltered" => $this->Rekapitulasi_harian_model->count_filtered_penarikan($tanggal),
             "data" => $data,
             "total_penarikan" => 'Rp ' . number_format($total_penarikan, 0, ',', '.'),
         );

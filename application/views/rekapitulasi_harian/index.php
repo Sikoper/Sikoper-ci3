@@ -3,14 +3,24 @@
         <div class="card-header">
         </div>
         <div class="card-body">
+            <!-- Date Picker Section -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-4 col-lg-3">
+                    <label for="filterTanggal" class="form-label fw-bold">Pilih Tanggal:</label>
+                    <input type="date" id="filterTanggal" class="form-control form-control-lg text-center"
+                        value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>">
+                </div>
+            </div>
+
             <!-- Summary Section -->
             <div class="recap-summary text-center my-5">
-                <h5>Ringkasan Transaksi Hari Ini</h5>
-                <h1 class="display-4 text-primary fw-bold mb-3"><?= date('d F Y') ?></h1>
+                <h5>Ringkasan Transaksi</h5>
+                <h1 id="displayTanggal" class="display-4 text-primary fw-bold mb-3"><?= date('d F Y') ?></h1>
                 <div class="row justify-content-center g-3">
                     <!-- Total Setoran Card -->
                     <div class="col-md-5 col-lg-4">
-                        <div class="total-balance-card" style="border-radius: 15px; overflow: hidden; border: 1px solid #dee2e6;">
+                        <div class="total-balance-card"
+                            style="border-radius: 15px; overflow: hidden; border: 1px solid #dee2e6;">
                             <div class="p-4 bg-light-success">
                                 <h6 class="text-muted">Total Setoran Hari Ini</h6>
                                 <h3 id="totalSetoran" class="fw-bold">Rp 0</h3>
@@ -19,7 +29,8 @@
                     </div>
                     <!-- Total Penarikan Card -->
                     <div class="col-md-5 col-lg-4">
-                        <div class="total-balance-card" style="border-radius: 15px; overflow: hidden; border: 1px solid #dee2e6;">
+                        <div class="total-balance-card"
+                            style="border-radius: 15px; overflow: hidden; border: 1px solid #dee2e6;">
                             <div class="p-4 bg-light-danger">
                                 <h6 class="text-muted">Total Penarikan Hari Ini</h6>
                                 <h3 id="totalPenarikan" class="fw-bold">Rp 0</h3>
@@ -28,7 +39,8 @@
                     </div>
                     <!-- Saldo Akhir -->
                     <div class="col-md-10 col-lg-4 mt-lg-3 mt-md-3">
-                        <div class="total-balance-card" style="border-radius: 15px; overflow: hidden; border: 1px solid #dee2e6;">
+                        <div class="total-balance-card"
+                            style="border-radius: 15px; overflow: hidden; border: 1px solid #dee2e6;">
                             <div class="p-4 bg-light-primary">
                                 <h6 class="text-muted">Saldo Akhir Hari Ini</h6>
                                 <h3 id="saldoAkhir" class="fw-bold">Rp 0</h3>
@@ -44,7 +56,8 @@
                 <div class="col-lg-6">
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-box-arrow-in-down me-2 text-success"></i>Detail Setoran</h5>
+                            <h5 class="mb-0"><i class="bi bi-box-arrow-in-down me-2 text-success"></i>Detail Setoran
+                            </h5>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -90,7 +103,7 @@
 </section>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
 
         /**
          * Parses currency strings (e.g., "Rp 1.500.000") into numbers.
@@ -114,20 +127,46 @@
             $('#saldoAkhir').text(formattedSaldo);
         }
 
+        /**
+         * Formats date to Indonesian format (dd MMMM yyyy)
+         */
+        function formatTanggalIndonesia(dateString) {
+            const bulan = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = bulan[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
+        }
+
+        /**
+         * Updates the display date header
+         */
+        function updateDisplayTanggal() {
+            const tanggal = $('#filterTanggal').val();
+            $('#displayTanggal').text(formatTanggalIndonesia(tanggal));
+        }
+
         // Initialize DataTable for Deposits (Setoran)
-        $('#setoranTable').DataTable({
+        var setoranTable = $('#setoranTable').DataTable({
             "processing": true,
             "serverSide": true,
             "order": [],
             "ajax": {
                 "url": "<?= site_url('rekapitulasi_harian/fetch_setoran_data') ?>",
                 "type": "POST",
-                "dataSrc": function(json) {
+                "data": function (d) {
+                    d.tanggal = $('#filterTanggal').val();
+                },
+                "dataSrc": function (json) {
                     $('#totalSetoran').text(json.total_setoran);
                     updateSaldoAkhir(); // Recalculate the final balance
                     return json.data;
                 },
-                "error": function(xhr, error, thrown) {
+                "error": function (xhr, error, thrown) {
                     console.error("Setoran AJAX Error:", xhr.responseText);
                 }
             },
@@ -145,19 +184,22 @@
         });
 
         // Initialize DataTable for Withdrawals (Penarikan)
-        $('#penarikanTable').DataTable({
+        var penarikanTable = $('#penarikanTable').DataTable({
             "processing": true,
             "serverSide": true,
             "order": [],
             "ajax": {
                 "url": "<?= site_url('rekapitulasi_harian/fetch_penarikan_data') ?>",
                 "type": "POST",
-                "dataSrc": function(json) {
+                "data": function (d) {
+                    d.tanggal = $('#filterTanggal').val();
+                },
+                "dataSrc": function (json) {
                     $('#totalPenarikan').text(json.total_penarikan);
                     updateSaldoAkhir(); // Recalculate the final balance
                     return json.data;
                 },
-                "error": function(xhr, error, thrown) {
+                "error": function (xhr, error, thrown) {
                     console.error("Penarikan AJAX Error:", xhr.responseText);
                 }
             },
@@ -172,6 +214,13 @@
             "language": {
                 "url": "https://cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
             }
+        });
+
+        // Handle date change event
+        $('#filterTanggal').on('change', function () {
+            updateDisplayTanggal();
+            setoranTable.ajax.reload();
+            penarikanTable.ajax.reload();
         });
     });
 </script>

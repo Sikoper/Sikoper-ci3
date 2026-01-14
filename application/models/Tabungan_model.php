@@ -41,7 +41,6 @@ class Tabungan_model extends CI_Model
         ";
 
         $this->db->from($subquery);
-        $this->db->join('tbpegawai', 'tbpegawai.id = trans.pegawai_id');
 
         if ($id !== null) {
             $this->db->where('trans.simpanan_id', $id);
