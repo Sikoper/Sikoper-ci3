@@ -6,13 +6,13 @@ class Rekapitulasi_harian_model extends CI_Model
     // Configuration for Deposits (Setoran)
     var $setoran_table = 'tbdetail_simpanan';
     var $setoran_column_order = array(null, 'tanggal_setoran', 'jumlah_setoran', null);
-    var $setoran_column_search = array('TIME(tanggal_setoran)', 'jumlah_setoran', 'tn.nama_lengkap');
+    var $setoran_column_search = array('ts.no_rekening', 'tn.nama_lengkap');
     var $setoran_order = array('tanggal_setoran' => 'desc');
 
     // Configuration for Withdrawals (Penarikan)
     var $penarikan_table = 'tbdetail_penarikan';
     var $penarikan_column_order = array(null, 'tanggal_penarikan', 'jumlah_penarikan', null);
-    var $penarikan_column_search = array('TIME(tanggal_penarikan)', 'jumlah_penarikan', 'tn.nama_lengkap');
+    var $penarikan_column_search = array('ts.no_rekening', 'tn.nama_lengkap');
     var $penarikan_order = array('tanggal_penarikan' => 'desc');
 
     // Selected date for filtering

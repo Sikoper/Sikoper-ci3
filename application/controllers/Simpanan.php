@@ -339,14 +339,14 @@ class Simpanan extends CI_Controller
         }
 
         $no_rekening = safe_base64_decode($encoded_rek);
-        ;
         $simpanan = $this->Simpanan_model->get_data_by_norek($no_rekening);
-        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
 
         if (!$simpanan) {
             show_custom_404();
             return;
         }
+
+        $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
 
         $query_jenis = $this->db
             ->select('nama, id')
@@ -859,7 +859,78 @@ class Simpanan extends CI_Controller
         $jenistabungan_id = $jenis ? $jenis->id : 1;
 
         // Run December only import (with delete existing = true)
-        $results = $this->Tabungan_model->import_december_only($file_path, $pegawai_id, $jenistabungan_id, true);
+        $results = $this->Tabungan_model->import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, true);
+
+        echo json_encode($results);
+    }
+
+    /**
+     * Process import for specific month
+     */
+    public function proses_import_month()
+    {
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            echo json_encode(['success' => false, 'errors' => ['Unauthorized']]);
+            return;
+        }
+
+        // Check file upload
+        if (empty($_FILES['excel_file']['name'])) {
+            echo json_encode(['success' => false, 'errors' => ['File tidak ditemukan']]);
+            return;
+        }
+
+        // Get month and year from POST
+        $month_code = $this->input->post('month_code') ?: 'JAN';
+        $year = $this->input->post('year') ?: '2026';
+        $delete_existing = $this->input->post('delete_existing') !== 'false'; // Default true
+
+        // Validate month code
+        $valid_months = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUNI', 'JULI', 'AGS', 'SEP', 'OKT', 'NOP', 'DES'];
+        if (!in_array(strtoupper($month_code), $valid_months)) {
+            echo json_encode(['success' => false, 'errors' => ['Kode bulan tidak valid: ' . $month_code]]);
+            return;
+        }
+
+        // Configure upload
+        $config['upload_path'] = './uploads/import/';
+        $config['allowed_types'] = 'xls|xlsx';
+        $config['max_size'] = 102400; // 100MB
+        $config['file_name'] = 'tabungan_' . strtolower($month_code) . '_' . date('YmdHis') . '_' . uniqid();
+
+        // Create directory if not exists
+        if (!is_dir($config['upload_path'])) {
+            mkdir($config['upload_path'], 0755, true);
+        }
+
+        $this->load->library('upload', $config);
+
+        if (!$this->upload->do_upload('excel_file')) {
+            echo json_encode(['success' => false, 'errors' => [$this->upload->display_errors('', '')]]);
+            return;
+        }
+
+        $upload_data = $this->upload->data();
+        $file_path = $upload_data['full_path'];
+
+        // Get pegawai_id from session or use default
+        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+
+        // Get jenistabungan_id for Tabungan
+        $jenis = $this->db->like('nama', 'Tabungan', 'both')->get('tbjenistabungan')->row();
+        $jenistabungan_id = $jenis ? $jenis->id : 1;
+
+        // Run import by month
+        $results = $this->Tabungan_model->import_by_month(
+            $file_path,
+            $month_code,
+            $year,
+            $pegawai_id,
+            $jenistabungan_id,
+            $delete_existing
+        );
 
         echo json_encode($results);
     }

@@ -1,0 +1,54 @@
+=== DATA DATABASE UNTUK NO. REKENING T482 ===
+
+=== TBSIMPANAN ===
+ID: 13532
+Nasabah ID: 17668
+No Rekening: T482
+Nama Nasabah: NI WAYAN SEKAR
+Jumlah Simpanan: Rp 150.000
+Total Setoran: Rp 0
+Total Penarikan: Rp 0
+Created At: 2026-02-05 08:58:07
+
+=== TBNASABAH ===
+ID: 17668
+Nama Lengkap: NI WAYAN SEKAR
+NIK: IMP20260204102348b35
+Alamat: GERIA
+
+=== DETAIL SETORAN (tbdetail_simpanan) ===
+1. 2026-01-02 12:00:00 - Rp 100.000
+2. 2026-01-05 12:00:00 - Rp 200.000
+3. 2026-01-06 12:00:00 - Rp 100.000
+4. 2026-01-07 12:00:00 - Rp 100.000
+5. 2026-01-08 12:00:00 - Rp 100.000
+6. 2026-01-09 12:00:00 - Rp 100.000
+7. 2026-01-12 12:00:00 - Rp 200.000
+8. 2026-01-13 12:00:00 - Rp 100.000
+9. 2026-01-14 12:00:00 - Rp 100.000
+10. 2026-01-15 12:00:00 - Rp 100.000
+11. 2026-01-19 12:00:00 - Rp 400.000
+12. 2026-01-20 12:00:00 - Rp 200.000
+13. 2026-01-21 12:00:00 - Rp 200.000
+14. 2026-01-22 12:00:00 - Rp 100.000
+15. 2026-01-23 12:00:00 - Rp 200.000
+16. 2026-01-26 12:00:00 - Rp 200.000
+17. 2026-01-27 12:00:00 - Rp 400.000
+18. 2026-01-28 12:00:00 - Rp 100.000
+19. 2026-01-30 12:00:00 - Rp 100.000
+20. 2026-02-02 12:00:00 - Rp 200.000
+... dan 1 transaksi lainnya
+Total: 21 transaksi, Rp 3.400.000
+
+=== DETAIL PENARIKAN (tbdetail_penarikan) ===
+1. 2026-01-27 12:00:00 - Rp 3.250.000 (Status: disetujui)
+Total: 1 transaksi, Rp 3.250.000
+
+
+=== PERBANDINGAN DENGAN EXCEL ===
+Excel NIN 482:
+  - Nama: NI WAYAN SEKAR
+  - Saldo Awal Jan: Rp 406.677
+  - Setoran Jan: Rp 3.100.000 (19 transaksi)
+  - Penarikan Jan: Rp 3.250.000 (1 transaksi hari 27)
+  - Saldo Akhir (Col 102): Rp 256.777

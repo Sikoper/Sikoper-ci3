@@ -97,7 +97,7 @@ class Deposito extends CI_Controller
                                 </button>';
                 } else {
                     $row[] = '
-                            <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->id) . '\'">
+                            <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->no_rekening) . '\'">
                                 <i class="fa fa-info fa-fw"></i>
                             </button>
                             <button type="button" class="btn btn-primary" onclick="printSertifikat(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
@@ -369,10 +369,14 @@ class Deposito extends CI_Controller
                         // Determine status based on user choice
                         $status_penarikan = $withdrawal_mode ? 'sudah_ditarik' : 'belum_ditarik';
 
+                        // Get actual nasabah name for log
+                        $nasabah_data = $this->Nasabah_model->get_data_by_id($nasabah_id_final);
+                        $nama_nasabah_log = $nasabah_data ? $nasabah_data->nama_lengkap : 'Unknown';
+
                         $bunga_logs[] = [
                             'deposito_id' => $deposito_id,
                             'no_rekening' => $no_rekening,
-                            'nama_nasabah' => $nasabah, // Ideally fetch name, but ID used for simpler constraint usually
+                            'nama_nasabah' => $nama_nasabah_log, // Now uses actual name instead of ID
                             'jumlah_bunga' => $bunga_bulanan_rounded,
                             'rate_bunga' => $bg_rate,
                             'tanggal_perhitungan' => $log_date,
@@ -590,14 +594,14 @@ class Deposito extends CI_Controller
         }
 
         $no_rekening = safe_base64_decode($encoded_rek);
-        ;
         $deposito = $this->Deposito_model->get_data_by_norek($no_rekening);
-        $nasabah = $this->Nasabah_model->get_data_by_id($deposito->nasabah_id);
 
         if (!$deposito) {
             show_custom_404();
             return;
         }
+
+        $nasabah = $this->Nasabah_model->get_data_by_id($deposito->nasabah_id);
 
         $query_jenis = $this->db
             ->select('nama, id')
@@ -805,28 +809,41 @@ class Deposito extends CI_Controller
         $bunga_tersedia_from_log = $this->Deposito_model->get_bunga_tersedia_from_log($deposito->id);
         $bunga_sudah_dibayar = $this->Deposito_model->get_bunga_sudah_dibayar_from_log($deposito->id);
 
-        // Calculate bunga sampai jatuh tempo
-        if ($deposito->status == 'ditutup') {
-            $hutang_bunga_saat_ini = 0;
-            $bunga_sampai_jatuh_tempo = $bunga_sudah_dibayar;
-        } else {
-            $bunga_sampai_jatuh_tempo = ($deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $deposito->durasi);
-            $hutang_bunga_saat_ini = $bunga_sampai_jatuh_tempo - $bunga_sudah_dibayar;
-        }
+        // Calculate bunga sampai jatuh tempo (total interest if held until maturity)
+        $bunga_sampai_jatuh_tempo = ($deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $deposito->durasi);
 
-        // Calculate bunga_tersedia (available interest to withdraw)
-        // = Total bunga earned so far - bunga already paid
-        // Calculate months since deposit started
+        // Calculate months elapsed using Excel method:
+        // Count complete months based on deposit anniversary date
         $start_date = new DateTime($deposito->tanggal_deposito);
         $now = new DateTime();
-        $interval = $start_date->diff($now);
-        $months_elapsed = ($interval->y * 12) + $interval->m;
-        if ($months_elapsed > $deposito->durasi) {
-            $months_elapsed = $deposito->durasi; // Cap at duration
+
+        // Excel counts complete months from deposit date
+        // If today is before the same day of month as deposit, subtract 1
+        $months_elapsed = ($now->format('Y') - $start_date->format('Y')) * 12
+            + ($now->format('n') - $start_date->format('n'));
+
+        // If we haven't reached the deposit anniversary day this month, reduce by 1
+        if ((int) $now->format('j') < (int) $start_date->format('j')) {
+            $months_elapsed--;
         }
 
+        // Ensure months_elapsed is not negative and capped at duration
+        $months_elapsed = max(0, min($months_elapsed, $deposito->durasi));
+
+        // Calculate bunga_earned_so_far (interest earned based on complete months - "BUNGA JATUH TEMPO" in Excel)
         $bunga_earned_so_far = $deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $months_elapsed;
-        $bunga_tersedia = max(0, $bunga_earned_so_far - $bunga_sudah_dibayar);
+
+        // CORRECTED: Hutang Bunga = Bunga Jatuh Tempo - Bunga Yang Sudah Dibayar
+        // Follows Excel KWITANSI calculation exactly
+        // Negative = overpaid (customer received advance), Positive = owed to customer
+        if ($deposito->status == 'ditutup') {
+            $hutang_bunga_saat_ini = 0;
+        } else {
+            $hutang_bunga_saat_ini = $bunga_earned_so_far - $bunga_sudah_dibayar;
+        }
+
+        // Bunga tersedia = interest that can be withdrawn now (cannot be negative)
+        $bunga_tersedia = max(0, $hutang_bunga_saat_ini);
 
         // Total Diterima = Bunga Yang Sudah Dibayar (what customer has received)
         $total_diterima_nasabah = $bunga_sudah_dibayar;

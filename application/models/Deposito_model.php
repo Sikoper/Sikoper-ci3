@@ -1116,27 +1116,36 @@ class Deposito_model extends CI_Model
 
         // Step 2: Import PEMBAYARAN BUNGA DEPOSITO (if sheet exists)
         // This sheet tracks interest payments history
-        // Col 6 = SALDO PINDAHAN (outstanding balance from previous year) - belum_ditarik
         // Cols 7-30 = monthly payments (date + amount pairs) - these are sudah_ditarik
         if ($sheet_bunga !== false && count($no_seri_to_deposito_id) > 0) {
             $rows_bunga = $xls->rows($sheet_bunga);
 
-            // Column mapping: Col 7 onwards are monthly payment pairs (TGL, Amount)
-            // Jan=7,8 Feb=9,10 Mar=11,12 Apr=13,14 May=15,16 Jun=17,18
-            // Jul=19,20 Aug=21,22 Sep=23,24 Oct=25,26 Nov=27,28 Dec=29,30
+            // DELETE old bunga log entries for all depositos being imported
+            // This prevents duplicate data when re-importing
+            $deposito_ids_to_clear = array_values($no_seri_to_deposito_id);
+            if (!empty($deposito_ids_to_clear)) {
+                $this->db->where_in('deposito_id', $deposito_ids_to_clear);
+                $this->db->where('input_method', 'import'); // Only delete imported entries, keep manual entries
+                $deleted_count = $this->db->delete('tb_bunga_deposito_log');
+                $results['bunga_log']['deleted'] = $this->db->affected_rows();
+            }
+
+            // CORRECTED Column mapping based on Excel structure (verified via debug):
+            // Col A(0)=NIN, B(1)=NAMA, C(2)=ALAMAT, D(3)=empty, E(4)=empty, F(5)=PINDAHAN TGL, G(6)=PINDAHAN SALDO
+            // Col H(7)=JAN TGL, I(8)=JAN Amount, J(9)=FEB TGL, K(10)=FEB Amount, etc.
             $months = [
-                7 => '01',
-                9 => '02',
-                11 => '03',
-                13 => '04',
-                15 => '05',
-                17 => '06',
-                19 => '07',
-                21 => '08',
-                23 => '09',
-                25 => '10',
-                27 => '11',
-                29 => '12'
+                7 => '01',  // JAN: date=7 (H), amount=8 (I)
+                9 => '02',  // FEB: date=9 (J), amount=10 (K)
+                11 => '03', // MAR: date=11 (L), amount=12 (M)
+                13 => '04', // APR: date=13 (N), amount=14 (O)
+                15 => '05', // MAY: date=15 (P), amount=16 (Q)
+                17 => '06', // JUN: date=17 (R), amount=18 (S)
+                19 => '07', // JUL: date=19 (T), amount=20 (U)
+                21 => '08', // AUG: date=21 (V), amount=22 (W)
+                23 => '09', // SEP: date=23 (X), amount=24 (Y)
+                25 => '10', // OCT: date=25 (Z), amount=26 (AA)
+                27 => '11', // NOV: date=27 (AB), amount=28 (AC)
+                29 => '12'  // DEC: date=29 (AD), amount=30 (AE)
             ];
 
             for ($i = 3; $i < count($rows_bunga); $i++) {
@@ -1148,15 +1157,12 @@ class Deposito_model extends CI_Model
 
                 $deposito_id = $no_seri_to_deposito_id[$nin];
 
-                // Get SALDO PINDAHAN from Col 6
-                // Based on Excel KWITANSI BUNGA DEPOSITO, this represents "YG SUDAH DI BAYAR"
-                // (interest that has ALREADY been paid in previous periods)
-                // So status should be 'sudah_ditarik' NOT 'belum_ditarik'
+                // Import SALDO PINDAHAN (Col G = index 6) - YG SUDAH DI BAYAR from previous periods
                 $saldo_pindahan = $this->_parse_amount_safe($row[6] ?? 0);
-
-                // Insert previous balance as PAID interest if > 0
                 if ($saldo_pindahan > 0) {
-                    $this->_insert_bunga_log($deposito_id, $saldo_pindahan, '2024-12-31', 'sudah_ditarik', $results['batch_id'], 'Saldo pindahan (bunga sudah dibayar)');
+                    // Use PINDAHAN TGL (Col F = index 5) if available, otherwise use 2024-12-31
+                    $pindahan_date = $this->_parse_date_safe($row[5] ?? '') ?: '2024-12-31';
+                    $this->_insert_bunga_log($deposito_id, $saldo_pindahan, $pindahan_date, 'sudah_ditarik', $results['batch_id'], 'Saldo pindahan (bunga periode sebelumnya)');
                     $results['bunga_log']['inserted']++;
                 }
 

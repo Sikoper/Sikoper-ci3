@@ -97,11 +97,15 @@
                     html += '</div>';
 
                     html += '<div class="row mb-3">';
-                    html += '<div class="col-md-4"><div class="card bg-primary text-white"><div class="card-body text-center">';
+                    html += '<div class="col-md-3"><div class="card bg-primary text-white"><div class="card-body text-center">';
                     html += '<h5 class="mb-0">' + (response.bunga_log ? response.bunga_log.inserted : 0) + '</h5>';
-                    html += '<small>Log Bunga</small></div></div></div>';
+                    html += '<small>Log Bunga Baru</small></div></div></div>';
 
-                    html += '<div class="col-md-4"><div class="card bg-secondary text-white"><div class="card-body text-center">';
+                    html += '<div class="col-md-3"><div class="card bg-warning text-dark"><div class="card-body text-center">';
+                    html += '<h5 class="mb-0">' + (response.bunga_log ? (response.bunga_log.deleted || 0) : 0) + '</h5>';
+                    html += '<small>Log Bunga Lama Dihapus</small></div></div></div>';
+
+                    html += '<div class="col-md-3"><div class="card bg-secondary text-white"><div class="card-body text-center">';
                     html += '<h5 class="mb-0">' + (response.batch_id || '-') + '</h5>';
                     html += '<small>Batch ID</small></div></div></div>';
                     html += '</div>';

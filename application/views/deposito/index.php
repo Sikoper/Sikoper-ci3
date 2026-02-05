@@ -4,9 +4,11 @@
             <button class="btn btn-primary" onclick="window.location='<?= base_url('deposito/add') ?>'">
                 <i class="fa fa-plus-circle"></i> Buka Deposito Baru
             </button>
-            <button class="btn btn-success ms-2" onclick="window.location='<?= base_url('deposito/import') ?>'">
-                <i class="fa fa-upload"></i> Import Excel
-            </button>
+            <?php if ($this->session->userdata('level') == 'Admin'): ?>
+                <button class="btn btn-success ms-2" onclick="window.location='<?= base_url('deposito/import') ?>'">
+                    <i class="fa fa-upload"></i> Import Excel
+                </button>
+            <?php endif; ?>
         </h4>
     </div>
     <div class="card-body">

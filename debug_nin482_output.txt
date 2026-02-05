@@ -1,0 +1,50 @@
+=== MENCARI DATA NIN/NO_TAB 482 ===
+
+=== DATA DARI JAN SHEET ===
+Found in JAN sheet at row 485:
+  [0] NO_URUT = 482
+  [1] NAMA = NI WAYAN SEKAR
+  [2] NO_TAB = 482
+  [3] ALAMAT = GERIA
+  [4] SALDO_AWAL = 406677
+
+  SETORAN HARIAN (Januari):
+    Hari 2: Rp 100.000
+    Hari 5: Rp 200.000
+    Hari 6: Rp 100.000
+    Hari 7: Rp 100.000
+    Hari 8: Rp 100.000
+    Hari 9: Rp 100.000
+    Hari 12: Rp 200.000
+    Hari 13: Rp 100.000
+    Hari 14: Rp 100.000
+    Hari 15: Rp 100.000
+    Hari 19: Rp 400.000
+    Hari 20: Rp 200.000
+    Hari 21: Rp 200.000
+    Hari 22: Rp 100.000
+    Hari 23: Rp 200.000
+    Hari 26: Rp 200.000
+    Hari 27: Rp 400.000
+    Hari 28: Rp 100.000
+    Hari 30: Rp 100.000
+
+=== DATA DARI DES SHEET ===
+Found in DES sheet at row 485:
+  [0] NO_URUT = 482
+  [1] NAMA = ''
+  [2] NO_TAB = 482
+  [3] ALAMAT = ''
+  [4] SALDO_BULAN_LALU = 567177
+  [102] SALDO_BULAN_INI = 568277
+
+  SETORAN HARIAN (Desember):
+
+
+=== PERBANDINGAN DENGAN SCREENSHOT ===
+Screenshot menunjukkan:
+  - No. Rekening: T482
+  - Nasabah: NI WAYAN SEKAR
+  - Saldo: Rp 150.000,00
+  - Tanggal Simpanan: 01-01-2026
+  - Setoran: Rp 100.000 dan Rp 200.000 per hari

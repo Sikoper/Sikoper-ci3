@@ -65,7 +65,8 @@
                                     <thead>
                                         <tr>
                                             <th class="text-center">No.</th>
-                                            <th>Waktu</th>
+                                            <th>Nomor Induk Nasabah</th>
+                                            <th>Nama Nasabah</th>
                                             <th class="text-end">Jumlah</th>
                                         </tr>
                                     </thead>
@@ -87,7 +88,8 @@
                                     <thead>
                                         <tr>
                                             <th class="text-center">No.</th>
-                                            <th>Waktu</th>
+                                            <th>Nomor Induk Nasabah</th>
+                                            <th>Nama Nasabah</th>
                                             <th class="text-end">Jumlah</th>
                                         </tr>
                                     </thead>
@@ -176,10 +178,26 @@
                 "className": "text-center"
             }, {
                 "targets": [2],
+                "className": "text-start"
+            }, {
+                "targets": [3],
                 "className": "text-end"
             }],
             "language": {
-                "url": "https://cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
+                "processing": "Memproses...",
+                "search": "Cari:",
+                "lengthMenu": "Tampilkan _MENU_ entri",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "infoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+                "infoFiltered": "(disaring dari _MAX_ total entri)",
+                "zeroRecords": "Tidak ada data yang tersedia pada tabel ini",
+                "emptyTable": "Tidak ada data yang tersedia pada tabel ini",
+                "paginate": {
+                    "first": "Pertama",
+                    "previous": "Sebelumnya",
+                    "next": "Selanjutnya",
+                    "last": "Terakhir"
+                }
             }
         });
 
@@ -209,10 +227,26 @@
                 "className": "text-center"
             }, {
                 "targets": [2],
+                "className": "text-start"
+            }, {
+                "targets": [3],
                 "className": "text-end"
             }],
             "language": {
-                "url": "https://cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
+                "processing": "Memproses...",
+                "search": "Cari:",
+                "lengthMenu": "Tampilkan _MENU_ entri",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "infoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+                "infoFiltered": "(disaring dari _MAX_ total entri)",
+                "zeroRecords": "Tidak ada data yang tersedia pada tabel ini",
+                "emptyTable": "Tidak ada data yang tersedia pada tabel ini",
+                "paginate": {
+                    "first": "Pertama",
+                    "previous": "Sebelumnya",
+                    "next": "Selanjutnya",
+                    "last": "Terakhir"
+                }
             }
         });
 

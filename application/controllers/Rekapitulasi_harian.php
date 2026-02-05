@@ -36,7 +36,7 @@ class Rekapitulasi_harian extends CI_Controller
     public function fetch_setoran_data()
     {
         // Get selected date from POST, default to today
-        $tanggal = $this->input->post('tanggal') ?? date('Y-m-d');
+        $tanggal = $this->input->post('tanggal') ?: date('Y-m-d');
 
         $list = $this->Rekapitulasi_harian_model->get_setoran_datatables($tanggal);
         $summary = $this->Rekapitulasi_harian_model->get_setoran_summary($tanggal);
@@ -47,7 +47,8 @@ class Rekapitulasi_harian extends CI_Controller
             $no++;
             $row = array();
             $row[] = '<div class="text-center">' . $no . '</div>';
-            $row[] = date('H:i:s', strtotime($item->tanggal_setoran));
+            $row[] = $item->no_rekening ?? '-';
+            $row[] = $item->nama_nasabah ?? '-';
             $row[] = '<div class="text-end fw-bold">Rp ' . number_format($item->jumlah_setoran, 0, ',', '.') . '</div>';
             $data[] = $row;
         }
@@ -73,7 +74,7 @@ class Rekapitulasi_harian extends CI_Controller
     public function fetch_penarikan_data()
     {
         // Get selected date from POST, default to today
-        $tanggal = $this->input->post('tanggal') ?? date('Y-m-d');
+        $tanggal = $this->input->post('tanggal') ?: date('Y-m-d');
 
         $list = $this->Rekapitulasi_harian_model->get_penarikan_datatables($tanggal);
         $summary = $this->Rekapitulasi_harian_model->get_penarikan_summary($tanggal);
@@ -84,7 +85,8 @@ class Rekapitulasi_harian extends CI_Controller
             $no++;
             $row = array();
             $row[] = '<div class="text-center">' . $no . '</div>';
-            $row[] = date('H:i:s', strtotime($item->tanggal_penarikan));
+            $row[] = $item->no_rekening ?? '-';
+            $row[] = $item->nama_nasabah ?? '-';
             $row[] = '<div class="text-end fw-bold">Rp ' . number_format($item->jumlah_penarikan, 0, ',', '.') . '</div>';
             $data[] = $row;
         }
