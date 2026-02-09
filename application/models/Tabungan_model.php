@@ -559,7 +559,7 @@ class Tabungan_model extends CI_Model
 	private function _create_nasabah_from_import($nama, $alamat = '-', $telp = '-', $pegawai_id = null)
 	{
 		$data = [
-			'nik' => 'IMP' . date('YmdHis') . substr(uniqid(), -4),
+			'nik' => '-',
 			'nama_lengkap' => $nama,
 			'jenis_kelamin' => '?',
 			'tempat_lahir' => '-',
@@ -1503,5 +1503,686 @@ class Tabungan_model extends CI_Model
 
 		return $results;
 	}
+
+	/**
+	 * Get sheet names from an Excel file
+	 * 
+	 * @param string $file_path Path to Excel file
+	 * @return array List of sheet names
+	 */
+	public function get_excel_sheet_names($file_path)
+	{
+		// Increase limits for large Excel files
+		ini_set('memory_limit', '1024M');
+		ini_set('max_execution_time', 300);
+		
+		$result = [
+			'success' => false,
+			'sheets' => [],
+			'errors' => []
+		];
+
+		if (!file_exists($file_path)) {
+			$result['errors'][] = 'File tidak ditemukan: ' . $file_path;
+			return $result;
+		}
+
+		$file_ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+
+		if ($file_ext === 'xlsx') {
+			require_once APPPATH . 'third_party/SimpleXLSX.php';
+			$xls = \Shuchkin\SimpleXLSX::parse($file_path);
+			if (!$xls) {
+				$result['errors'][] = 'Gagal membaca file: ' . \Shuchkin\SimpleXLSX::parseError();
+				return $result;
+			}
+		} else {
+			require_once APPPATH . 'third_party/SimpleXLS.php';
+			$xls = \Shuchkin\SimpleXLS::parse($file_path);
+			if (!$xls) {
+				$result['errors'][] = 'Gagal membaca file: ' . \Shuchkin\SimpleXLS::parseError();
+				return $result;
+			}
+		}
+
+		$sheets = $xls->sheetNames();
+		$result['sheets'] = [];
+		
+		foreach ($sheets as $index => $name) {
+			$result['sheets'][] = [
+				'index' => $index,
+				'name' => $name
+			];
+		}
+
+		$result['success'] = true;
+		return $result;
+	}
+
+	/**
+	 * Preview sheet data for column mapping
+	 * Returns first N rows of a specific sheet with column headers
+	 * 
+	 * @param string $file_path Path to Excel file
+	 * @param string $month_code Month code (JAN, FEB, etc.)
+	 * @param int $limit Number of rows to return
+	 * @return array Preview data with headers and rows
+	 */
+	public function preview_sheet_data($file_path, $month_code, $limit = 10)
+	{
+		// Increase limits for large Excel files
+		ini_set('memory_limit', '2048M');
+		ini_set('max_execution_time', 300);
+
+		$result = [
+			'success' => false,
+			'sheet_name' => $month_code,
+			'headers' => [],
+			'rows' => [],
+			'total_columns' => 0,
+			'total_rows' => 0,
+			'suggested_mapping' => [],
+			'errors' => []
+		];
+
+		if (!file_exists($file_path)) {
+			$result['errors'][] = 'File tidak ditemukan: ' . $file_path;
+			return $result;
+		}
+
+		// Detect file type
+		$file_ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+
+		if ($file_ext === 'xlsx') {
+			require_once APPPATH . 'third_party/SimpleXLSX.php';
+			$xls = \Shuchkin\SimpleXLSX::parse($file_path);
+			if (!$xls) {
+				$result['errors'][] = 'Gagal membaca file: ' . \Shuchkin\SimpleXLSX::parseError();
+				return $result;
+			}
+		} else {
+			require_once APPPATH . 'third_party/SimpleXLS.php';
+			$xls = \Shuchkin\SimpleXLS::parse($file_path);
+			if (!$xls) {
+				$result['errors'][] = 'Gagal membaca file: ' . \Shuchkin\SimpleXLS::parseError();
+				return $result;
+			}
+		}
+
+		$sheets = $xls->sheetNames();
+		$result['available_sheets'] = $sheets;
+
+		// Find sheet by month code
+		$sheet_index = array_search(strtoupper($month_code), array_map('strtoupper', $sheets));
+		if ($sheet_index === false) {
+			$result['errors'][] = 'Sheet ' . $month_code . ' tidak ditemukan';
+			return $result;
+		}
+
+		$rows = $xls->rows($sheet_index);
+		$result['total_rows'] = count($rows);
+		$result['total_columns'] = isset($rows[0]) ? count($rows[0]) : 0;
+
+		// Generate column letters (A, B, C, ... AA, AB, etc.)
+		$col_letters = [];
+		for ($i = 0; $i < $result['total_columns']; $i++) {
+			$col_letters[] = $this->_column_letter($i);
+		}
+		$result['column_letters'] = $col_letters;
+
+		// Get header row (row 3 typically contains headers)
+		if (isset($rows[2])) {
+			$result['headers'] = array_map(function($val) {
+				return trim((string) $val);
+			}, $rows[2]);
+		}
+
+		// Build name mapping from JAN sheet (for non-JAN sheets)
+		$jan_name_map = [];
+		$is_jan_sheet = strtoupper($month_code) === 'JAN';
+		
+		if (!$is_jan_sheet) {
+			$jan_index = array_search('JAN', array_map('strtoupper', $sheets));
+			if ($jan_index !== false) {
+				$jan_rows = $xls->rows($jan_index);
+				// Default JAN column indices: 0=NO, 1=NAMA, 2=NO_TAB, 3=ALAMAT
+				for ($i = 3; $i < count($jan_rows); $i++) {
+					$jan_row = $jan_rows[$i];
+					$jan_no_tab = intval($jan_row[2] ?? 0);
+					$jan_nama = trim($jan_row[1] ?? '');
+					$jan_alamat = trim($jan_row[3] ?? '-');
+					
+					if ($jan_no_tab > 0 && !empty($jan_nama)) {
+						$jan_name_map[$jan_no_tab] = [
+							'nama' => $jan_nama,
+							'alamat' => $jan_alamat
+						];
+					}
+				}
+			}
+		}
+		$result['jan_name_map'] = $jan_name_map;
+		$result['is_jan_sheet'] = $is_jan_sheet;
+
+		// Get data rows (starting from row 4)
+		for ($i = 3; $i < min(count($rows), 3 + $limit); $i++) {
+			$row_data = [];
+			foreach ($rows[$i] as $idx => $cell) {
+				$row_data[] = [
+					'col_index' => $idx,
+					'col_letter' => $this->_column_letter($idx),
+					'value' => $this->_format_preview_value($cell)
+				];
+			}
+			$result['rows'][] = $row_data;
+		}
+
+		// Try to auto-detect column mapping based on month
+		$result['suggested_mapping'] = $this->_detect_column_mapping($rows, $month_code);
+
+		$result['success'] = true;
+		return $result;
+	}
+
+	/**
+	 * Convert column index to Excel letter (0=A, 1=B, 26=AA, etc.)
+	 */
+	private function _column_letter($index)
+	{
+		$letter = '';
+		while ($index >= 0) {
+			$letter = chr(65 + ($index % 26)) . $letter;
+			$index = intval($index / 26) - 1;
+		}
+		return $letter;
+	}
+
+	/**
+	 * Format cell value for preview display
+	 */
+	private function _format_preview_value($value)
+	{
+		if ($value === null || $value === '') {
+			return '';
+		}
+		if (is_numeric($value) && $value > 1000000) {
+			return number_format($value, 0, ',', '.');
+		}
+		return (string) $value;
+	}
+
+	/**
+	 * Auto-detect column mapping based on header keywords
+	 */
+	private function _detect_column_mapping($rows, $month_code = '')
+	{
+		// Determine structure based on month:
+		// JAN: NO(0), NAMA(1), NO_TAB(2), ALAMAT(3), SALDO(4), SETORAN(5-35), PENARIKAN(36-66)
+		// FEB+: NO(0), NAMA(1), NO(2), NAMA(3), NO_TAB(4), ALAMAT(5), SALDO(6), SETORAN(7-35), PENARIKAN(36-64)
+		
+		$isJan = (strtoupper($month_code) === 'JAN');
+		
+		if ($isJan) {
+			// JAN structure
+			$mapping = [
+				'no_urut' => 0,           // A
+				'nama' => 1,              // B
+				'no_tab' => 2,            // C
+				'alamat' => 3,            // D
+				'saldo_awal' => 4,        // E (SALDO BULAN LALU)
+				'setoran_start' => 5,     // F (first setoran column, day 1)
+				'setoran_end' => 35,      // AJ (last setoran column, day 31)
+				'penarikan_start' => 36,  // AK (first penarikan column, day 1)
+				'penarikan_end' => 66,    // BO (last penarikan column, day 31)
+				'bunga' => 97             // CT (bunga column)
+			];
+		} else {
+			// FEB+ structure (has extra NO/NAMA columns at start)
+			$mapping = [
+				'no_urut' => 0,           // A
+				'nama' => 1,              // B (will be fetched from JAN for other months)
+				'no_tab' => 4,            // E
+				'alamat' => 5,            // F
+				'saldo_awal' => 6,        // G (SALDO BULAN LALU)
+				'setoran_start' => 7,     // H (first setoran column, day 1)
+				'setoran_end' => 35,      // AJ (last setoran column, day 29)
+				'penarikan_start' => 36,  // AK (first penarikan column, day 1)
+				'penarikan_end' => 64,    // BM (last penarikan column, day 29)
+				'bunga' => 97             // CT (bunga column)
+			];
+		}
+
+		// Try to find SALDO header to verify/adjust mapping
+		if (isset($rows[2])) {
+			$headers = $rows[2];
+			foreach ($headers as $idx => $header) {
+				$h = strtoupper(trim((string) $header));
+				
+				// Find SALDO column to verify structure
+				if (strpos($h, 'SALDO') !== false) {
+					$mapping['saldo_awal'] = $idx;
+					$mapping['setoran_start'] = $idx + 1;
+					
+					// Recalculate based on detected saldo position
+					if ($idx == 4) {
+						// JAN structure
+						$mapping['setoran_end'] = 35;
+						$mapping['penarikan_start'] = 36;
+						$mapping['penarikan_end'] = 66;
+					} else if ($idx == 6) {
+						// FEB+ structure
+						$mapping['setoran_end'] = 35;
+						$mapping['penarikan_start'] = 36;
+						$mapping['penarikan_end'] = 64;
+					}
+					break;
+				}
+			}
+		}
+
+		return $mapping;
+	}
+
+	/**
+	 * Import from specific month sheet with user-defined column mapping
+	 * 
+	 * @param string $file_path Path to Excel file
+	 * @param string $month_code Month code (JAN, FEB, etc.)
+	 * @param string $year Year
+	 * @param int $pegawai_id Employee ID
+	 * @param int $jenistabungan_id Savings type ID
+	 * @param array $mapping Column mapping array
+	 * @param bool $delete_month Delete existing transactions for this month
+	 * @return array Results
+	 */
+	public function import_by_month_with_mapping($file_path, $month_code, $year, $pegawai_id, $jenistabungan_id, $mapping, $delete_month = true)
+	{
+		// Debug Log
+		$log_file = APPPATH . 'logs/import_debug_' . date('Y-m-d') . '.log';
+		$log_msg = "\n[" . date('H:i:s') . "] START IMPORT MAPPING\n";
+		$log_msg .= "File: $file_path\nMonth: $month_code, Year: $year\n";
+		$log_msg .= "Mapping: " . json_encode($mapping) . "\n";
+
+		ini_set('memory_limit', '2048M');
+		ini_set('max_execution_time', 600);
+
+		// Month mapping
+		$month_map = [
+			'JAN' => '01', 'FEB' => '02', 'MAR' => '03', 'APR' => '04',
+			'MEI' => '05', 'JUNI' => '06', 'JULI' => '07', 'AGS' => '08',
+			'SEP' => '09', 'OKT' => '10', 'NOP' => '11', 'DES' => '12'
+		];
+
+		// Clean month code to handle potential extra chars
+		// Remove any numeric prefix like "0: " or "1: "
+		$clean_month_code = preg_replace('/^\d+:\s*/', '', $month_code);
+		$clean_month_code = strtoupper(trim($clean_month_code));
+		
+		// If clean code is not in map, try to find a key that is contained in it
+		if (!isset($month_map[$clean_month_code])) {
+			foreach ($month_map as $key => $val) {
+				if (stripos($clean_month_code, $key) !== false) {
+					$clean_month_code = $key;
+					break;
+				}
+			}
+		}
+
+		$log_msg .= "Clean Month Code: $clean_month_code\n";
+
+		// Use the clean code for logic
+		$month = $month_map[$clean_month_code] ?? null;
+
+		$results = [
+			'success' => false,
+			'batch_id' => $clean_month_code . date('YmdHis'),
+			'importing_sheet' => $month_code . ' (' . $year . ')',
+			'mapping_used' => $mapping,
+			'simpanan' => ['inserted' => 0, 'updated' => 0, 'errors' => 0],
+			'nasabah' => ['created' => 0, 'found' => 0],
+			'setoran' => ['inserted' => 0],
+			'penarikan' => ['inserted' => 0],
+			'bunga' => ['inserted' => 0],
+			'deleted' => ['setoran' => 0, 'penarikan' => 0, 'bunga' => 0],
+			'details' => [],
+			'errors' => []
+		];
+
+		if (!file_exists($file_path)) {
+			$log_msg .= "ERROR: File not found\n";
+			file_put_contents($log_file, $log_msg, FILE_APPEND);
+			$results['errors'][] = 'File tidak ditemukan: ' . $file_path;
+			return $results;
+		}
+
+		if (!$month) {
+			$log_msg .= "ERROR: Invalid month map for $clean_month_code\n";
+			file_put_contents($log_file, $log_msg, FILE_APPEND);
+			$results['errors'][] = 'Kode bulan tidak valid: ' . $month_code;
+			return $results;
+		}
+
+		$month = $month_map[$month_code];
+
+		// Detect file type
+		$file_ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+
+		if ($file_ext === 'xlsx') {
+			require_once APPPATH . 'third_party/SimpleXLSX.php';
+			$xls = \Shuchkin\SimpleXLSX::parse($file_path);
+			if (!$xls) {
+				$results['errors'][] = 'Gagal membaca file Excel (.xlsx): ' . \Shuchkin\SimpleXLSX::parseError();
+				return $results;
+			}
+		} else {
+			require_once APPPATH . 'third_party/SimpleXLS.php';
+			$xls = \Shuchkin\SimpleXLS::parse($file_path);
+			if (!$xls) {
+				$results['errors'][] = 'Gagal membaca file Excel (.xls): ' . \Shuchkin\SimpleXLS::parseError();
+				return $results;
+			}
+		}
+
+		$sheets = $xls->sheetNames();
+
+		// Find sheet by month code
+		$sheet_index = array_search($month_code, array_map('strtoupper', $sheets));
+		if ($sheet_index === false) {
+			$results['errors'][] = 'Sheet ' . $month_code . ' tidak ditemukan';
+			return $results;
+		}
+
+		// Disable FK checks
+		$this->db->query('SET FOREIGN_KEY_CHECKS=0');
+
+		// Delete existing transactions for the month if requested
+		if ($delete_month) {
+			$date_start = $year . '-' . $month . '-01';
+			$date_end = $year . '-' . $month . '-31';
+
+			// Delete ALL setoran for this month
+			$this->db->where('tanggal_setoran >=', $date_start)
+				->where('tanggal_setoran <=', $date_end . ' 23:59:59')
+				->delete('tbdetail_simpanan');
+			$results['deleted']['setoran'] = $this->db->affected_rows();
+
+			// Delete ALL penarikan for this month
+			$this->db->where('tanggal_penarikan >=', $date_start)
+				->where('tanggal_penarikan <=', $date_end . ' 23:59:59')
+				->delete('tbdetail_penarikan');
+			$results['deleted']['penarikan'] = $this->db->affected_rows();
+
+			// Delete ALL bunga (tbtransaksi) for this month
+			$this->db->where('tanggal_transaksi >=', $date_start)
+				->where('tanggal_transaksi <=', $date_end . ' 23:59:59')
+				->delete('tbtransaksi');
+			$results['deleted']['bunga'] = $this->db->affected_rows();
+
+			// Reset jumlah_bunga to 0 for all simpanan
+			$this->db->update('tbsimpanan', ['jumlah_bunga' => 0]);
+		}
+
+		$rows = $xls->rows($sheet_index);
+		$nama_to_nasabah = [];
+		$norek_to_id = [];
+		$norek_saldo_awal = []; // Track saldo_awal per account for final calculation
+
+		// Get column indices from mapping
+		$col_no_urut = $mapping['no_urut'];
+		$col_nama = $mapping['nama'];
+		$col_no_tab = $mapping['no_tab'];
+		$col_alamat = $mapping['alamat'];
+		$col_saldo = $mapping['saldo_awal'];
+		$col_setoran_start = $mapping['setoran_start'];
+		$col_setoran_end = $mapping['setoran_end'] ?? ($col_setoran_start + 28); // Default 29 columns
+		$col_penarikan_start = $mapping['penarikan_start'];
+		$col_penarikan_end = $mapping['penarikan_end'] ?? ($col_penarikan_start + 28); // Default 29 columns
+		$col_bunga = $mapping['bunga'] ?? ($col_penarikan_end + 1);
+
+		// Build nama mapping from JAN sheet
+		$jan_index = array_search('JAN', array_map('strtoupper', $sheets));
+		if ($jan_index === false) $jan_index = 0;
+
+		$noTab_to_nama = [];
+		$jan_rows = $xls->rows($jan_index);
+		for ($i = 3; $i < count($jan_rows); $i++) {
+			$jan_row = $jan_rows[$i];
+			// For JAN sheet, use default indices (0, 1, 2, 3)
+			$jan_no_tab = intval($jan_row[2] ?? 0);
+			$jan_nama = trim($jan_row[1] ?? '');
+			$jan_alamat = trim($jan_row[3] ?? '-');
+
+			if ($jan_no_tab > 0 && !empty($jan_nama)) {
+				$noTab_to_nama[$jan_no_tab] = [
+					'nama' => $jan_nama,
+					'alamat' => $jan_alamat
+				];
+			}
+		}
+
+		// Process rows
+		$log_msg = "Rows found: " . count($rows) . "\n";
+		file_put_contents($log_file, $log_msg, FILE_APPEND);
+
+		// Debug: Dump first data row structure
+		if (isset($rows[3])) {
+			$log_msg = "Row[3] has " . count($rows[3]) . " columns\n";
+			$log_msg .= "Row[3] content (first 40 cols): " . json_encode(array_slice($rows[3], 0, 40)) . "\n";
+			file_put_contents($log_file, $log_msg, FILE_APPEND);
+		}
+
+		for ($i = 3; $i < count($rows); $i++) {
+			$row = $rows[$i];
+
+			$no_urut = intval($row[$col_no_urut] ?? 0);
+			$no_tab = intval($row[$col_no_tab] ?? 0);
+
+			if ($no_urut <= 0 && $no_tab <= 0) continue;
+
+			$norek_num = $no_tab > 0 ? $no_tab : $no_urut;
+
+			// Get nama from mapping
+			if (isset($noTab_to_nama[$norek_num])) {
+				$nama = $noTab_to_nama[$norek_num]['nama'];
+				$alamat = $noTab_to_nama[$norek_num]['alamat'];
+			} else {
+				$nama = trim($row[$col_nama] ?? '');
+				$alamat = trim($row[$col_alamat] ?? '-');
+				if (empty($nama)) {
+					$nama = 'Nasabah T' . str_pad($norek_num, 3, '0', STR_PAD_LEFT);
+				}
+			}
+
+			if (stripos($nama, 'JUMLAH') !== false || stripos($nama, 'TOTAL') !== false) continue;
+
+			try {
+				$saldo_sebelum = $this->_parse_amount($row[$col_saldo] ?? 0);
+				$no_rekening = 'T' . str_pad($norek_num, 3, '0', STR_PAD_LEFT);
+
+				// Find or create nasabah
+				if (isset($nama_to_nasabah[$no_rekening])) {
+					$nasabah_id = $nama_to_nasabah[$no_rekening];
+					$results['nasabah']['found']++;
+				} else {
+					$nasabah = $this->_find_nasabah_by_name($nama);
+					if ($nasabah) {
+						$nasabah_id = $nasabah->id;
+						$results['nasabah']['found']++;
+					} else {
+						$nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
+						$results['nasabah']['created']++;
+					}
+					$nama_to_nasabah[$no_rekening] = $nasabah_id;
+				}
+
+				// Check if simpanan exists
+				$existing = $this->db->where('no_rekening', $no_rekening)->get('tbsimpanan')->row();
+
+				if (!$existing) {
+					$simpanan_data = [
+						'no_rekening' => $no_rekening,
+						'nasabah_id' => $nasabah_id,
+						'pegawai_id' => $pegawai_id,
+						'jenistabungan_id' => $jenistabungan_id,
+						'nama_nasabah' => $nama,
+						'jumlah_simpanan' => $saldo_sebelum,
+						'jumlah_bunga' => 0,
+						'tanggal_simpanan' => $year . '-' . $month . '-01',
+						'status' => 'aktif'
+					];
+					$this->db->insert('tbsimpanan', $simpanan_data);
+					$simpanan_id = $this->db->insert_id();
+					$results['simpanan']['inserted']++;
+				} else {
+					$simpanan_id = $existing->id;
+					$this->db->where('id', $simpanan_id)->update('tbsimpanan', [
+						'nama_nasabah' => $nama,
+						'nasabah_id' => $nasabah_id
+					]);
+					$results['simpanan']['updated']++;
+				}
+
+				// Store saldo_awal for this account (used in final saldo calculation)
+				// saldo_sebelum goes directly to tbsimpanan.jumlah_simpanan, NOT as setoran transaction
+				$norek_saldo_awal[$no_rekening] = $saldo_sebelum;
+
+				$norek_to_id[$no_rekening] = $simpanan_id;
+
+				// Process SETORAN columns from start to end (each column = 1 day)
+				$setoran_cols = $col_setoran_end - $col_setoran_start + 1;
+				
+				// Log first row processing
+				if ($i == 3) {
+					$log_msg = "Row 3 Debug:\nSetoran Cols: $setoran_cols (Start: $col_setoran_start, End: $col_setoran_end)\n";
+					file_put_contents($log_file, $log_msg, FILE_APPEND);
+				}
+
+				for ($day = 1; $day <= $setoran_cols; $day++) {
+					$col = $col_setoran_start + ($day - 1);
+					$raw_val = $row[$col] ?? 0;
+					$amount = $this->_parse_amount($raw_val);
+					
+					// Debug: Log first few setoran values for first row
+					if ($i == 3 && $day <= 5) {
+						$log_msg = "Row3 Day$day: Col=$col, Raw='$raw_val', Parsed=$amount, Month=$month\n";
+						file_put_contents($log_file, $log_msg, FILE_APPEND);
+					}
+
+					// Only check if day is valid for this month (some months have 28/29/30/31 days)
+					if ($amount > 0 && $day <= 31) {
+						// Use the actual day from the loop
+						if (checkdate((int) $month, $day, (int) $year)) {
+							$date = sprintf('%s-%s-%02d', $year, $month, $day);
+							$this->db->insert('tbdetail_simpanan', [
+								'simpanan_id' => $simpanan_id,
+								'tanggal_setoran' => $date . ' 12:00:00',
+								'jumlah_setoran' => $amount,
+								'pegawai_id' => $pegawai_id
+							]);
+							$results['setoran']['inserted']++;
+						}
+					}
+				}
+
+				// Process PENARIKAN columns from start to end (each column = 1 day)
+				$penarikan_cols = $col_penarikan_end - $col_penarikan_start + 1;
+				for ($day = 1; $day <= $penarikan_cols; $day++) {
+					$col = $col_penarikan_start + ($day - 1);
+					$amount = $this->_parse_amount($row[$col] ?? 0);
+
+					if ($amount > 0 && checkdate((int) $month, $day, (int) $year)) {
+						$date = sprintf('%s-%s-%02d', $year, $month, $day);
+						$this->db->insert('tbdetail_penarikan', [
+							'simpanan_id' => $simpanan_id,
+							'penarikan_id' => 0,
+							'tanggal_penarikan' => $date . ' 12:00:00',
+							'jumlah_penarikan' => $amount,
+							'pegawai_id' => $pegawai_id,
+							'status' => 'disetujui'
+						]);
+						$results['penarikan']['inserted']++;
+					}
+				}
+
+				// Import bunga from mapped column - insert into tbtransaksi (Detail bunga)
+				$bunga_net = $this->_parse_amount($row[$col_bunga] ?? 0);
+				
+				// VALIDATION: Bunga should be a small interest amount, NOT saldo_awal
+				// Skip if bunga equals saldo_sebelum (column misalignment for JAN sheet)
+				// Also skip if bunga is unreasonably large (> 1 million = likely saldo not bunga)
+				if ($bunga_net > 0 && $bunga_net != $saldo_sebelum && $bunga_net < 1000000) {
+					// Update tbsimpanan.jumlah_bunga
+					$this->db->where('id', $simpanan_id)->update('tbsimpanan', [
+						'jumlah_bunga' => $bunga_net
+					]);
+
+					// Insert into tbtransaksi for Detail bunga display
+					$last_day = date('t', strtotime("$year-$month-01"));
+					$this->db->insert('tbtransaksi', [
+						'simpanan_id' => $simpanan_id,
+						'no_rekening' => $no_rekening,
+						'nama_nasabah' => $nama,
+						'tanggal_transaksi' => "$year-$month-$last_day",
+						'jumlah_transaksi' => $bunga_net,
+						'rate_bunga' => 0,
+						'bunga_riil' => $bunga_net
+					]);
+					$results['bunga']['inserted']++;
+				}
+
+				$results['details'][] = [
+					'row' => $i + 1,
+					'nama' => $nama,
+					'no_rekening' => $no_rekening,
+					'action' => $existing ? 'updated' : 'created'
+				];
+
+			} catch (Exception $e) {
+				$results['simpanan']['errors']++;
+				$results['errors'][] = "Row " . ($i + 1) . ": " . $e->getMessage();
+				$log_msg = "Row " . ($i+1) . " Exception: " . $e->getMessage() . "\n";
+				file_put_contents($log_file, $log_msg, FILE_APPEND);
+			}
+		}
+
+		// Update saldo for each simpanan: saldo = saldo_awal + setoran - penarikan + bunga
+		foreach ($norek_to_id as $no_rekening => $simpanan_id) {
+			try {
+				// Get saldo_awal for this account
+				$saldo_awal = isset($norek_saldo_awal[$no_rekening]) ? $norek_saldo_awal[$no_rekening] : 0;
+
+				$setoran_result = $this->db->select_sum('jumlah_setoran')
+					->where('simpanan_id', $simpanan_id)
+					->get('tbdetail_simpanan')->row();
+				$total_setoran = ($setoran_result && $setoran_result->jumlah_setoran) ? floatval($setoran_result->jumlah_setoran) : 0;
+
+				$penarikan_result = $this->db->select_sum('jumlah_penarikan')
+					->where('simpanan_id', $simpanan_id)
+					->get('tbdetail_penarikan')->row();
+				$total_penarikan = ($penarikan_result && $penarikan_result->jumlah_penarikan) ? floatval($penarikan_result->jumlah_penarikan) : 0;
+
+				// Get bunga from tbsimpanan.jumlah_bunga
+				$simpanan = $this->db->where('id', $simpanan_id)->get('tbsimpanan')->row();
+				$bunga = ($simpanan && $simpanan->jumlah_bunga) ? floatval($simpanan->jumlah_bunga) : 0;
+
+				// SALDO = SALDO_AWAL + SETORAN - PENARIKAN + BUNGA
+				$saldo = $saldo_awal + $total_setoran - $total_penarikan + $bunga;
+				$this->db->where('id', $simpanan_id)->update('tbsimpanan', ['jumlah_simpanan' => $saldo]);
+			} catch (Exception $e) {
+				$results['errors'][] = "Saldo update error for $no_rekening: " . $e->getMessage();
+			}
+		}
+
+		$log_msg = "IMPORT COMPLETE. Results: " . json_encode($results) . "\n";
+		file_put_contents($log_file, $log_msg, FILE_APPEND);
+
+		$this->db->query('SET FOREIGN_KEY_CHECKS=1');
+
+		$results['success'] = true;
+		$results['total_processed'] = count($norek_to_id);
+
+		return $results;
+	}
 }
+
 

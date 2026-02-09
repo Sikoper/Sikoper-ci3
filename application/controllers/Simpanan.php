@@ -934,5 +934,169 @@ class Simpanan extends CI_Controller
 
         echo json_encode($results);
     }
+
+    /**
+     * Get sheet names from uploaded Excel file
+     * Returns list of available sheets for dynamic selection
+     */
+    public function get_sheet_names()
+    {
+        // Increase limits for large Excel files
+        ini_set('memory_limit', '1024M');
+        ini_set('max_execution_time', 300);
+        
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            echo json_encode(['success' => false, 'errors' => ['Unauthorized']]);
+            return;
+        }
+
+        if (empty($_FILES['excel_file']['name'])) {
+            echo json_encode(['success' => false, 'errors' => ['File tidak ditemukan']]);
+            return;
+        }
+
+        $config['upload_path'] = './uploads/import/';
+        $config['allowed_types'] = 'xls|xlsx';
+        $config['max_size'] = 102400;
+        $config['file_name'] = 'sheets_' . date('YmdHis') . '_' . uniqid();
+
+        if (!is_dir($config['upload_path'])) {
+            mkdir($config['upload_path'], 0755, true);
+        }
+
+        $this->load->library('upload', $config);
+
+        if (!$this->upload->do_upload('excel_file')) {
+            echo json_encode(['success' => false, 'errors' => [$this->upload->display_errors('', '')]]);
+            return;
+        }
+
+        $upload_data = $this->upload->data();
+        $file_path = $upload_data['full_path'];
+
+        // Store file path in session
+        $this->session->set_userdata('import_file_path', $file_path);
+
+        // Get sheet names from model
+        $sheets = $this->Tabungan_model->get_excel_sheet_names($file_path);
+
+        echo json_encode($sheets);
+    }
+
+    /**
+     * Preview Excel data for column mapping
+     * Uses file from session (uploaded by get_sheet_names)
+     */
+    public function preview_import()
+    {
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            echo json_encode(['success' => false, 'errors' => ['Unauthorized']]);
+            return;
+        }
+
+        // Get sheet name from POST
+        $month_code = strtoupper(trim($this->input->post('month_code') ?: 'JAN'));
+
+        // Get file path from session (uploaded by get_sheet_names)
+        $file_path = $this->session->userdata('import_file_path');
+        
+        if (empty($file_path) || !file_exists($file_path)) {
+            echo json_encode(['success' => false, 'errors' => ['File tidak ditemukan. Silakan upload ulang.']]);
+            return;
+        }
+
+        // Get preview data from model
+        $preview = $this->Tabungan_model->preview_sheet_data($file_path, $month_code, 500);
+
+        echo json_encode($preview);
+    }
+
+    /**
+     * Process import with user-defined column mapping
+     */
+    public function proses_import_with_mapping()
+    {
+        $allowed_roles = ['Admin', 'Direktur'];
+        $level = $this->session->userdata('level');
+        if (!in_array($level, $allowed_roles)) {
+            echo json_encode(['success' => false, 'errors' => ['Unauthorized']]);
+            return;
+        }
+
+        // Get file path from session (set during preview)
+        $file_path = $this->session->userdata('import_file_path');
+        
+        // If no session file, check for new upload
+        if (empty($file_path) || !file_exists($file_path)) {
+            if (!empty($_FILES['excel_file']['name'])) {
+                $config['upload_path'] = './uploads/import/';
+                $config['allowed_types'] = 'xls|xlsx';
+                $config['max_size'] = 102400;
+                $config['file_name'] = 'tabungan_mapped_' . date('YmdHis') . '_' . uniqid();
+
+                if (!is_dir($config['upload_path'])) {
+                    mkdir($config['upload_path'], 0755, true);
+                }
+
+                $this->load->library('upload', $config);
+
+                if (!$this->upload->do_upload('excel_file')) {
+                    echo json_encode(['success' => false, 'errors' => [$this->upload->display_errors('', '')]]);
+                    return;
+                }
+
+                $upload_data = $this->upload->data();
+                $file_path = $upload_data['full_path'];
+            } else {
+                echo json_encode(['success' => false, 'errors' => ['File tidak ditemukan. Silakan preview ulang.']]);
+                return;
+            }
+        }
+
+        // Get mapping from POST - H-AJ = Setoran (7-35, days 1-29), AK-BM = Penarikan (36-64, days 1-29)
+        $mapping = [
+            'no_urut' => intval($this->input->post('col_no_urut') ?? 0),
+            'nama' => intval($this->input->post('col_nama') ?? 1),
+            'no_tab' => intval($this->input->post('col_no_tab') ?? 4),
+            'alamat' => intval($this->input->post('col_alamat') ?? 5),
+            'saldo_awal' => intval($this->input->post('col_saldo_awal') ?? 6),
+            'setoran_start' => intval($this->input->post('col_setoran_start') ?? 7),
+            'setoran_end' => intval($this->input->post('col_setoran_end') ?? 35),
+            'penarikan_start' => intval($this->input->post('col_penarikan_start') ?? 36),
+            'penarikan_end' => intval($this->input->post('col_penarikan_end') ?? 64),
+            'bunga' => intval($this->input->post('col_bunga') ?? 97),
+        ];
+
+        $month_code = $this->input->post('month_code') ?: 'JAN';
+        $year = $this->input->post('year') ?: '2026';
+        $delete_existing = $this->input->post('delete_existing') !== 'false';
+
+        // Get pegawai_id from session or use default
+        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+
+        // Get jenistabungan_id for Tabungan
+        $jenis = $this->db->like('nama', 'Tabungan', 'both')->get('tbjenistabungan')->row();
+        $jenistabungan_id = $jenis ? $jenis->id : 1;
+
+        // Run import with mapping
+        $results = $this->Tabungan_model->import_by_month_with_mapping(
+            $file_path,
+            $month_code,
+            $year,
+            $pegawai_id,
+            $jenistabungan_id,
+            $mapping,
+            $delete_existing
+        );
+
+        // Clear session file path
+        $this->session->unset_userdata('import_file_path');
+
+        echo json_encode($results);
+    }
 }
 
