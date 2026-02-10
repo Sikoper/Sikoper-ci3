@@ -1723,32 +1723,40 @@ class Tabungan_model extends CI_Model
 		$isJan = (strtoupper($month_code) === 'JAN');
 		
 		if ($isJan) {
-			// JAN structure
+			// JAN structure: NO(0), NAMA(1), NO_TAB(2), ALAMAT(3), SALDO(4)
+			// SETORAN(5-35), PENARIKAN(36-66), SALDO_HARIAN(67-97)
+			// E-MIN(98), BUNGA_RAW(99), BULAT(100), BUNGA_BULAT(101), SALDO_AKHIR(102)
 			$mapping = [
-				'no_urut' => 0,           // A
-				'nama' => 1,              // B
-				'no_tab' => 2,            // C
-				'alamat' => 3,            // D
-				'saldo_awal' => 4,        // E (SALDO BULAN LALU)
-				'setoran_start' => 5,     // F (first setoran column, day 1)
-				'setoran_end' => 35,      // AJ (last setoran column, day 31)
-				'penarikan_start' => 36,  // AK (first penarikan column, day 1)
-				'penarikan_end' => 66,    // BO (last penarikan column, day 31)
-				'bunga' => 97             // CT (bunga column)
+				'no_urut' => 0,
+				'nama' => 1,
+				'no_tab' => 2,
+				'alamat' => 3,
+				'saldo_awal' => 4,
+				'setoran_start' => 5,
+				'setoran_end' => 35,
+				'penarikan_start' => 36,
+				'penarikan_end' => 66,
+				'e_min' => 98,             // E-MIN (base saldo for bunga calc)
+				'bunga_raw' => 99,         // BUNGA raw (E-MIN * rate)
+				'bunga' => 101             // BUNGA BULAT (rounded interest)
 			];
 		} else {
-			// FEB+ structure (has extra NO/NAMA columns at start)
+			// FEB+ structure: NO(0), NAMA(1), NO(2), NAMA(3), NO_TAB(4), ALAMAT(5), SALDO(6)
+			// SETORAN(7-35), PENARIKAN(36-64), SALDO_HARIAN(65-93)
+			// E-MIN(94), BUNGA_RAW(95), BULAT(96), BUNGA_BULAT(97), SALDO_AKHIR(98)
 			$mapping = [
-				'no_urut' => 0,           // A
-				'nama' => 1,              // B (will be fetched from JAN for other months)
-				'no_tab' => 4,            // E
-				'alamat' => 5,            // F
-				'saldo_awal' => 6,        // G (SALDO BULAN LALU)
-				'setoran_start' => 7,     // H (first setoran column, day 1)
-				'setoran_end' => 35,      // AJ (last setoran column, day 29)
-				'penarikan_start' => 36,  // AK (first penarikan column, day 1)
-				'penarikan_end' => 64,    // BM (last penarikan column, day 29)
-				'bunga' => 97             // CT (bunga column)
+				'no_urut' => 0,
+				'nama' => 1,
+				'no_tab' => 4,
+				'alamat' => 5,
+				'saldo_awal' => 6,
+				'setoran_start' => 7,
+				'setoran_end' => 35,
+				'penarikan_start' => 36,
+				'penarikan_end' => 64,
+				'e_min' => 94,             // E-MIN (base saldo for bunga calc)
+				'bunga_raw' => 95,         // BUNGA raw (E-MIN * rate)
+				'bunga' => 97              // BUNGA BULAT (rounded interest)
 			];
 		}
 
@@ -1765,15 +1773,21 @@ class Tabungan_model extends CI_Model
 					
 					// Recalculate based on detected saldo position
 					if ($idx == 4) {
-						// JAN structure
+						// JAN structure: setoran=5-35, penarikan=36-66, saldo_harian=67-97
 						$mapping['setoran_end'] = 35;
 						$mapping['penarikan_start'] = 36;
 						$mapping['penarikan_end'] = 66;
+						$mapping['e_min'] = 98;  // E-MIN for JAN
+						$mapping['bunga_raw'] = 99; // BUNGA raw for JAN
+						$mapping['bunga'] = 101; // BUNGA BULAT for JAN
 					} else if ($idx == 6) {
-						// FEB+ structure
+						// FEB+ structure: setoran=7-35, penarikan=36-64, saldo_harian=65-93
 						$mapping['setoran_end'] = 35;
 						$mapping['penarikan_start'] = 36;
 						$mapping['penarikan_end'] = 64;
+						$mapping['e_min'] = 94;  // E-MIN for FEB+
+						$mapping['bunga_raw'] = 95; // BUNGA raw for FEB+
+						$mapping['bunga'] = 97;  // BUNGA BULAT for FEB+
 					}
 					break;
 				}
@@ -1862,7 +1876,7 @@ class Tabungan_model extends CI_Model
 			return $results;
 		}
 
-		$month = $month_map[$month_code];
+		$month = $month_map[$clean_month_code];
 
 		// Detect file type
 		$file_ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
@@ -1938,6 +1952,8 @@ class Tabungan_model extends CI_Model
 		$col_penarikan_start = $mapping['penarikan_start'];
 		$col_penarikan_end = $mapping['penarikan_end'] ?? ($col_penarikan_start + 28); // Default 29 columns
 		$col_bunga = $mapping['bunga'] ?? ($col_penarikan_end + 1);
+		$col_e_min = $mapping['e_min'] ?? ($col_bunga - 3);
+		$col_bunga_raw = $mapping['bunga_raw'] ?? ($col_bunga - 2);
 
 		// Build nama mapping from JAN sheet
 		$jan_index = array_search('JAN', array_map('strtoupper', $sheets));
@@ -2104,13 +2120,24 @@ class Tabungan_model extends CI_Model
 					}
 				}
 
-				// Import bunga from mapped column - insert into tbtransaksi (Detail bunga)
-				$bunga_net = $this->_parse_amount($row[$col_bunga] ?? 0);
+				// Import bunga from mapped columns:
+				// - BUNGA BULAT (rounded) → jumlah_transaksi in tbtransaksi
+				// - BUNGA RAW (E-MIN * rate) → bunga_riil in tbtransaksi
+				// - E-MIN (base saldo) → used to calculate rate_bunga
+				$bunga_net = $this->_parse_amount($row[$col_bunga] ?? 0);      // Rounded bunga
+				$bunga_raw = $this->_parse_amount($row[$col_bunga_raw] ?? 0);  // Raw bunga (before rounding)
+				$e_min = $this->_parse_amount($row[$col_e_min] ?? 0);          // E-MIN (base saldo)
 				
-				// VALIDATION: Bunga should be a small interest amount, NOT saldo_awal
-				// Skip if bunga equals saldo_sebelum (column misalignment for JAN sheet)
-				// Also skip if bunga is unreasonably large (> 1 million = likely saldo not bunga)
-				if ($bunga_net > 0 && $bunga_net != $saldo_sebelum && $bunga_net < 1000000) {
+				// Calculate bunga rate: rate = bunga_raw / e_min * 100
+				// Formula: =IF(CU4>="","",IF(CU4>=50000,CU4*0.2%,0))
+				$rate_bunga = 0;
+				if ($e_min > 0 && $bunga_raw > 0) {
+					$rate_bunga = round(($bunga_raw / $e_min) * 100, 2); // e.g., 0.2 for 0.2%
+				}
+				
+				// VALIDATION: Bunga must be > 0 and not equal to saldo_sebelum
+				$is_valid_bunga = ($bunga_net > 0 && $bunga_net != $saldo_sebelum);
+				if ($is_valid_bunga) {
 					// Update tbsimpanan.jumlah_bunga
 					$this->db->where('id', $simpanan_id)->update('tbsimpanan', [
 						'jumlah_bunga' => $bunga_net
@@ -2123,9 +2150,9 @@ class Tabungan_model extends CI_Model
 						'no_rekening' => $no_rekening,
 						'nama_nasabah' => $nama,
 						'tanggal_transaksi' => "$year-$month-$last_day",
-						'jumlah_transaksi' => $bunga_net,
-						'rate_bunga' => 0,
-						'bunga_riil' => $bunga_net
+						'jumlah_transaksi' => $bunga_net,   // Rounded bunga (31,900)
+						'rate_bunga' => $rate_bunga,         // Rate percentage (0.2)
+						'bunga_riil' => $bunga_raw           // Raw bunga before rounding (31,912)
 					]);
 					$results['bunga']['inserted']++;
 				}
@@ -2145,19 +2172,28 @@ class Tabungan_model extends CI_Model
 			}
 		}
 
-		// Update saldo for each simpanan: saldo = saldo_awal + setoran - penarikan + bunga
+		// Update saldo for each simpanan: saldo = saldo_awal + setoran(this month) - penarikan(this month) + bunga
+		$date_start = $year . '-' . $month . '-01';
+		$date_end = $year . '-' . $month . '-31';
+		$debug_count = 0;
 		foreach ($norek_to_id as $no_rekening => $simpanan_id) {
 			try {
 				// Get saldo_awal for this account
 				$saldo_awal = isset($norek_saldo_awal[$no_rekening]) ? $norek_saldo_awal[$no_rekening] : 0;
 
+				// Sum setoran only for THIS month
 				$setoran_result = $this->db->select_sum('jumlah_setoran')
 					->where('simpanan_id', $simpanan_id)
+					->where('tanggal_setoran >=', $date_start)
+					->where('tanggal_setoran <=', $date_end . ' 23:59:59')
 					->get('tbdetail_simpanan')->row();
 				$total_setoran = ($setoran_result && $setoran_result->jumlah_setoran) ? floatval($setoran_result->jumlah_setoran) : 0;
 
+				// Sum penarikan only for THIS month
 				$penarikan_result = $this->db->select_sum('jumlah_penarikan')
 					->where('simpanan_id', $simpanan_id)
+					->where('tanggal_penarikan >=', $date_start)
+					->where('tanggal_penarikan <=', $date_end . ' 23:59:59')
 					->get('tbdetail_penarikan')->row();
 				$total_penarikan = ($penarikan_result && $penarikan_result->jumlah_penarikan) ? floatval($penarikan_result->jumlah_penarikan) : 0;
 
@@ -2165,8 +2201,16 @@ class Tabungan_model extends CI_Model
 				$simpanan = $this->db->where('id', $simpanan_id)->get('tbsimpanan')->row();
 				$bunga = ($simpanan && $simpanan->jumlah_bunga) ? floatval($simpanan->jumlah_bunga) : 0;
 
-				// SALDO = SALDO_AWAL + SETORAN - PENARIKAN + BUNGA
+				// SALDO = SALDO_AWAL + SETORAN(this month) - PENARIKAN(this month) + BUNGA
 				$saldo = $saldo_awal + $total_setoran - $total_penarikan + $bunga;
+				
+				// Debug: Log saldo calculation for first 5 accounts
+				$debug_count++;
+				if ($debug_count <= 5) {
+					$log_msg = "SALDO CALC $no_rekening: awal=$saldo_awal + setor=$total_setoran - tarik=$total_penarikan + bunga=$bunga = $saldo (month=$month)\n";
+					file_put_contents($log_file, $log_msg, FILE_APPEND);
+				}
+				
 				$this->db->where('id', $simpanan_id)->update('tbsimpanan', ['jumlah_simpanan' => $saldo]);
 			} catch (Exception $e) {
 				$results['errors'][] = "Saldo update error for $no_rekening: " . $e->getMessage();
