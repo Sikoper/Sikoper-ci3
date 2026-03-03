@@ -861,6 +861,8 @@ class Deposito extends CI_Controller
             'bunga_sudah_dibayar' => $bunga_sudah_dibayar,
             'hutang_bunga' => $hutang_bunga_saat_ini,
             'bunga_sampai_jatuh_tempo' => $bunga_sampai_jatuh_tempo,
+            'bunga_earned_so_far' => $bunga_earned_so_far,       // Bunga terakumulasi s/d hari ini (= Excel "BUNGA JATUH TEMPO")
+            'months_elapsed' => $months_elapsed,                  // Bunga Ke (periode bunga saat ini)
         ];
 
         // print_r($data);

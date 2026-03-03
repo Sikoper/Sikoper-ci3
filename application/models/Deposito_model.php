@@ -735,11 +735,7 @@ class Deposito_model extends CI_Model
         if ($result)
             return $result;
 
-        // Try LIKE match
-        $result = $this->db->like('nama_lengkap', trim($nama), 'both')
-            ->limit(1)
-            ->get('tbnasabah')->row();
-
+        // Exact match only — no LIKE fallback to avoid wrong matching
         return $result;
     }
 
@@ -749,7 +745,7 @@ class Deposito_model extends CI_Model
     public function create_nasabah_from_import($nama, $alamat = '-', $telp = '-', $pegawai_id = null)
     {
         $data = [
-            'nik' => 'IMP' . date('YmdHis') . substr(uniqid(), -4),
+            'nik' => '-',
             'nama_lengkap' => $nama,
             'jenis_kelamin' => '?',
             'tempat_lahir' => '-',

@@ -50,13 +50,11 @@ class Rekapitulasi_tabungan extends CI_Controller
         $this->parser->parse('templates/main', $parser);
     }
 
-    // Your controller function - No changes needed here. It works perfectly with the new model.
     public function fetch_rekapitulasi()
     {
         $bulan = $this->input->post('bulan');
         $tahun = $this->input->post('tahun');
 
-        // The model now handles the 'all' case internally
         $list = $this->Rekapitulasi_tabungan_model->get_datatables($bulan, $tahun);
         $data = array();
         $no = $_POST['start'];
@@ -65,30 +63,39 @@ class Rekapitulasi_tabungan extends CI_Controller
             $no++;
             $row = array();
 
+            $setoran = $field->setoran_bulan ?? 0;
+            $penarikan = $field->penarikan_bulan ?? 0;
             $saldo_pokok = $field->saldo_pokok ?? 0;
             $bunga = $field->bunga ?? 0;
-            $total_diterima = $saldo_pokok + $bunga;
+
+            // Setoran includes bunga (matching Excel)
+            $setoran_total = $setoran + $bunga;
 
             $row[] = "<div class='text-center'>$no</div>";
             $row[] = $field->no_rekening;
             $row[] = $field->nama_nasabah;
+            $row[] = "<div class='text-end'>Rp " . number_format($setoran_total, 0, ',', '.') . "</div>";
+            $row[] = "<div class='text-end'>Rp " . number_format($penarikan, 0, ',', '.') . "</div>";
             $row[] = "<div class='text-end'>Rp " . number_format($saldo_pokok, 0, ',', '.') . "</div>";
             $row[] = "<div class='text-end'>Rp " . number_format($bunga, 0, ',', '.') . "</div>";
-            $row[] = "<div class='text-end fw-bold'>Rp " . number_format($total_diterima, 0, ',', '.') . "</div>";
 
             $data[] = $row;
         }
 
-        // The model also handles the summary query correctly now
         $summary = $this->Rekapitulasi_tabungan_model->get_summary_data($bulan, $tahun);
         $recordsFiltered = $this->Rekapitulasi_tabungan_model->count_filtered($bulan, $tahun);
-        $recordsTotal = $this->Rekapitulasi_tabungan_model->count_all(); // count_all also benefits from the change
+        $recordsTotal = $this->Rekapitulasi_tabungan_model->count_all();
+
+        // Total Setoran includes bunga (matching Excel)
+        $total_setoran_combined = ($summary['total_setoran'] ?? 0) + ($summary['total_bunga'] ?? 0);
 
         $output = array(
             "draw" => $_POST['draw'],
             "recordsTotal" => $recordsTotal,
             "recordsFiltered" => $recordsFiltered,
             "data" => $data,
+            "total_setoran" => "Rp " . number_format($total_setoran_combined, 0, ',', '.'),
+            "total_penarikan" => "Rp " . number_format($summary['total_penarikan'] ?? 0, 0, ',', '.'),
             "total_saldo_pokok" => "Rp " . number_format($summary['total_saldo_pokok'] ?? 0, 0, ',', '.'),
             "total_bunga" => "Rp " . number_format($summary['total_bunga'] ?? 0, 0, ',', '.'),
         );

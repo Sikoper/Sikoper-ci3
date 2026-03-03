@@ -34,8 +34,16 @@
                         <td>: <?= number_format($deposito->rate_bunga, 2, ',', '.') ?>%</td>
                     </tr>
                     <tr>
-                        <th>Bunga Sampai Jatuh Tempo</th>
-                        <td>: Rp <?= number_format($bunga_sampai_jatuh_tempo, 2, ',', '.') ?></td>
+                        <th>Total Bunga Keseluruhan</th>
+                        <td>: Rp <?= number_format($bunga_sampai_jatuh_tempo, 2, ',', '.') ?>
+                            <small class="text-muted">(<?= $deposito->durasi ?> bulan)</small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Bunga Diperoleh Saat Ini</th>
+                        <td>: <strong>Rp <?= number_format($bunga_earned_so_far, 2, ',', '.') ?></strong>
+                            <small class="text-muted">(Bunga Ke-<?= $months_elapsed ?>)</small>
+                        </td>
                     </tr>
                     <tr>
                         <th>Hutang Bunga</th>
@@ -77,7 +85,8 @@
                             <tr id="field-ahli-waris">
                                 <th>Ahli Waris</th>
                                 <td>: <?= $deposito->nama_ahli_waris ?> (<?= $deposito->hubungan_ahli_waris ?> dari
-                                    <?= $nasabah->nama_lengkap ?>), <?= $deposito->telp_ahli_waris ?></td>
+                                    <?= $nasabah->nama_lengkap ?>), <?= $deposito->telp_ahli_waris ?>
+                                </td>
                             </tr>
                         <?php endif ?>
                     <?php endif; ?>
@@ -225,7 +234,7 @@
             data: 4,
             className: "text-center",
             visible: userLevel === 'Admin',
-            render: function(data, type, row) {
+            render: function (data, type, row) {
                 return data; // Render raw HTML
             }
         }

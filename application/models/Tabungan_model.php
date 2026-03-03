@@ -178,7 +178,25 @@ class Tabungan_model extends CI_Model
 
 			$saldo_awal = ($setor_awal + $bunga_awal) - $tarik_awal;
 
-			// --- REMOVED: The entire block that tried to find the "first setor" and use it as saldo awal. This logic was incorrect. ---
+			// --- Hitung saldo pindahan (initial balance dari import yg tidak tercatat sebagai transaksi) ---
+			$simpanan_data = $this->db->where('id', $source_id)->get('tbsimpanan')->row();
+			if ($simpanan_data) {
+				// Total SEMUA transaksi yang ada di database (tanpa filter tanggal)
+				$all_setor_q = $this->db->select_sum('jumlah_setoran', 'total')->where('simpanan_id', $source_id)->get('tbdetail_simpanan');
+				$all_setor = ($all_setor_q->num_rows() > 0 && $all_setor_q->row()->total !== null) ? (float) $all_setor_q->row()->total : 0;
+
+				$all_tarik_q = $this->db->select_sum('jumlah_penarikan', 'total')->where('simpanan_id', $source_id)->get('tbdetail_penarikan');
+				$all_tarik = ($all_tarik_q->num_rows() > 0 && $all_tarik_q->row()->total !== null) ? (float) $all_tarik_q->row()->total : 0;
+
+				$all_bunga_q = $this->db->select_sum('jumlah_transaksi', 'total')->where('simpanan_id', $source_id)->get('tbtransaksi');
+				$all_bunga = ($all_bunga_q->num_rows() > 0 && $all_bunga_q->row()->total !== null) ? (float) $all_bunga_q->row()->total : 0;
+
+				// Saldo pindahan = jumlah_simpanan saat ini - total semua transaksi tercatat
+				$saldo_pindahan = (float) $simpanan_data->jumlah_simpanan - (($all_setor + $all_bunga) - $all_tarik);
+				if ($saldo_pindahan > 0) {
+					$saldo_awal += $saldo_pindahan;
+				}
+			}
 
 			// --- Transaksi Setoran ---
 			if ($jenis_laporan == 1 || $jenis_laporan == 3) {
@@ -531,23 +549,17 @@ class Tabungan_model extends CI_Model
 	}
 
 	/**
-	 * Helper: Find nasabah by name
+	 * Helper: Find nasabah by name (exact match only)
+	 * LIKE fallback removed to prevent matching wrong nasabah with similar names
 	 */
 	private function _find_nasabah_by_name($nama)
 	{
 		if (empty($nama))
 			return null;
 
-		// Try exact match first
+		// Exact match only - no LIKE to prevent wrong matches
+		// e.g. "SITI" should NOT match "SITI AMINAH" or "SITI NURHALIZA"
 		$result = $this->db->where('LOWER(nama_lengkap)', strtolower(trim($nama)))
-			->get('tbnasabah')->row();
-
-		if ($result)
-			return $result;
-
-		// Try LIKE match
-		$result = $this->db->like('nama_lengkap', trim($nama), 'both')
-			->limit(1)
 			->get('tbnasabah')->row();
 
 		return $result;
@@ -1240,6 +1252,7 @@ class Tabungan_model extends CI_Model
 		$rows = $xls->rows($sheet_index);
 		$nama_to_nasabah = [];
 		$norek_to_id = [];
+		$norek_saldo_awal = []; // Track saldo_awal per account (NOT inserted as setoran)
 
 		// PHASE 0.5: Build nama mapping from JAN sheet (since some sheets have empty NAMA column)
 		// JAN sheet has NAMA in Col[1], NO_TAB in Col[2]
@@ -1312,26 +1325,41 @@ class Tabungan_model extends CI_Model
 				$norek_num = $no_tab > 0 ? $no_tab : $no_urut;
 				$no_rekening = 'T' . str_pad($norek_num, 3, '0', STR_PAD_LEFT);
 
-				// Find or create nasabah
-				if (isset($nama_to_nasabah[$no_rekening])) {
-					$nasabah_id = $nama_to_nasabah[$no_rekening];
-					$results['nasabah']['found']++;
-				} else {
-					$nasabah = $this->_find_nasabah_by_name($nama);
-					if ($nasabah) {
-						$nasabah_id = $nasabah->id;
-						$results['nasabah']['found']++;
-					} else {
-						$nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
-						$results['nasabah']['created']++;
-					}
-					$nama_to_nasabah[$no_rekening] = $nasabah_id;
-				}
-
-				// Check if simpanan exists
+				// FIX: Check existing simpanan FIRST to avoid wrong nasabah matching
 				$existing = $this->db->where('no_rekening', $no_rekening)->get('tbsimpanan')->row();
 
-				if (!$existing) {
+				if ($existing) {
+					// Existing account — use its nasabah_id (no name matching needed)
+					$simpanan_id = $existing->id;
+					$nasabah_id = $existing->nasabah_id;
+					$results['nasabah']['found']++;
+					$results['simpanan']['updated']++;
+
+					// Update nama in BOTH tbsimpanan AND tbnasabah to keep them in sync
+					$this->db->where('id', $simpanan_id)->update('tbsimpanan', [
+						'nama_nasabah' => $nama
+					]);
+					$this->db->where('id', $nasabah_id)->update('tbnasabah', [
+						'nama_lengkap' => $nama,
+						'alamat' => $alamat ?: '-'
+					]);
+				} else {
+					// New account — find or create nasabah by exact name
+					if (isset($nama_to_nasabah[$no_rekening])) {
+						$nasabah_id = $nama_to_nasabah[$no_rekening];
+						$results['nasabah']['found']++;
+					} else {
+						$nasabah = $this->_find_nasabah_by_name($nama);
+						if ($nasabah) {
+							$nasabah_id = $nasabah->id;
+							$results['nasabah']['found']++;
+						} else {
+							$nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
+							$results['nasabah']['created']++;
+						}
+						$nama_to_nasabah[$no_rekening] = $nasabah_id;
+					}
+
 					// Create simpanan master record
 					$simpanan_data = [
 						'no_rekening' => $no_rekening,
@@ -1347,36 +1375,11 @@ class Tabungan_model extends CI_Model
 					$this->db->insert('tbsimpanan', $simpanan_data);
 					$simpanan_id = $this->db->insert_id();
 					$results['simpanan']['inserted']++;
-				} else {
-					$simpanan_id = $existing->id;
-
-					// FIX: Update name and nasabah_id for existing records (fixes placeholder names)
-					$this->db->where('id', $simpanan_id)->update('tbsimpanan', [
-						'nama_nasabah' => $nama,
-						'nasabah_id' => $nasabah_id
-					]);
-
-					$results['simpanan']['updated']++;
 				}
 
-				// INSERT SALDO SEBELUM AS INITIAL DEPOSIT (opening balance)
-				// ONLY for January (or first month of migration) to avoid duplicating balance
-				if (($month == '01' || $month == 'JAN') && $saldo_sebelum > 0) {
-					// Check if opening balance already exists to prevent duplicates (though delete should have handled it)
-					$chk_opening = $this->db->where('simpanan_id', $simpanan_id)
-						->where('tanggal_setoran', $year . '-' . $month . '-01 00:00:01')
-						->get('tbdetail_simpanan')->num_rows();
-
-					if ($chk_opening == 0) {
-						$this->db->insert('tbdetail_simpanan', [
-							'simpanan_id' => $simpanan_id,
-							'tanggal_setoran' => $year . '-' . $month . '-01 00:00:01',
-							'jumlah_setoran' => $saldo_sebelum,
-							'pegawai_id' => $pegawai_id
-						]);
-						$results['setoran']['inserted']++;
-					}
-				}
+				// FIX: saldo_awal stored in tbsimpanan.jumlah_simpanan (NOT as setoran)
+				// This prevents ghost setoran records from appearing in rekapitulasi harian
+				$norek_saldo_awal[$no_rekening] = $saldo_sebelum;
 
 				$norek_to_id[$no_rekening] = $simpanan_id;
 
@@ -1468,10 +1471,14 @@ class Tabungan_model extends CI_Model
 			}
 		}
 
-		// PHASE 2: Update saldo for each simpanan (wrapped in try-catch to prevent transaction failure)
+		// PHASE 2: Update saldo for each simpanan
+		// FIX: Use saldo_awal + setoran - penarikan (not depend on ghost setoran records)
 		foreach ($norek_to_id as $no_rekening => $simpanan_id) {
 			try {
-				// Calculate total setoran
+				// Get saldo_awal for this account
+				$saldo_awal = isset($norek_saldo_awal[$no_rekening]) ? $norek_saldo_awal[$no_rekening] : 0;
+
+				// Calculate total setoran (actual deposits only, no saldo_awal)
 				$setoran_result = $this->db->select_sum('jumlah_setoran')
 					->where('simpanan_id', $simpanan_id)
 					->get('tbdetail_simpanan')
@@ -1485,8 +1492,8 @@ class Tabungan_model extends CI_Model
 					->row();
 				$total_penarikan = ($penarikan_result && $penarikan_result->jumlah_penarikan) ? floatval($penarikan_result->jumlah_penarikan) : 0;
 
-				// Update saldo
-				$saldo = $total_setoran - $total_penarikan;
+				// SALDO = SALDO_AWAL + SETORAN - PENARIKAN
+				$saldo = $saldo_awal + $total_setoran - $total_penarikan;
 				$this->db->where('id', $simpanan_id)
 					->update('tbsimpanan', ['jumlah_simpanan' => $saldo]);
 			} catch (Exception $e) {
@@ -1515,7 +1522,7 @@ class Tabungan_model extends CI_Model
 		// Increase limits for large Excel files
 		ini_set('memory_limit', '1024M');
 		ini_set('max_execution_time', 300);
-		
+
 		$result = [
 			'success' => false,
 			'sheets' => [],
@@ -1547,7 +1554,7 @@ class Tabungan_model extends CI_Model
 
 		$sheets = $xls->sheetNames();
 		$result['sheets'] = [];
-		
+
 		foreach ($sheets as $index => $name) {
 			$result['sheets'][] = [
 				'index' => $index,
@@ -1632,7 +1639,7 @@ class Tabungan_model extends CI_Model
 
 		// Get header row (row 3 typically contains headers)
 		if (isset($rows[2])) {
-			$result['headers'] = array_map(function($val) {
+			$result['headers'] = array_map(function ($val) {
 				return trim((string) $val);
 			}, $rows[2]);
 		}
@@ -1640,7 +1647,7 @@ class Tabungan_model extends CI_Model
 		// Build name mapping from JAN sheet (for non-JAN sheets)
 		$jan_name_map = [];
 		$is_jan_sheet = strtoupper($month_code) === 'JAN';
-		
+
 		if (!$is_jan_sheet) {
 			$jan_index = array_search('JAN', array_map('strtoupper', $sheets));
 			if ($jan_index !== false) {
@@ -1651,7 +1658,7 @@ class Tabungan_model extends CI_Model
 					$jan_no_tab = intval($jan_row[2] ?? 0);
 					$jan_nama = trim($jan_row[1] ?? '');
 					$jan_alamat = trim($jan_row[3] ?? '-');
-					
+
 					if ($jan_no_tab > 0 && !empty($jan_nama)) {
 						$jan_name_map[$jan_no_tab] = [
 							'nama' => $jan_nama,
@@ -1719,9 +1726,9 @@ class Tabungan_model extends CI_Model
 		// Determine structure based on month:
 		// JAN: NO(0), NAMA(1), NO_TAB(2), ALAMAT(3), SALDO(4), SETORAN(5-35), PENARIKAN(36-66)
 		// FEB+: NO(0), NAMA(1), NO(2), NAMA(3), NO_TAB(4), ALAMAT(5), SALDO(6), SETORAN(7-35), PENARIKAN(36-64)
-		
+
 		$isJan = (strtoupper($month_code) === 'JAN');
-		
+
 		if ($isJan) {
 			// JAN structure: NO(0), NAMA(1), NO_TAB(2), ALAMAT(3), SALDO(4)
 			// SETORAN(5-35), PENARIKAN(36-66), SALDO_HARIAN(67-97)
@@ -1765,12 +1772,12 @@ class Tabungan_model extends CI_Model
 			$headers = $rows[2];
 			foreach ($headers as $idx => $header) {
 				$h = strtoupper(trim((string) $header));
-				
+
 				// Find SALDO column to verify structure
 				if (strpos($h, 'SALDO') !== false) {
 					$mapping['saldo_awal'] = $idx;
 					$mapping['setoran_start'] = $idx + 1;
-					
+
 					// Recalculate based on detected saldo position
 					if ($idx == 4) {
 						// JAN structure: setoran=5-35, penarikan=36-66, saldo_harian=67-97
@@ -1822,16 +1829,25 @@ class Tabungan_model extends CI_Model
 
 		// Month mapping
 		$month_map = [
-			'JAN' => '01', 'FEB' => '02', 'MAR' => '03', 'APR' => '04',
-			'MEI' => '05', 'JUNI' => '06', 'JULI' => '07', 'AGS' => '08',
-			'SEP' => '09', 'OKT' => '10', 'NOP' => '11', 'DES' => '12'
+			'JAN' => '01',
+			'FEB' => '02',
+			'MAR' => '03',
+			'APR' => '04',
+			'MEI' => '05',
+			'JUNI' => '06',
+			'JULI' => '07',
+			'AGS' => '08',
+			'SEP' => '09',
+			'OKT' => '10',
+			'NOP' => '11',
+			'DES' => '12'
 		];
 
 		// Clean month code to handle potential extra chars
 		// Remove any numeric prefix like "0: " or "1: "
 		$clean_month_code = preg_replace('/^\d+:\s*/', '', $month_code);
 		$clean_month_code = strtoupper(trim($clean_month_code));
-		
+
 		// If clean code is not in map, try to find a key that is contained in it
 		if (!isset($month_map[$clean_month_code])) {
 			foreach ($month_map as $key => $val) {
@@ -1957,7 +1973,8 @@ class Tabungan_model extends CI_Model
 
 		// Build nama mapping from JAN sheet
 		$jan_index = array_search('JAN', array_map('strtoupper', $sheets));
-		if ($jan_index === false) $jan_index = 0;
+		if ($jan_index === false)
+			$jan_index = 0;
 
 		$noTab_to_nama = [];
 		$jan_rows = $xls->rows($jan_index);
@@ -1993,7 +2010,8 @@ class Tabungan_model extends CI_Model
 			$no_urut = intval($row[$col_no_urut] ?? 0);
 			$no_tab = intval($row[$col_no_tab] ?? 0);
 
-			if ($no_urut <= 0 && $no_tab <= 0) continue;
+			if ($no_urut <= 0 && $no_tab <= 0)
+				continue;
 
 			$norek_num = $no_tab > 0 ? $no_tab : $no_urut;
 
@@ -2009,32 +2027,49 @@ class Tabungan_model extends CI_Model
 				}
 			}
 
-			if (stripos($nama, 'JUMLAH') !== false || stripos($nama, 'TOTAL') !== false) continue;
+			if (stripos($nama, 'JUMLAH') !== false || stripos($nama, 'TOTAL') !== false)
+				continue;
 
 			try {
 				$saldo_sebelum = $this->_parse_amount($row[$col_saldo] ?? 0);
 				$no_rekening = 'T' . str_pad($norek_num, 3, '0', STR_PAD_LEFT);
 
-				// Find or create nasabah
-				if (isset($nama_to_nasabah[$no_rekening])) {
-					$nasabah_id = $nama_to_nasabah[$no_rekening];
-					$results['nasabah']['found']++;
-				} else {
-					$nasabah = $this->_find_nasabah_by_name($nama);
-					if ($nasabah) {
-						$nasabah_id = $nasabah->id;
-						$results['nasabah']['found']++;
-					} else {
-						$nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
-						$results['nasabah']['created']++;
-					}
-					$nama_to_nasabah[$no_rekening] = $nasabah_id;
-				}
-
-				// Check if simpanan exists
+				// FIX: Check existing simpanan FIRST to avoid wrong nasabah matching
 				$existing = $this->db->where('no_rekening', $no_rekening)->get('tbsimpanan')->row();
 
-				if (!$existing) {
+				if ($existing) {
+					// Existing account — use its nasabah_id (no name matching needed)
+					$simpanan_id = $existing->id;
+					$nasabah_id = $existing->nasabah_id;
+					$results['nasabah']['found']++;
+					$results['simpanan']['updated']++;
+
+					// Update nama in BOTH tbsimpanan AND tbnasabah to keep them in sync
+					$this->db->where('id', $simpanan_id)->update('tbsimpanan', [
+						'nama_nasabah' => $nama
+					]);
+					$this->db->where('id', $nasabah_id)->update('tbnasabah', [
+						'nama_lengkap' => $nama,
+						'alamat' => $alamat ?: '-'
+					]);
+				} else {
+					// New account — find or create nasabah by exact name
+					if (isset($nama_to_nasabah[$no_rekening])) {
+						$nasabah_id = $nama_to_nasabah[$no_rekening];
+						$results['nasabah']['found']++;
+					} else {
+						$nasabah = $this->_find_nasabah_by_name($nama);
+						if ($nasabah) {
+							$nasabah_id = $nasabah->id;
+							$results['nasabah']['found']++;
+						} else {
+							$nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
+							$results['nasabah']['created']++;
+						}
+						$nama_to_nasabah[$no_rekening] = $nasabah_id;
+					}
+
+					// Create simpanan master record
 					$simpanan_data = [
 						'no_rekening' => $no_rekening,
 						'nasabah_id' => $nasabah_id,
@@ -2049,13 +2084,6 @@ class Tabungan_model extends CI_Model
 					$this->db->insert('tbsimpanan', $simpanan_data);
 					$simpanan_id = $this->db->insert_id();
 					$results['simpanan']['inserted']++;
-				} else {
-					$simpanan_id = $existing->id;
-					$this->db->where('id', $simpanan_id)->update('tbsimpanan', [
-						'nama_nasabah' => $nama,
-						'nasabah_id' => $nasabah_id
-					]);
-					$results['simpanan']['updated']++;
 				}
 
 				// Store saldo_awal for this account (used in final saldo calculation)
@@ -2066,7 +2094,7 @@ class Tabungan_model extends CI_Model
 
 				// Process SETORAN columns from start to end (each column = 1 day)
 				$setoran_cols = $col_setoran_end - $col_setoran_start + 1;
-				
+
 				// Log first row processing
 				if ($i == 3) {
 					$log_msg = "Row 3 Debug:\nSetoran Cols: $setoran_cols (Start: $col_setoran_start, End: $col_setoran_end)\n";
@@ -2077,7 +2105,7 @@ class Tabungan_model extends CI_Model
 					$col = $col_setoran_start + ($day - 1);
 					$raw_val = $row[$col] ?? 0;
 					$amount = $this->_parse_amount($raw_val);
-					
+
 					// Debug: Log first few setoran values for first row
 					if ($i == 3 && $day <= 5) {
 						$log_msg = "Row3 Day$day: Col=$col, Raw='$raw_val', Parsed=$amount, Month=$month\n";
@@ -2127,14 +2155,14 @@ class Tabungan_model extends CI_Model
 				$bunga_net = $this->_parse_amount($row[$col_bunga] ?? 0);      // Rounded bunga
 				$bunga_raw = $this->_parse_amount($row[$col_bunga_raw] ?? 0);  // Raw bunga (before rounding)
 				$e_min = $this->_parse_amount($row[$col_e_min] ?? 0);          // E-MIN (base saldo)
-				
+
 				// Calculate bunga rate: rate = bunga_raw / e_min * 100
 				// Formula: =IF(CU4>="","",IF(CU4>=50000,CU4*0.2%,0))
 				$rate_bunga = 0;
 				if ($e_min > 0 && $bunga_raw > 0) {
 					$rate_bunga = round(($bunga_raw / $e_min) * 100, 2); // e.g., 0.2 for 0.2%
 				}
-				
+
 				// VALIDATION: Bunga must be > 0 and not equal to saldo_sebelum
 				$is_valid_bunga = ($bunga_net > 0 && $bunga_net != $saldo_sebelum);
 				if ($is_valid_bunga) {
@@ -2167,7 +2195,7 @@ class Tabungan_model extends CI_Model
 			} catch (Exception $e) {
 				$results['simpanan']['errors']++;
 				$results['errors'][] = "Row " . ($i + 1) . ": " . $e->getMessage();
-				$log_msg = "Row " . ($i+1) . " Exception: " . $e->getMessage() . "\n";
+				$log_msg = "Row " . ($i + 1) . " Exception: " . $e->getMessage() . "\n";
 				file_put_contents($log_file, $log_msg, FILE_APPEND);
 			}
 		}
@@ -2203,14 +2231,14 @@ class Tabungan_model extends CI_Model
 
 				// SALDO = SALDO_AWAL + SETORAN(this month) - PENARIKAN(this month) + BUNGA
 				$saldo = $saldo_awal + $total_setoran - $total_penarikan + $bunga;
-				
+
 				// Debug: Log saldo calculation for first 5 accounts
 				$debug_count++;
 				if ($debug_count <= 5) {
 					$log_msg = "SALDO CALC $no_rekening: awal=$saldo_awal + setor=$total_setoran - tarik=$total_penarikan + bunga=$bunga = $saldo (month=$month)\n";
 					file_put_contents($log_file, $log_msg, FILE_APPEND);
 				}
-				
+
 				$this->db->where('id', $simpanan_id)->update('tbsimpanan', ['jumlah_simpanan' => $saldo]);
 			} catch (Exception $e) {
 				$results['errors'][] = "Saldo update error for $no_rekening: " . $e->getMessage();
