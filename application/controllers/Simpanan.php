@@ -941,10 +941,6 @@ class Simpanan extends CI_Controller
      */
     public function get_sheet_names()
     {
-        // Increase limits for large Excel files
-        ini_set('memory_limit', '1024M');
-        ini_set('max_execution_time', 300);
-        
         $allowed_roles = ['Admin', 'Direktur'];
         $level = $this->session->userdata('level');
         if (!in_array($level, $allowed_roles)) {
@@ -978,11 +974,200 @@ class Simpanan extends CI_Controller
 
         // Store file path in session
         $this->session->set_userdata('import_file_path', $file_path);
+        $this->session->set_userdata('import_upload_time', time());
 
-        // Get sheet names from model
-        $sheets = $this->Tabungan_model->get_excel_sheet_names($file_path);
+        // Start background CLI parsing process
+        $php_path = PHP_BINARY;
+        $script_path = APPPATH . 'scripts/parse_excel_bg.php';
+        $app_path = str_replace('/', '\\', APPPATH);
 
-        echo json_encode($sheets);
+        // Try multiple methods to start background process on Windows
+        $bg_started = false;
+
+        // Method 1: popen with start /B
+        $cmd = 'start /B "" "' . $php_path . '" "' . $script_path . '" "' . $file_path . '" "' . $app_path . '"';
+        $proc = @popen($cmd, 'r');
+        if ($proc) {
+            pclose($proc);
+            $bg_started = true;
+        }
+
+        // Method 2: If Method 1 didn't work (check .status file after brief wait)
+        if (!$bg_started) {
+            $cmd2 = 'cmd /c start /B "" "' . $php_path . '" "' . $script_path . '" "' . $file_path . '" "' . $app_path . '"';
+            $proc2 = @popen($cmd2, 'r');
+            if ($proc2) {
+                pclose($proc2);
+                $bg_started = true;
+            }
+        }
+
+        // Store app_path in session for inline fallback
+        $this->session->set_userdata('import_app_path', $app_path);
+
+        // Return immediately - frontend will poll check_parse_status
+        echo json_encode([
+            'success' => true,
+            'parsing' => true,
+            'message' => 'File diupload, parsing dimulai...'
+        ]);
+    }
+
+    /**
+     * Check parsing status (polled by frontend)
+     * If background process failed to start, falls back to inline parsing
+     */
+    public function check_parse_status()
+    {
+        $file_path = $this->session->userdata('import_file_path');
+
+        if (empty($file_path)) {
+            echo json_encode(['status' => 'error', 'error' => 'No file path in session']);
+            return;
+        }
+
+        $status_file = $file_path . '.status';
+        $sheets_file = $file_path . '.sheets.json';
+
+        // If status file exists, background process is working
+        if (file_exists($status_file)) {
+            $status = json_decode(file_get_contents($status_file), true);
+
+            // If done, also return sheet names
+            if ($status['status'] === 'done' && file_exists($sheets_file)) {
+                $sheet_names = json_decode(file_get_contents($sheets_file), true);
+                $sheets = [];
+                foreach ($sheet_names as $index => $name) {
+                    $sheets[] = ['index' => $index, 'name' => $name];
+                }
+                $status['sheets'] = $sheets;
+
+                // Store cache path info in session
+                $this->session->set_userdata('import_cache_path', $file_path);
+            }
+
+            echo json_encode($status);
+            return;
+        }
+
+        // No status file — check if background process has stalled
+        $upload_time = $this->session->userdata('import_upload_time') ?: 0;
+        $elapsed = time() - $upload_time;
+
+        // Wait up to 8 seconds for background process to start
+        if ($elapsed < 8) {
+            echo json_encode(['status' => 'waiting', 'message' => 'Menunggu proses dimulai...']);
+            return;
+        }
+
+        // Background process failed to start — do inline parsing as fallback
+        set_time_limit(0);
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 0);
+        ignore_user_abort(true);
+
+        // Write status so other polls know we're working
+        file_put_contents($status_file, json_encode([
+            'status' => 'parsing',
+            'message' => 'Parsing inline (fallback)...'
+        ]));
+
+        try {
+            if (!file_exists($file_path)) {
+                throw new Exception('File tidak ditemukan: ' . $file_path);
+            }
+
+            $file_ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+
+            if ($file_ext === 'xlsx') {
+                require_once APPPATH . 'third_party/SimpleXLSX.php';
+                $xls = \Shuchkin\SimpleXLSX::parse($file_path);
+                if (!$xls) {
+                    throw new Exception('Gagal parsing XLSX: ' . \Shuchkin\SimpleXLSX::parseError());
+                }
+            } else {
+                require_once APPPATH . 'third_party/SimpleXLS.php';
+                $xls = \Shuchkin\SimpleXLS::parse($file_path);
+                if (!$xls) {
+                    throw new Exception('Gagal parsing XLS: ' . \Shuchkin\SimpleXLS::parseError());
+                }
+            }
+
+            file_put_contents($status_file, json_encode([
+                'status' => 'extracting',
+                'message' => 'File berhasil diparsing, mengekstrak sheet...'
+            ]));
+
+            $sheet_names = $xls->sheetNames();
+
+            // Save sheet names
+            file_put_contents($sheets_file, json_encode($sheet_names));
+
+            // Extract each sheet as individual JSON + preview files
+            $jan_name_map = [];
+            foreach ($sheet_names as $index => $name) {
+                file_put_contents($status_file, json_encode([
+                    'status' => 'extracting',
+                    'message' => 'Sheet ' . ($index + 1) . '/' . count($sheet_names) . ': ' . $name
+                ]));
+
+                $rows = $xls->rows($index);
+                file_put_contents($file_path . '.sheet.' . strtoupper($name) . '.json', json_encode($rows));
+
+                // Save lightweight preview (first 50 data rows + headers)
+                $preview_rows = array_slice($rows, 0, 53); // 3 header rows + 50 data rows
+                file_put_contents($file_path . '.sheet.' . strtoupper($name) . '.preview.json', json_encode($preview_rows));
+
+                // Build JAN name map for cross-sheet name lookup
+                if (strtoupper($name) === 'JAN') {
+                    for ($r = 3; $r < count($rows); $r++) {
+                        $jan_no_tab = intval($rows[$r][2] ?? 0);
+                        $jan_nama = trim($rows[$r][1] ?? '');
+                        $jan_alamat = trim($rows[$r][3] ?? '-');
+                        if ($jan_no_tab > 0 && !empty($jan_nama)) {
+                            $jan_name_map[$jan_no_tab] = [
+                                'nama' => $jan_nama,
+                                'alamat' => $jan_alamat
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // Save JAN name map separately (tiny file, used by preview)
+            file_put_contents($file_path . '.jan_names.json', json_encode($jan_name_map));
+
+            // Done — return sheet list
+            $sheets = [];
+            foreach ($sheet_names as $index => $name) {
+                $sheets[] = ['index' => $index, 'name' => $name];
+            }
+
+            $this->session->set_userdata('import_cache_path', $file_path);
+
+            file_put_contents($status_file, json_encode([
+                'status' => 'done',
+                'sheets' => $sheet_names,
+                'message' => 'Selesai!'
+            ]));
+
+            echo json_encode([
+                'status' => 'done',
+                'sheets' => $sheets,
+                'message' => 'Selesai! (inline fallback)'
+            ]);
+
+        } catch (Exception $e) {
+            file_put_contents($status_file, json_encode([
+                'status' => 'error',
+                'error' => $e->getMessage()
+            ]));
+
+            echo json_encode([
+                'status' => 'error',
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -991,6 +1176,19 @@ class Simpanan extends CI_Controller
      */
     public function preview_import()
     {
+        // Aggressive timeout prevention for large files (36MB+)
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        ini_set('memory_limit', '2048M');
+        ignore_user_abort(true);
+
+        // Disable output buffering to prevent Apache timeout
+        if (ob_get_level())
+            ob_end_clean();
+
+        // Prevent Apache/proxy timeout by setting headers
+        header('X-Accel-Buffering: no');
+
         $allowed_roles = ['Admin', 'Direktur'];
         $level = $this->session->userdata('level');
         if (!in_array($level, $allowed_roles)) {
@@ -1003,7 +1201,7 @@ class Simpanan extends CI_Controller
 
         // Get file path from session (uploaded by get_sheet_names)
         $file_path = $this->session->userdata('import_file_path');
-        
+
         if (empty($file_path) || !file_exists($file_path)) {
             echo json_encode(['success' => false, 'errors' => ['File tidak ditemukan. Silakan upload ulang.']]);
             return;
@@ -1020,6 +1218,19 @@ class Simpanan extends CI_Controller
      */
     public function proses_import_with_mapping()
     {
+        // Aggressive timeout prevention for large files (36MB+)
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        ini_set('memory_limit', '2048M');
+        ignore_user_abort(true);
+
+        // Disable output buffering to prevent Apache timeout
+        if (ob_get_level())
+            ob_end_clean();
+
+        // Prevent Apache/proxy timeout by setting headers
+        header('X-Accel-Buffering: no');
+
         $allowed_roles = ['Admin', 'Direktur'];
         $level = $this->session->userdata('level');
         if (!in_array($level, $allowed_roles)) {
@@ -1029,7 +1240,7 @@ class Simpanan extends CI_Controller
 
         // Get file path from session (set during preview)
         $file_path = $this->session->userdata('import_file_path');
-        
+
         // If no session file, check for new upload
         if (empty($file_path) || !file_exists($file_path)) {
             if (!empty($_FILES['excel_file']['name'])) {
@@ -1057,20 +1268,20 @@ class Simpanan extends CI_Controller
             }
         }
 
-        // Get mapping from POST - H-AJ = Setoran (7-35, days 1-29), AK-BM = Penarikan (36-64, days 1-29)
+        // Get mapping from POST - ALL months have same structure:
+        // Col 4=SALDO, Cols 5-35=SETORAN(31 days), Cols 36-66=PENARIKAN(31 days), Col 101=BUNGA RIIL
         $mapping = [
             'no_urut' => intval($this->input->post('col_no_urut') ?? 0),
             'nama' => intval($this->input->post('col_nama') ?? 1),
-            'no_tab' => intval($this->input->post('col_no_tab') ?? 4),
-            'alamat' => intval($this->input->post('col_alamat') ?? 5),
-            'saldo_awal' => intval($this->input->post('col_saldo_awal') ?? 6),
-            'setoran_start' => intval($this->input->post('col_setoran_start') ?? 7),
+            'no_tab' => intval($this->input->post('col_no_tab') ?? 2),
+            'alamat' => intval($this->input->post('col_alamat') ?? 3),
+            'saldo_awal' => intval($this->input->post('col_saldo_awal') ?? 4),
+            'setoran_start' => intval($this->input->post('col_setoran_start') ?? 5),
             'setoran_end' => intval($this->input->post('col_setoran_end') ?? 35),
             'penarikan_start' => intval($this->input->post('col_penarikan_start') ?? 36),
-            'penarikan_end' => intval($this->input->post('col_penarikan_end') ?? 64),
-            'bunga' => intval($this->input->post('col_bunga') ?? 97),
+            'penarikan_end' => intval($this->input->post('col_penarikan_end') ?? 66),
+            'bunga' => intval($this->input->post('col_bunga') ?? 101),
         ];
-
         $month_code = $this->input->post('month_code') ?: 'JAN';
         $year = $this->input->post('year') ?: '2026';
         $delete_existing = $this->input->post('delete_existing') !== 'false';
