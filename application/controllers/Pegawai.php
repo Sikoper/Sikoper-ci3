@@ -41,11 +41,11 @@ class Pegawai extends CI_Controller
                 $row[] = $field->nama_lengkap;
                 $row[] = $field->telp;
                 $row[] = $field->jabatan;
-                $encodedNik = safe_base64_encode($field->nik);
-                $buttons = "<button class=\"btn btn-secondary\" onclick=\"window.location='pegawai/detail/$encodedNik'\"><i class='fa fa-info fa-fw'></i></button>";
+                $encodedId = safe_base64_encode($field->id);
+                $buttons = "<button class=\"btn btn-secondary\" onclick=\"window.location='pegawai/detail/$encodedId'\"><i class='fa fa-info fa-fw'></i></button>";
 
                 if ($level !== 'Direktur') {
-                    $buttons = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='pegawai/edit/$encodedNik'\"><i class='fa fa-edit fa-fw'></i></button>
+                    $buttons = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='pegawai/edit/$encodedId'\"><i class='fa fa-edit fa-fw'></i></button>
                             <button class=\"btn btn-danger\" onclick=\"deleteItem('{$field->id}', '{$field->nama_lengkap}')\"><i class=\"fa fa-trash fa-fw\"></i></button> " . $buttons;
                 }
 
@@ -201,18 +201,22 @@ class Pegawai extends CI_Controller
 
             $id = $this->input->post('id');
 
-            $this->Pegawai_model->delete_data($id);
-
-            $msg = [
-                'success' => 'Data berhasil dihapus'
-            ];
+            if ($this->Pegawai_model->delete_data($id)) {
+                $msg = [
+                    'success' => 'Data berhasil dihapus'
+                ];
+            } else {
+                $msg = [
+                    'error' => 'Data Pegawai gagal dihapus karena masih memiliki record simpanan, deposito, atau akun pengguna terkait.'
+                ];
+            }
             echo json_encode($msg);
         } else {
             redirect('unauthorized_403');
         }
     }
 
-    public function edit($encoded_nik = null)
+    public function edit($encoded_id = null)
     {
         $allowed_roles = ['Admin'];
         $level = $this->session->userdata('level');
@@ -221,14 +225,13 @@ class Pegawai extends CI_Controller
         }
 
         // Menggunakan helper function dari secure_helper.php
-        if ($encoded_nik === null) {
+        if ($encoded_id === null) {
             show_custom_404();
             return;
         }
 
-        $nik = safe_base64_decode($encoded_nik);
-        ;
-        $pegawai = $this->Pegawai_model->get_data_by_nik($nik);
+        $id = safe_base64_decode($encoded_id);
+        $pegawai = $this->Pegawai_model->get_data_by_id($id);
 
         if (!$pegawai) {
             show_custom_404();
@@ -349,18 +352,18 @@ class Pegawai extends CI_Controller
         }
     }
 
-    public function detail($encoded_nik = null)
+    public function detail($encoded_id = null)
     {
         // Menggunakan helper function dari secure_helper.php
-        if ($encoded_nik === null) {
+        if ($encoded_id === null) {
             show_custom_404();
             return;
         }
 
-        $nik = safe_base64_decode($encoded_nik);
+        $id = safe_base64_decode($encoded_id);
 
         $this->load->model('Pegawai_model');
-        $pegawai = $this->Pegawai_model->get_data_by_nik($nik);
+        $pegawai = $this->Pegawai_model->get_data_by_id($id);
 
         if (!$pegawai) {
             show_custom_404();

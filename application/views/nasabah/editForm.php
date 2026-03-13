@@ -3,7 +3,7 @@
         <?php
         // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
         $backUrl = $this->input->get('code') == 1
-            ? site_url('nasabah/detail/' . safe_base64_encode($nasabah->nik))
+            ? site_url('nasabah/detail/' . safe_base64_encode($nasabah->id))
             : site_url('nasabah');
         ?>
         <div class="card-header">

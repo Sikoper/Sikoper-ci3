@@ -52,12 +52,12 @@
         <?php if ($this->session->userdata('level') != 'Direktur'): ?>
             <div class="d-flex justify-content-end mt-4">
                 <button type="button"
-                    onclick="window.location='<?= base_url('pegawai/edit/' . safe_base64_encode($pegawai->nik)) . '?code=1' ?>'"
+                    onclick="window.location='<?= base_url('pegawai/edit/' . safe_base64_encode($pegawai->id)) . '?code=1' ?>'"
                     class="btn btn-success me-2">
                     <i class="fa fa-edit fa-fw"></i> Edit
                 </button>
                 <button class="btn btn-danger"
-                    onclick="deleteItem('<?= $pegawai->nik ?>', '<?= addslashes($pegawai->nama_lengkap) ?>')">
+                    onclick="deleteItem('<?= $pegawai->id ?>', '<?= addslashes($pegawai->nama_lengkap) ?>')">
                     <i class="fa fa-trash fa-fw"></i> Hapus
                 </button>
             </div>

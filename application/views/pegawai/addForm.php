@@ -89,6 +89,9 @@
                         <select id="jabatan" name="jabatan" class="form-select">
                             <option value=""> -- Pilih Jabatan -- </option>
                             <option value="PENANGGUNG JAWAB">PENANGGUNG JAWAB</option>
+                            <option value="PENGAWAS I">PENGAWAS I</option>
+                            <option value="KEPALA SPBS">KEPALA SPBS</option>
+                            <option value="PENGAWAS II">PENGAWAS II</option>
                             <option value="BADAN PEMERIKSA">BADAN PEMERIKSA</option>
                             <option value="KEPALA BAGIAN TATA USAHA">KEPALA BAGIAN TATA USAHA</option>
                             <option value="PEMBUKUAN 1">PEMBUKUAN 1</option>

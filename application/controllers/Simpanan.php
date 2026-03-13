@@ -37,23 +37,23 @@ class Simpanan extends CI_Controller
     public function fetchData()
     {
         // Menggunakan helper function dari secure_helper.php
-        // if ($this->input->is_ajax_request() == true) {
-        $list = $this->Simpanan_model->get_datatables();
-        $data = array();
-        $no = $_POST['start'];
-        $level = $this->session->userdata('level');
+        if ($this->input->is_ajax_request() == true) {
+            $list = $this->Simpanan_model->get_datatables();
+            $data = array();
+            $no = $_POST['start'];
+            $level = $this->session->userdata('level');
 
-        foreach ($list as $field) {
-            $no++;
-            $row = array();
+            foreach ($list as $field) {
+                $no++;
+                $row = array();
 
-            $row[] = "<div class=\"text-center\">$no</div>";
-            $row[] = $field->nama_nasabah;
-            $row[] = $field->no_rekening;
-            $row[] = $field->telp_nasabah;
-            $row[] = number_format($field->jumlah_simpanan, 0, ',', '.');
-            if ($level == 'Admin') {
-                $row[] = '
+                $row[] = "<div class=\"text-center\">$no</div>";
+                $row[] = $field->nama_nasabah;
+                $row[] = $field->no_rekening;
+                $row[] = $field->telp_nasabah;
+                $row[] = number_format($field->jumlah_simpanan, 0, ',', '.');
+                if ($level == 'Admin') {
+                    $row[] = '
                                 <button type="button" class="btn btn-danger" onclick="deleteItem(\'' . $field->id . '\', \'' . $field->no_rekening . '\')">
                                     <i class="fa fa-trash fa-fw"></i>
                                 </button>
@@ -63,29 +63,29 @@ class Simpanan extends CI_Controller
                                 <button type="button" class="btn btn-primary" onclick="printNasabah(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
                                     <i class="fa fa-file"></i>
                                 </button>';
-            } else {
-                $row[] = '
+                } else {
+                    $row[] = '
                             <button type="button" class="btn btn-secondary" onclick="window.location=\'simpanan/detail/' . safe_base64_encode($field->no_rekening) . '\'">
                                 <i class="fa fa-info fa-fw"></i>
                             </button>
                             <button type="button" class="btn btn-primary" onclick="printNasabah(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
                                 <i class="fa fa-file"></i>
                             </button>';
+                }
+                $data[] = $row;
             }
-            $data[] = $row;
+
+            $output = array(
+                "draw" => $_POST['draw'],
+                "recordsTotal" => $this->Simpanan_model->count_all(),
+                "recordsFiltered" => $this->Simpanan_model->count_filtered(),
+                "data" => $data,
+            );
+
+            echo json_encode($output);
+        } else {
+            exit('Maaf data tidak bisa ditampilkan');
         }
-
-        $output = array(
-            "draw" => $_POST['draw'],
-            "recordsTotal" => $this->Simpanan_model->count_all(),
-            "recordsFiltered" => $this->Simpanan_model->count_filtered(),
-            "data" => $data,
-        );
-
-        echo json_encode($output);
-        // } else {
-        //     exit('Maaf data tidak bisa ditampilkan');
-        // }
     }
 
     public function add()
@@ -557,7 +557,8 @@ class Simpanan extends CI_Controller
 
         $nasabah = $this->Nasabah_model->get_data_by_id($simpanan->nasabah_id);
         $jenis_tabungan = $this->Kategori_model->get_data_by_id($simpanan->jenistabungan_id);
-        $pegawai = $this->Pegawai_model->get_data_by_id($simpanan->pegawai_id);
+        $pegawai = new stdClass();
+        $pegawai->nama_lengkap = $this->getNamaPegawai($simpanan->pegawai_id);
 
         $this->load->model('Penarikan_model');
         $akumulasi_data_penarikan = $this->Penarikan_model->get_akumulasi_penarikan_by_simpanan($simpanan->id);
@@ -583,6 +584,29 @@ class Simpanan extends CI_Controller
             'isi' => $this->load->view('simpanan/detail', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
+    }
+
+    private function getNamaPegawai($pegawai_id_param = null)
+    {
+        $level = $this->session->userdata('level');
+        $pegawai_id = $pegawai_id_param ?: $this->session->userdata('pegawai_id');
+
+        if ($level === 'Admin' || empty($pegawai_id) || $pegawai_id == 1) {
+            $pegawai = $this->Pegawai_model->get_first_by_jabatan('PEMBUKUAN TABUNGAN');
+            if (!$pegawai) {
+                // Fallback to first available pegawai
+                $pegawai = $this->db->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+            }
+            return $pegawai ? $pegawai->nama_lengkap : 'Admin (Default)';
+        } else {
+            $pegawai = $this->Pegawai_model->get_data_by_id($pegawai_id);
+            if (!$pegawai) {
+                $pegawai = $this->Pegawai_model->get_first_by_jabatan('PEMBUKUAN TABUNGAN');
+                if (!$pegawai)
+                    $pegawai = $this->db->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+            }
+            return $pegawai ? $pegawai->nama_lengkap : 'N/A';
+        }
     }
 
     public function getJenisData()
@@ -799,8 +823,12 @@ class Simpanan extends CI_Controller
         $upload_data = $this->upload->data();
         $file_path = $upload_data['full_path'];
 
-        // Get pegawai_id from session or use default
-        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+        // Get pegawai_id from session or use first available
+        $pegawai_id = $this->session->userdata('pegawai_id');
+        if (!$pegawai_id) {
+            $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
+            $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+        }
 
         // Get jenistabungan_id for Tabungan
         $jenis = $this->db->like('nama', 'Tabungan', 'both')->get('tbjenistabungan')->row();
@@ -851,8 +879,12 @@ class Simpanan extends CI_Controller
         $upload_data = $this->upload->data();
         $file_path = $upload_data['full_path'];
 
-        // Get pegawai_id from session or use default
-        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+        // Get pegawai_id from session or use first available
+        $pegawai_id = $this->session->userdata('pegawai_id');
+        if (!$pegawai_id) {
+            $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
+            $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+        }
 
         // Get jenistabungan_id for Tabungan
         $jenis = $this->db->like('nama', 'Tabungan', 'both')->get('tbjenistabungan')->row();
@@ -915,8 +947,12 @@ class Simpanan extends CI_Controller
         $upload_data = $this->upload->data();
         $file_path = $upload_data['full_path'];
 
-        // Get pegawai_id from session or use default
-        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+        // Get pegawai_id from session or use first available
+        $pegawai_id = $this->session->userdata('pegawai_id');
+        if (!$pegawai_id) {
+            $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
+            $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+        }
 
         // Get jenistabungan_id for Tabungan
         $jenis = $this->db->like('nama', 'Tabungan', 'both')->get('tbjenistabungan')->row();
@@ -1286,8 +1322,12 @@ class Simpanan extends CI_Controller
         $year = $this->input->post('year') ?: '2026';
         $delete_existing = $this->input->post('delete_existing') !== 'false';
 
-        // Get pegawai_id from session or use default
-        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+        // Get pegawai_id from session or use first available
+        $pegawai_id = $this->session->userdata('pegawai_id');
+        if (!$pegawai_id) {
+            $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
+            $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+        }
 
         // Get jenistabungan_id for Tabungan
         $jenis = $this->db->like('nama', 'Tabungan', 'both')->get('tbjenistabungan')->row();

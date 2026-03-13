@@ -3,7 +3,7 @@
         <?php
         // Menggunakan safe_base64_encode dari secure_helper.php (autoloaded)
         $backUrl = $this->input->get('code') == 1
-            ? site_url('pegawai/detail/' . safe_base64_encode($pegawai->nik))
+            ? site_url('pegawai/detail/' . safe_base64_encode($pegawai->id))
             : site_url('pegawai');
         ?>
         <div class="card-header">
@@ -21,7 +21,7 @@
                     <div class="form-group" style="height: 80px;">
                         <label for="nik">NIK</label>
                         <input type="text" class="form-control" id="nik" name="nik" placeholder="NIK sesuai KTP"
-                            autocomplete="off" value="<?= $pegawai->nik; ?>" readonly>
+                            autocomplete="off" value="<?= $pegawai->nik; ?>">
                         <div id="errorNik" class="invalid-feedback" style="display: none;"></div>
                         <div class="valid-feedback" style="display: none;"></div>
                     </div>
@@ -93,6 +93,12 @@
                         <select id="jabatan" name="jabatan" class="form-select">
                             <option value=""> -- Pilih Jabatan -- </option>
                             <option value="PENANGGUNG JAWAB" <?= ($pegawai->jabatan == 'PENANGGUNG JAWAB') ? 'selected' : ''; ?>>PENANGGUNG JAWAB</option>
+                            <option value="PENGAWAS I" <?= ($pegawai->jabatan == 'PENGAWAS I') ? 'selected' : ''; ?>>
+                                PENGAWAS I</option>
+                            <option value="KEPALA SPBS" <?= ($pegawai->jabatan == 'KEPALA SPBS') ? 'selected' : ''; ?>>
+                                KEPALA SPBS</option>
+                            <option value="PENGAWAS II" <?= ($pegawai->jabatan == 'PENGAWAS II') ? 'selected' : ''; ?>>
+                                PENGAWAS II</option>
                             <option value="BADAN PEMERIKSA" <?= ($pegawai->jabatan == 'BADAN PEMERIKSA') ? 'selected' : ''; ?>>BADAN PEMERIKSA</option>
                             <option value="KEPALA BAGIAN TATA USAHA" <?= ($pegawai->jabatan == 'KEPALA BAGIAN TATA USAHA') ? 'selected' : ''; ?>>KEPALA BAGIAN TATA USAHA</option>
                             <option value="PEMBUKUAN 1" <?= ($pegawai->jabatan == 'PEMBUKUAN 1') ? 'selected' : ''; ?>>

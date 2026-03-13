@@ -34,7 +34,7 @@ class Bunga extends CI_Controller
 
         $parser = [
             'judul' => "Daftar Bunga Tabungan",
-            'isi'   => $this->load->view('bunga/index', $data, TRUE)
+            'isi' => $this->load->view('bunga/index', $data, TRUE)
         ];
         $this->parser->parse('templates/main', $parser);
     }
@@ -107,7 +107,7 @@ class Bunga extends CI_Controller
             // This line now works correctly because the new query selects 'bunga_riil'
             $row[] = "Rp " . number_format($field->bunga_riil, 2, ',', '.');
 
-            $row[] = number_format((float)$field->rate_bunga, 2, ',', '.') . " %";
+            $row[] = number_format((float) $field->rate_bunga, 2, ',', '.') . " %";
 
             // The delete button remains compatible
             $row[] = "<button class=\"btn btn-danger btn-sm\" onclick=\"deleteRecordBunga('" . $field->source_id . "', '" . $field->jumlah_transaksi . "','" . $field->tipe . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>";
@@ -141,27 +141,35 @@ class Bunga extends CI_Controller
                 return;
             }
 
-            // Get related simpanan
-            $simpanan = $this->Simpanan_model->get_data_by_id($transaksi->simpanan_id);
+            $this->db->trans_start();
+
+            // 1. Lock tabel tbsimpanan for update
+            $simpanan_query = $this->db->query(
+                "SELECT id, jumlah_simpanan FROM tbsimpanan WHERE id = ? FOR UPDATE",
+                [$transaksi->simpanan_id]
+            );
+            $simpanan = $simpanan_query->row();
 
             if (!$simpanan) {
+                $this->db->trans_rollback();
                 echo json_encode(['error' => 'Data simpanan tidak ditemukan.']);
                 return;
             }
 
-            // Recalculate total simpanan
+            // 2. Recalculate and update
             $selisih = $simpanan->jumlah_simpanan - $transaksi->jumlah_transaksi;
+            $this->db->where('id', $transaksi->simpanan_id);
+            $this->db->update('tbsimpanan', ['jumlah_simpanan' => $selisih]);
 
-            // Delete transaksi
-            $delete = $this->Bunga_model->delete_data($id);
-            if ($delete) {
-                // Update jumlah simpanan
-                $this->Simpanan_model->edit_data($transaksi->simpanan_id, [
-                    'jumlah_simpanan' => $selisih
-                ]);
-                echo json_encode(['success' => 'Bunga tabungan berhasil dihapus.']);
-            } else {
+            // 3. Delete transaksi
+            $this->Bunga_model->delete_data($id);
+
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === FALSE) {
                 echo json_encode(['error' => 'Gagal menghapus bunga tabungan.']);
+            } else {
+                echo json_encode(['success' => 'Bunga tabungan berhasil dihapus.']);
             }
         }
     }
@@ -191,19 +199,19 @@ class Bunga extends CI_Controller
     {
         $start_date = $this->input->get('start_date') ?? date('Y-m-01');
         $end_date = $this->input->get('end_date') ?? date('Y-m-t');
-        
+
         // Get data for the report
         $list = $this->Bunga_model->get_report_data($start_date, $end_date);
         $total_bunga = $this->Bunga_model->get_total_bunga_filtered($start_date, $end_date);
-        
+
         // Format dates for display
         $formatter = new \IntlDateFormatter('id_ID', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);
         $formatter->setPattern('MMMM yyyy');
         $periode = $formatter->format(new DateTime($start_date));
-        
+
         $formatter->setPattern('d MMMM yyyy');
         $tanggal_cetak = $formatter->format(new DateTime());
-        
+
         $data = [
             'list' => $list,
             'total_bunga' => $total_bunga,
@@ -237,24 +245,24 @@ class Bunga extends CI_Controller
 
         $search = $this->input->get('q') ?? '';
         $target_date = $this->input->get('target_date') ?? date('Y-m-d');
-        
+
         $month = date('m', strtotime($target_date));
         $year = date('Y', strtotime($target_date));
-        
+
         // Get simpanan that don't have bunga for this month
         $this->db->select('s.id, s.no_rekening, s.jumlah_simpanan, s.bunga_rate,
             COALESCE(s.nama_nasabah, n.nama_lengkap) as nama_nasabah');
         $this->db->from('tbsimpanan s');
         $this->db->join('tbnasabah n', 'n.id = s.nasabah_id', 'left');
         $this->db->where('s.status', 'aktif');
-        
+
         // Exclude simpanan that already have bunga this month
         $subquery = $this->db->select('simpanan_id')
             ->where('MONTH(tanggal_transaksi)', $month)
             ->where('YEAR(tanggal_transaksi)', $year)
             ->get_compiled_select('tbtransaksi');
         $this->db->where("s.id NOT IN ($subquery)", null, false);
-        
+
         if (!empty($search)) {
             $this->db->group_start();
             $this->db->like('s.no_rekening', $search);
@@ -262,10 +270,10 @@ class Bunga extends CI_Controller
             $this->db->or_like('n.nama_lengkap', $search);
             $this->db->group_end();
         }
-        
+
         $this->db->order_by('s.no_rekening', 'ASC');
         $this->db->limit(20);
-        
+
         $results = $this->db->get()->result();
 
         $data = [];
@@ -308,12 +316,12 @@ class Bunga extends CI_Controller
         // Check for duplicate (only 1 per month allowed)
         $month = date('m', strtotime($tanggal));
         $year = date('Y', strtotime($tanggal));
-        
+
         $exists = $this->db->where('simpanan_id', $simpanan_id)
             ->where('MONTH(tanggal_transaksi)', $month)
             ->where('YEAR(tanggal_transaksi)', $year)
             ->count_all_results('tbtransaksi');
-            
+
         if ($exists > 0) {
             $bulan = date('F Y', strtotime($tanggal));
             echo json_encode(['error' => "Bunga untuk tabungan ini pada bulan $bulan sudah ada."]);
@@ -340,14 +348,14 @@ class Bunga extends CI_Controller
 
         // Insert into tbtransaksi
         $this->db->trans_start();
-        
+
         $this->db->insert('tbtransaksi', $data);
-        
+
         // Update simpanan balance
         $new_balance = $simpanan->jumlah_simpanan + $jumlah_bunga;
         $this->db->where('id', $simpanan_id);
         $this->db->update('tbsimpanan', ['jumlah_simpanan' => $new_balance]);
-        
+
         $this->db->trans_complete();
 
         if ($this->db->trans_status()) {

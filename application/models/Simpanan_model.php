@@ -5,8 +5,8 @@ class Simpanan_model extends CI_Model
 {
     var $table = 'tbsimpanan';
     // DENORMALIZED: Using denormalized columns for faster queries
-    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_simpanan',  null);
-    var $column_search = array('tbsimpanan.nama_nasabah', 'tbsimpanan.no_rekening', 'tbsimpanan.jenis_tabungan');
+    var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_simpanan', null);
+    var $column_search = array('tbsimpanan.nama_nasabah', 'tbnasabah.nama_lengkap', 'tbsimpanan.no_rekening', 'tbsimpanan.jenis_tabungan');
     var $order = array('created_at' => 'DESC');
 
     public $_table_detail_simpanan = 'tbdetail_simpanan';
@@ -81,24 +81,31 @@ class Simpanan_model extends CI_Model
         // DENORMALIZED: Auto-populate denormalized columns if not provided
         if (empty($data['nama_nasabah']) && !empty($data['nasabah_id'])) {
             $nasabah = $this->db->select('nama_lengkap')->where('id', $data['nasabah_id'])->get('tbnasabah')->row();
-            if ($nasabah) $data['nama_nasabah'] = $nasabah->nama_lengkap;
+            if ($nasabah)
+                $data['nama_nasabah'] = $nasabah->nama_lengkap;
         }
         if (empty($data['nama_pegawai']) && !empty($data['pegawai_id'])) {
             $pegawai = $this->db->select('nama_lengkap')->where('id', $data['pegawai_id'])->get('tbpegawai')->row();
-            if ($pegawai) $data['nama_pegawai'] = $pegawai->nama_lengkap;
+            if ($pegawai)
+                $data['nama_pegawai'] = $pegawai->nama_lengkap;
         }
         if ((empty($data['jenis_tabungan']) || empty($data['bunga_rate'])) && !empty($data['jenistabungan_id'])) {
             $jenis = $this->db->select('nama, bunga')->where('id', $data['jenistabungan_id'])->get('tbjenistabungan')->row();
             if ($jenis) {
-                if (empty($data['jenis_tabungan'])) $data['jenis_tabungan'] = $jenis->nama;
-                if (empty($data['bunga_rate'])) $data['bunga_rate'] = $jenis->bunga;
+                if (empty($data['jenis_tabungan']))
+                    $data['jenis_tabungan'] = $jenis->nama;
+                if (empty($data['bunga_rate']))
+                    $data['bunga_rate'] = $jenis->bunga;
             }
         }
         // Initialize totals to 0
-        if (!isset($data['total_setoran'])) $data['total_setoran'] = 0;
-        if (!isset($data['total_penarikan'])) $data['total_penarikan'] = 0;
-        if (!isset($data['total_bunga_akumulasi'])) $data['total_bunga_akumulasi'] = 0;
-        
+        if (!isset($data['total_setoran']))
+            $data['total_setoran'] = 0;
+        if (!isset($data['total_penarikan']))
+            $data['total_penarikan'] = 0;
+        if (!isset($data['total_bunga_akumulasi']))
+            $data['total_bunga_akumulasi'] = 0;
+
         return $this->db->insert('tbsimpanan', $data);
     }
 
@@ -107,7 +114,7 @@ class Simpanan_model extends CI_Model
      */
     public function add_to_total_setoran($simpanan_id, $amount)
     {
-        $this->db->set('total_setoran', 'COALESCE(total_setoran, 0) + ' . (float)$amount, false);
+        $this->db->set('total_setoran', 'COALESCE(total_setoran, 0) + ' . (float) $amount, false);
         $this->db->where('id', $simpanan_id);
         return $this->db->update('tbsimpanan');
     }
@@ -117,7 +124,7 @@ class Simpanan_model extends CI_Model
      */
     public function add_to_total_penarikan($simpanan_id, $amount)
     {
-        $this->db->set('total_penarikan', 'COALESCE(total_penarikan, 0) + ' . (float)$amount, false);
+        $this->db->set('total_penarikan', 'COALESCE(total_penarikan, 0) + ' . (float) $amount, false);
         $this->db->where('id', $simpanan_id);
         return $this->db->update('tbsimpanan');
     }
@@ -127,7 +134,7 @@ class Simpanan_model extends CI_Model
      */
     public function add_to_total_bunga($simpanan_id, $amount)
     {
-        $this->db->set('total_bunga_akumulasi', 'COALESCE(total_bunga_akumulasi, 0) + ' . (float)$amount, false);
+        $this->db->set('total_bunga_akumulasi', 'COALESCE(total_bunga_akumulasi, 0) + ' . (float) $amount, false);
         $this->db->where('id', $simpanan_id);
         return $this->db->update('tbsimpanan');
     }
@@ -141,18 +148,18 @@ class Simpanan_model extends CI_Model
         $setoran = $this->db->select_sum('jumlah_setoran')
             ->where('simpanan_id', $simpanan_id)
             ->get('tbdetail_simpanan')->row();
-        
+
         // Calculate total_penarikan
         $penarikan = $this->db->select_sum('jumlah_penarikan')
             ->where('simpanan_id', $simpanan_id)
             ->where('status', 'disetujui')
             ->get('tbdetail_penarikan')->row();
-        
+
         // Calculate total_bunga
         $bunga = $this->db->select_sum('jumlah_transaksi')
             ->where('simpanan_id', $simpanan_id)
             ->get('tbtransaksi')->row();
-        
+
         return $this->db->where('id', $simpanan_id)->update('tbsimpanan', [
             'total_setoran' => $setoran->jumlah_setoran ?? 0,
             'total_penarikan' => $penarikan->jumlah_penarikan ?? 0,
@@ -256,13 +263,13 @@ class Simpanan_model extends CI_Model
             $result = $query->row();
             return (object) [
                 'total_penarikan' => $result->total_penarikan ?? 0,
-                'total_denda'     => $result->total_denda ?? 0,
+                'total_denda' => $result->total_denda ?? 0,
             ];
         }
 
         return (object) [
             'total_penarikan' => 0,
-            'total_denda'     => 0,
+            'total_denda' => 0,
         ];
     }
 
@@ -306,6 +313,7 @@ class Simpanan_model extends CI_Model
         }
 
         $this->db->order_by('s.no_rekening', 'ASC');
+        $this->db->limit(50);
         return $this->db->get()->result();
     }
 

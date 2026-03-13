@@ -72,13 +72,27 @@ class Pegawai_model extends CI_Model
 
     public function delete_data($id)
     {
+        // Check if pegawai has related records in simpanan
+        $this->db->where('pegawai_id', $id);
+        $simpanan_exists = $this->db->get('tbsimpanan')->num_rows() > 0;
+
+        // Check if pegawai has related records in deposito
+        $this->db->where('pegawai_id', $id);
+        $deposito_exists = $this->db->get('tbdeposito')->num_rows() > 0;
+
+        // Check if pegawai has a user account
+        $this->db->where('pegawai_id', $id);
+        $user_exists = $this->db->get('tbuser')->num_rows() > 0;
+
+        // Block deletion if any related records exist
+        if ($simpanan_exists || $deposito_exists || $user_exists) {
+            return false;
+        }
+
         return $this->db->delete('tbpegawai', ['id' => $id]);
     }
 
-    public function get_data_by_nik($nik)
-    {
-        return $this->db->get_where('tbpegawai', ['nik' => $nik])->row();
-    }
+
 
     public function get_data()
     {

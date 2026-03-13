@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Nasabah_model extends CI_Model
 {
     var $table = 'tbnasabah';
-    var $column_order = array(null, 'nik', 'nama_lengkap', 'telp', 'alamat',  null);
+    var $column_order = array(null, 'nik', 'nama_lengkap', 'telp', 'alamat', null);
     var $column_search = array('nik', 'nama_lengkap');
     var $order = array('created_at' => 'DESC');
 
@@ -92,10 +92,7 @@ class Nasabah_model extends CI_Model
         return $this->db->delete('tbnasabah', ['id' => $id]);
     }
 
-    public function get_data_by_nik($nik)
-    {
-        return $this->db->get_where('tbnasabah', ['nik' => $nik])->row();
-    }
+
 
     public function edit_data($id, $data)
     {
@@ -117,6 +114,7 @@ class Nasabah_model extends CI_Model
         $this->db->like('nama_lengkap', $keyword);
         $this->db->select('id, nama_lengkap');
         $this->db->from('tbnasabah');
+        $this->db->limit(50);
         $query = $this->db->get();
         return $query->result();
     }

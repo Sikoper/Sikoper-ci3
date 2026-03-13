@@ -89,7 +89,7 @@ class Deposito extends CI_Controller
                                 <button type="button" class="btn btn-danger" onclick="deleteItem(\'' . $field->id . '\', \'' . $field->no_rekening . '\')">
                                     <i class="fa fa-trash fa-fw"></i>
                                 </button>
-                                <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->no_rekening) . '\'">
+                                <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->id) . '\'">
                                     <i class="fa fa-info fa-fw"></i>
                                 </button>
                                 <button type="button" class="btn btn-primary" onclick="printSertifikat(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
@@ -97,7 +97,7 @@ class Deposito extends CI_Controller
                                 </button>';
                 } else {
                     $row[] = '
-                            <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->no_rekening) . '\'">
+                            <button type="button" class="btn btn-secondary" onclick="window.location=\'deposito/detail/' . safe_base64_encode($field->id) . '\'">
                                 <i class="fa fa-info fa-fw"></i>
                             </button>
                             <button type="button" class="btn btn-primary" onclick="printSertifikat(\'' . $field->id . '\', \'' . $field->nama_nasabah . '\')">
@@ -275,6 +275,8 @@ class Deposito extends CI_Controller
                 // print_r($total_bunga_didapat);
                 // exit;
 
+                $this->db->trans_start();
+
                 if ($quick_add_mode == '1') {
                     // Auto-create Nasabah
                     $nama_baru = $this->input->post('nama_langsung', true);
@@ -299,6 +301,7 @@ class Deposito extends CI_Controller
                     $nasabah_id_final = $this->db->insert_id();
 
                     if (!$nasabah_id_final) {
+                        $this->db->trans_rollback();
                         $msg = ['error' => ['errorGeneral' => 'Gagal membuat data nasabah baru.']];
                         echo json_encode($msg);
                         return;
@@ -320,12 +323,6 @@ class Deposito extends CI_Controller
                     'telp_ahli_waris' => $kontak_ahli_waris,
                     'hubungan_ahli_waris' => $hubungan_ahli_waris,
                 ];
-
-                // echo '<pre>';
-                // print_r($data);
-                // exit;
-
-                $this->db->trans_start();
 
                 $this->Deposito_model->insert_data($data);
                 $deposito_id = $this->db->insert_id();
@@ -702,6 +699,10 @@ class Deposito extends CI_Controller
                 'required' => 'Pengendapan harus diisi.'
             ]);
 
+            $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [
+                'required' => 'Pegawai sebagai penanggung jawab wajib dipilih.',
+            ]);
+
             $this->form_validation->set_rules('jenis_denda', 'Jenis Denda', 'required', [
                 'required' => 'Jenis denda harus diisi.'
             ]);
@@ -732,6 +733,7 @@ class Deposito extends CI_Controller
                         'errorBiayaRegistrasi' => form_error('biaya_registrasi'),
                         'errorSimpananAwal' => form_error('simpanan_awal'),
                         'errorPengendapan' => form_error('pengendapan'),
+                        'errorPegawai' => form_error('pegawai_id'),
                         'errorJenisDenda' => form_error('jenis_denda'),
                         'errorJumlahDenda' => form_error('jumlah_denda'),
                         'errorJummlahDeposito' => form_error('jumlah_deposito'),
@@ -784,23 +786,30 @@ class Deposito extends CI_Controller
             return;
         }
 
-        $no_rekening = safe_base64_decode($encoded_rek);
+        $id = safe_base64_decode($encoded_rek);
 
-        if ($no_rekening === false || empty(trim($no_rekening))) {
-            show_404("Nomor rekening tidak valid.");
+        if ($id === false || empty(trim($id))) {
+            show_404("ID deposito tidak valid.");
             return;
         }
 
-        $deposito = $this->Deposito_model->get_data_by_norek($no_rekening);
-        log_message('debug', 'Level: ' . $level . ' | Rek: ' . $no_rekening . ' | Result: ' . print_r($deposito, true));
+        $deposito = $this->Deposito_model->get_data_by_id($id);
+        log_message('debug', 'Level: ' . $level . ' | ID: ' . $id . ' | Result: ' . print_r($deposito, true));
         if (!$deposito) {
-            show_404("Data deposito tidak ditemukan untuk nomor rekening: " . html_escape($no_rekening));
+            show_404("Data deposito tidak ditemukan untuk ID: " . html_escape($id));
             return;
         }
 
         $nasabah = $this->Nasabah_model->get_data_by_id($deposito->nasabah_id);
+
+        // Ensure nama_nasabah is always populated (fallback from nasabah record)
+        if (empty($deposito->nama_nasabah) && $nasabah) {
+            $deposito->nama_nasabah = $nasabah->nama_lengkap;
+        }
+
         $jenis_tabungan = $this->Kategori_model->get_data_by_id($deposito->jenistabungan_id);
-        $pegawai = $this->Pegawai_model->get_data_by_id($deposito->pegawai_id);
+        $pegawai = new stdClass();
+        $pegawai->nama_lengkap = $this->getNamaPegawai($deposito->pegawai_id);
 
         $this->load->model('Pencairan_model');
         $akumulasi_data_penarikan = $this->Pencairan_model->get_akumulasi_penarikan_by_deposito($deposito->id);
@@ -1090,16 +1099,25 @@ class Deposito extends CI_Controller
         $this->dompdf_lib->stream($filename, false);
     }
 
-    private function getNamaPegawai()
+    private function getNamaPegawai($pegawai_id_param = null)
     {
         $level = $this->session->userdata('level');
-        $pegawai_id = $this->session->userdata('pegawai_id');
+        $pegawai_id = $pegawai_id_param ?: $this->session->userdata('pegawai_id');
 
-        if ($level === 'Admin') {
+        if ($level === 'Admin' || empty($pegawai_id) || $pegawai_id == 1) {
             $pegawai = $this->Pegawai_model->get_first_by_jabatan('PEMBUKUAN TABUNGAN');
-            return $pegawai ? $pegawai->nama_lengkap : 'N/A';
+            if (!$pegawai) {
+                // Fallback to first available pegawai
+                $pegawai = $this->db->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+            }
+            return $pegawai ? $pegawai->nama_lengkap : 'Admin (Default)';
         } else {
             $pegawai = $this->Pegawai_model->get_data_by_id($pegawai_id);
+            if (!$pegawai) {
+                $pegawai = $this->Pegawai_model->get_first_by_jabatan('PEMBUKUAN TABUNGAN');
+                if (!$pegawai)
+                    $pegawai = $this->db->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+            }
             return $pegawai ? $pegawai->nama_lengkap : 'N/A';
         }
     }
@@ -1182,10 +1200,42 @@ class Deposito extends CI_Controller
         $response = ['status' => 'error', 'message' => 'Data tidak ditemukan.'];
 
         if ($deposito_id) {
-            $deposito = $this->Deposito_model->get_detail_deposito_by_id($deposito_id);
-            $bunga_tersedia = $this->Deposito_model->get_bunga_tersedia_from_log($deposito_id);
+            $deposito = $this->Deposito_model->get_data_by_id($deposito_id);
 
             if ($deposito) {
+                // Ensure nama_nasabah is always populated 
+                if (empty($deposito->nama_nasabah)) {
+                    $nasabah = $this->db->get_where('tbnasabah', ['id' => $deposito->nasabah_id])->row();
+                    $deposito->nama_nasabah = $nasabah ? $nasabah->nama_lengkap : 'N/A';
+                }
+
+                // Get bunga values from log
+                $bunga_sudah_dibayar = $this->Deposito_model->get_bunga_sudah_dibayar_from_log($deposito->id);
+
+                // Calculate months elapsed using Excel method
+                $start_date = new DateTime($deposito->tanggal_deposito);
+                $now = new DateTime();
+                $months_elapsed = ($now->format('Y') - $start_date->format('Y')) * 12
+                    + ($now->format('n') - $start_date->format('n'));
+
+                if ((int) $now->format('j') < (int) $start_date->format('j')) {
+                    $months_elapsed--;
+                }
+
+                $months_elapsed = max(0, min($months_elapsed, $deposito->durasi));
+
+                // Bunga_earned_so_far
+                $bunga_earned_so_far = $deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $months_elapsed;
+
+                // Hutang Bunga = Bunga Jatuh Tempo - Bunga Yang Sudah Dibayar
+                if ($deposito->status == 'ditutup') {
+                    $hutang_bunga_saat_ini = 0;
+                } else {
+                    $hutang_bunga_saat_ini = $bunga_earned_so_far - $bunga_sudah_dibayar;
+                }
+
+                $bunga_tersedia = max(0, $hutang_bunga_saat_ini);
+
                 $response = [
                     'status' => 'success',
                     'nama_nasabah' => $deposito->nama_nasabah,
@@ -1351,8 +1401,25 @@ class Deposito extends CI_Controller
         $upload_data = $this->upload->data();
         $file_path = $upload_data['full_path'];
 
-        // Get pegawai_id from session or use default
-        $pegawai_id = $this->session->userdata('pegawai_id') ?: 1;
+        // Get pegawai_id from session, validate it exists in tbpegawai
+        $pegawai_id = $this->session->userdata('pegawai_id');
+        if (!empty($pegawai_id)) {
+            // Verify the pegawai_id still exists in database
+            $pegawai_exists = $this->db->where('id', $pegawai_id)->get('tbpegawai')->row();
+            if (!$pegawai_exists) {
+                $pegawai_id = null; // Reset if pegawai was deleted
+            }
+        }
+        if (empty($pegawai_id)) {
+            // Fallback: get first available pegawai from database
+            $first_pegawai = $this->db->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+            if ($first_pegawai) {
+                $pegawai_id = $first_pegawai->id;
+            } else {
+                echo json_encode(['success' => false, 'errors' => ['Tidak ada data pegawai. Silakan tambah pegawai terlebih dahulu.']]);
+                return;
+            }
+        }
 
         // Get jenistabungan_id for Deposito
         $jenis = $this->db->like('nama', 'Deposito', 'both')->get('tbjenistabungan')->row();

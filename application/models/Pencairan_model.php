@@ -19,9 +19,9 @@ class Pencairan_model extends CI_Model
         $query = $this->db->get();
         $result = $query->row();
 
-        return (object)[
-            'total_akumulasi_penarikan' => (float)($result->total_akumulasi_penarikan ?? 0),
-            'total_akumulasi_denda'     => (float)($result->total_akumulasi_denda ?? 0)
+        return (object) [
+            'total_akumulasi_penarikan' => (float) ($result->total_akumulasi_penarikan ?? 0),
+            'total_akumulasi_denda' => (float) ($result->total_akumulasi_denda ?? 0)
         ];
     }
 
@@ -33,7 +33,7 @@ class Pencairan_model extends CI_Model
 
     private function _get_datatables_query_detail_penarikan($deposito_id)
     {
-        if (empty($deposito_id) || !ctype_digit((string)$deposito_id)) {
+        if (empty($deposito_id) || !ctype_digit((string) $deposito_id)) {
             $this->db->where('1=0', null, false);
         } else {
             $this->db->where('p.deposito_id', $deposito_id);
@@ -89,7 +89,7 @@ class Pencairan_model extends CI_Model
 
     public function count_all_detail_penarikan($deposito_id)
     {
-        if (empty($deposito_id) || !ctype_digit((string)$deposito_id)) {
+        if (empty($deposito_id) || !ctype_digit((string) $deposito_id)) {
             return 0;
         }
         $this->db->from($this->_table_penarikan);
@@ -121,7 +121,7 @@ class Pencairan_model extends CI_Model
 
     public function kurangi_saldo_deposito($id, $jumlah)
     {
-        $this->db->set('jumlah_deposito', 'jumlah_deposito - ' . (float)$jumlah, false);
+        $this->db->set('jumlah_deposito', 'jumlah_deposito - ' . (float) $jumlah, false);
         $this->db->where('id', $id);
         $this->db->update($this->_table_deposito);
         return $this->db->affected_rows() > 0;
@@ -129,7 +129,7 @@ class Pencairan_model extends CI_Model
 
     public function tambah_saldo_deposito($deposito_id, $jumlah)
     {
-        $this->db->set('jumlah_deposito', 'jumlah_deposito + ' . (float)$jumlah, false);
+        $this->db->set('jumlah_deposito', 'jumlah_deposito + ' . (float) $jumlah, false);
         $this->db->where('id', $deposito_id);
         return $this->db->update($this->_table_deposito);
     }
@@ -205,8 +205,12 @@ class Pencairan_model extends CI_Model
 
     public function proses_pencairan_penuh($deposito_id, $pegawai_id)
     {
-        $deposito = $this->db->get_where('tbdeposito', ['id' => $deposito_id])->row();
+        $this->db->trans_start();
+
+        // Lock the row to prevent race conditions
+        $deposito = $this->db->query("SELECT * FROM tbdeposito WHERE id = ? FOR UPDATE", [$deposito_id])->row();
         if (!$deposito || !in_array($deposito->status, ['aktif', 'jatuh tempo'])) {
+            $this->db->trans_rollback();
             return ['status' => false, 'message' => 'Rekening tidak valid atau sudah tidak aktif.'];
         }
 
@@ -218,21 +222,21 @@ class Pencairan_model extends CI_Model
         $tanggal_jatuh_tempo = new DateTime($deposito->tanggal_deposito);
         $tanggal_jatuh_tempo->add(new DateInterval('P' . $deposito->durasi . 'M'));
         if (new DateTime() < $tanggal_jatuh_tempo) {
-            $penalty_rate = (float)($jenis_tabungan->jumlah_denda ?? 0);
+            $penalty_rate = (float) ($jenis_tabungan->jumlah_denda ?? 0);
             $denda = round(($penalty_rate / 100) * $deposito->jumlah_deposito);
         }
 
         $this->db->trans_start();
 
         $data_penarikan = [
-            'deposito_id'            => $deposito_id,
-            'pegawai_id'             => $pegawai_id,
-            'tanggal_penarikan'      => date('Y-m-d H:i:s'),
-            'jumlah_penarikan'       => (float)$deposito->jumlah_deposito + (float)$bunga_tersedia,
-            'jumlah_penarikan_pokok' => (float)$deposito->jumlah_deposito,
-            'jumlah_penarikan_bunga' => (float)$bunga_tersedia,
-            'jumlah_denda'           => (float)$denda,
-            'total_penarikan'        => ((float)$deposito->jumlah_deposito + (float)$bunga_tersedia) - (float)$denda,
+            'deposito_id' => $deposito_id,
+            'pegawai_id' => $pegawai_id,
+            'tanggal_penarikan' => date('Y-m-d H:i:s'),
+            'jumlah_penarikan' => (float) $deposito->jumlah_deposito + (float) $bunga_tersedia,
+            'jumlah_penarikan_pokok' => (float) $deposito->jumlah_deposito,
+            'jumlah_penarikan_bunga' => (float) $bunga_tersedia,
+            'jumlah_denda' => (float) $denda,
+            'total_penarikan' => ((float) $deposito->jumlah_deposito + (float) $bunga_tersedia) - (float) $denda,
         ];
         $this->db->insert('tbpenarikan_deposito', $data_penarikan);
         $penarikan_id = $this->db->insert_id();

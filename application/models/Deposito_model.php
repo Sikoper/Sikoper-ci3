@@ -6,7 +6,7 @@ class Deposito_model extends CI_Model
     var $table = 'tbdeposito';
     // DENORMALIZED: Using denormalized columns for faster queries
     var $column_order = array(null, 'nama_nasabah', 'no_rekening', 'telp_nasabah', 'jumlah_deposito', 'status', null);
-    var $column_search = array('tbdeposito.nama_nasabah', 'tbdeposito.no_rekening', 'tbdeposito.status');
+    var $column_search = array('tbdeposito.nama_nasabah', 'tbnasabah.nama_lengkap', 'tbdeposito.no_rekening', 'tbdeposito.status');
     var $order = array('created_at' => 'DESC');
 
     public $_table_penarikan_deposito = 'tbpenarikan_deposito';
@@ -177,11 +177,11 @@ class Deposito_model extends CI_Model
 
         $this->db->trans_complete();
 
-
         if ($this->db->trans_status() === FALSE) {
             log_message('error', 'Gagal menghapus data deposito lengkap untuk ID: ' . $id_deposito);
             return false;
         }
+
         return true;
     }
 
@@ -204,14 +204,7 @@ class Deposito_model extends CI_Model
     public function get_data_by_norek($rek)
     {
         $this->db->where('no_rekening', $rek);
-        $result = $this->db->get($this->table)->row();
-
-        if (!$result && is_numeric($rek)) {
-            $this->db->where('id', $rek);
-            $result = $this->db->get($this->table)->row();
-        }
-
-        return $result;
+        return $this->db->get($this->table)->row();
     }
 
     public function get_rekening_deposito_by_nasabah($nasabah_id)
@@ -275,8 +268,8 @@ class Deposito_model extends CI_Model
         $this->db->join('tbjenistabungan', 'tbdeposito.jenistabungan_id = tbjenistabungan.id', 'left');
         $this->db->join('tbnasabah', 'tbdeposito.nasabah_id = tbnasabah.id', 'left');
         $this->db->join('tbpegawai as pegawai', 'tbdeposito.pegawai_id = pegawai.id', 'left');
-        $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'KEPALA BAGIAN KEUANGAN'", 'left');
-        $this->db->join('tbpegawai as bendahara', "bendahara.jabatan = 'Bendahara'", 'left');
+        $this->db->join('tbpegawai as pimpinan', "pimpinan.jabatan = 'KEPALA SPBS'", 'left');
+        $this->db->join('tbpegawai as bendahara', "bendahara.jabatan = 'KEPALA BAGIAN KEUANGAN'", 'left');
         $this->db->where('tbdeposito.id', $id);
         $this->db->limit(1);
 
@@ -317,6 +310,7 @@ class Deposito_model extends CI_Model
             $this->db->group_end();
         }
 
+        $this->db->limit(50);
         return $this->db->get()->result();
     }
 
@@ -334,22 +328,27 @@ class Deposito_model extends CI_Model
 
     public function cari_rekening_deposito_nasabah($search = '')
     {
-        $this->db->select('d.id, CONCAT(d.no_rekening, " - ", n.nama_lengkap) as text');
+        $this->db->select('d.id, CONCAT(d.no_rekening, " - ", COALESCE(d.nama_nasabah, n.nama_lengkap)) as text', FALSE);
         $this->db->from('tbdeposito d');
-        $this->db->join('tbnasabah n', 'd.nasabah_id = n.id');
-        $this->db->join('tb_bunga_deposito_log bl', 'd.id = bl.deposito_id');
+        $this->db->join('tbnasabah n', 'd.nasabah_id = n.id', 'left');
+
+        $this->db->group_start();
         $this->db->where('d.status', 'aktif');
-        $this->db->where('bl.status_penarikan', 'belum_ditarik');
+        $this->db->or_where('d.status', 'jatuh tempo');
+        $this->db->group_end();
+
+        $this->db->where('d.jumlah_deposito >', 0);
 
         if (!empty($search)) {
             $this->db->group_start();
             $this->db->like('d.no_rekening', $search);
+            $this->db->or_like('d.nama_nasabah', $search);
             $this->db->or_like('n.nama_lengkap', $search);
             $this->db->group_end();
         }
 
-        $this->db->group_by('d.id');
         $this->db->order_by('d.no_rekening', 'ASC');
+        $this->db->limit(50);
         return $this->db->get()->result();
     }
 
@@ -370,10 +369,8 @@ class Deposito_model extends CI_Model
     {
         $this->db->trans_start();
 
-        $this->db->select_sum('jumlah_bunga');
-        $this->db->where('deposito_id', $deposito_id);
-        $this->db->where('status_penarikan', 'belum_ditarik');
-        $total = $this->db->get('tb_bunga_deposito_log')->row()->jumlah_bunga ?? 0;
+        // Calculate the maximum withdrawable balance based on time elapsed instead of static records
+        $total = $this->get_bunga_tersedia_from_log($deposito_id);
 
         if ($total <= 0) {
             $this->db->trans_complete();
@@ -393,11 +390,31 @@ class Deposito_model extends CI_Model
         $this->db->insert('tbpenarikan_deposito', $dataP);
         $penarikan_id = $this->db->insert_id();
 
+        // Instead of updating old pending rows (which may not exist if we calculate on the fly), 
+        // we create a new log entry recording this payment. 
+        // We also mark any existing 'belum_ditarik' rows as 'sudah_ditarik' to clean them up.
+
         $this->db->set('status_penarikan', 'sudah_ditarik');
         $this->db->set('penarikan_id', $penarikan_id);
         $this->db->where('deposito_id', $deposito_id);
         $this->db->where('status_penarikan', 'belum_ditarik');
         $this->db->update('tb_bunga_deposito_log');
+
+        // Create a definitive record for this withdrawal
+        $deposito = $this->get_data_by_id($deposito_id);
+        $logData = [
+            'deposito_id' => $deposito_id,
+            'no_rekening' => $deposito->no_rekening,
+            'nama_nasabah' => $deposito->nama_nasabah ?: ($this->db->get_where('tbnasabah', ['id' => $deposito->nasabah_id])->row()->nama_lengkap ?? ''),
+            'jumlah_bunga' => $total,
+            'rate_bunga' => $deposito->rate_bunga,
+            'tanggal_perhitungan' => date('Y-m-d'),
+            'status_penarikan' => 'sudah_ditarik',
+            'penarikan_id' => $penarikan_id,
+            'input_method' => 'manual',
+            'keterangan' => 'Penarikan Bunga'
+        ];
+        $this->db->insert('tb_bunga_deposito_log', $logData);
 
         $this->db->trans_complete();
 
@@ -408,27 +425,32 @@ class Deposito_model extends CI_Model
 
     public function get_bunga_tersedia_from_log($deposito_id)
     {
-        // OPTIMIZED: Try denormalized column first, fallback to SUM query
-        $deposito = $this->db->select('bunga_belum_ditarik')
-            ->where('id', $deposito_id)
-            ->get('tbdeposito')
-            ->row();
+        $deposito = $this->get_data_by_id($deposito_id);
+        if (!$deposito)
+            return 0;
 
-        if ($deposito && $deposito->bunga_belum_ditarik !== null && $deposito->bunga_belum_ditarik > 0) {
-            return (float) $deposito->bunga_belum_ditarik;
+        $bunga_sudah_dibayar = $this->get_bunga_sudah_dibayar_from_log($deposito_id);
+
+        $start_date = new DateTime($deposito->tanggal_deposito);
+        $now = new DateTime();
+        $months_elapsed = ($now->format('Y') - $start_date->format('Y')) * 12
+            + ($now->format('n') - $start_date->format('n'));
+
+        if ((int) $now->format('j') < (int) $start_date->format('j')) {
+            $months_elapsed--;
+        }
+        $months_elapsed = max(0, min($months_elapsed, $deposito->durasi));
+
+        $bunga_earned_so_far = $deposito->jumlah_deposito * ($deposito->rate_bunga / 100) * $months_elapsed;
+
+        if ($deposito->status == 'ditutup') {
+            $hutang_bunga_saat_ini = 0;
+        } else {
+            $hutang_bunga_saat_ini = $bunga_earned_so_far - $bunga_sudah_dibayar;
         }
 
-        // Fallback to calculated value
-        $this->db->select_sum('jumlah_bunga');
-        $this->db->from('tb_bunga_deposito_log');
-        $this->db->where('deposito_id', $deposito_id);
-        $this->db->where('status_penarikan', 'belum_ditarik');
-
-        $result = $this->db->get()->row();
-
-        return $result->jumlah_bunga ?? 0;
+        return max(0, $hutang_bunga_saat_ini);
     }
-
 
     public function get_bunga_sudah_dibayar_from_log($deposito_id)
     {
@@ -1153,16 +1175,18 @@ class Deposito_model extends CI_Model
 
                 $deposito_id = $no_seri_to_deposito_id[$nin];
 
-                // Import SALDO PINDAHAN (Col G = index 6) - YG SUDAH DI BAYAR from previous periods
+                // Import SALDO PINDAHAN (Col G = index 6) - Bunga yg belum ditarik dari periode sblmnya
                 $saldo_pindahan = $this->_parse_amount_safe($row[6] ?? 0);
+                $total_bunga_tersedia = 0;
+
                 if ($saldo_pindahan > 0) {
-                    // Use PINDAHAN TGL (Col F = index 5) if available, otherwise use 2024-12-31
                     $pindahan_date = $this->_parse_date_safe($row[5] ?? '') ?: '2024-12-31';
-                    $this->_insert_bunga_log($deposito_id, $saldo_pindahan, $pindahan_date, 'sudah_ditarik', $results['batch_id'], 'Saldo pindahan (bunga periode sebelumnya)');
+                    $this->_insert_bunga_log($deposito_id, $saldo_pindahan, $pindahan_date, 'belum_ditarik', $results['batch_id'], 'Saldo pindahan (bunga periode sebelumnya)');
                     $results['bunga_log']['inserted']++;
+                    $total_bunga_tersedia += $saldo_pindahan;
                 }
 
-                // Insert monthly bunga payments (these ARE payments = sudah_ditarik)
+                // Insert monthly bunga payments (User wants these to be available for withdrawal in the app)
                 foreach ($months as $col => $month) {
                     $date_col = $col;
                     $amount_col = $col + 1;
@@ -1170,12 +1194,20 @@ class Deposito_model extends CI_Model
                     $payment_date = $this->_parse_date_safe($row[$date_col] ?? '');
                     $payment_amount = $this->_parse_amount_safe($row[$amount_col] ?? 0);
 
-                    // Only insert if we have valid date AND amount > 0
                     if ($payment_amount > 0 && $payment_date) {
-                        $this->_insert_bunga_log($deposito_id, $payment_amount, $payment_date, 'sudah_ditarik', $results['batch_id'], "Pembayaran bunga bulan $month");
+                        $this->_insert_bunga_log($deposito_id, $payment_amount, $payment_date, 'belum_ditarik', $results['batch_id'], "Pembayaran bunga bulan $month");
                         $results['bunga_log']['inserted']++;
+                        $total_bunga_tersedia += $payment_amount;
                     }
                 }
+
+                // Update denormalized column tbdeposito
+                if ($total_bunga_tersedia > 0) {
+                    $this->db->set('bunga_belum_ditarik', 'bunga_belum_ditarik + ' . $total_bunga_tersedia, FALSE);
+                    $this->db->where('id', $deposito_id);
+                    $this->db->update($this->table);
+                }
+
             }
         }
 
@@ -1206,6 +1238,17 @@ class Deposito_model extends CI_Model
                 if ($bunga_belum_ditarik > 0) {
                     $this->db->where('id', $deposito_id)
                         ->update($this->table, ['bunga_belum_ditarik' => $bunga_belum_ditarik]);
+
+                    // Insert into tb_bunga_deposito_log so it can be withdrawn
+                    $this->_insert_bunga_log(
+                        $deposito_id,
+                        $bunga_belum_ditarik,
+                        date('Y-m-d'),
+                        'belum_ditarik',
+                        $results['batch_id'],
+                        'Hutang Bunga (Bunga Belum Ditarik)'
+                    );
+                    $results['bunga_log']['inserted']++;
                 }
             }
         }

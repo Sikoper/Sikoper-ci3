@@ -275,6 +275,15 @@ class Penarikan extends CI_Controller
 
     public function delete()
     {
+        if (!$this->input->is_ajax_request()) {
+            exit('No direct script access allowed');
+        }
+
+        if ($this->session->userdata('level') !== 'Admin') {
+            echo json_encode(['error' => 'Akses ditolak. Hanya Admin yang boleh menghapus data penarikan.']);
+            return;
+        }
+
         $id = $this->input->post('id');
         $deleted = $this->Penarikan_model->hapus_data_penarikan_by_id($id);
         if ($deleted) {

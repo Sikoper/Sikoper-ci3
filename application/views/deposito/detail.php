@@ -15,7 +15,7 @@
                     </tr>
                     <tr>
                         <th>Nasabah</th>
-                        <td>: <?= $nasabah->nama_lengkap ?? '-' ?></td>
+                        <td>: <?= $deposito->nama_nasabah ?? ($nasabah->nama_lengkap ?? '-') ?></td>
                     </tr>
                     <tr>
                         <th>Pegawai yang mendata</th>
@@ -85,7 +85,8 @@
                             <tr id="field-ahli-waris">
                                 <th>Ahli Waris</th>
                                 <td>: <?= $deposito->nama_ahli_waris ?> (<?= $deposito->hubungan_ahli_waris ?> dari
-                                    <?= $nasabah->nama_lengkap ?>), <?= $deposito->telp_ahli_waris ?>
+                                    <?= $deposito->nama_nasabah ?? ($nasabah->nama_lengkap ?? '-') ?>),
+                                    <?= $deposito->telp_ahli_waris ?>
                                 </td>
                             </tr>
                         <?php endif ?>
@@ -105,13 +106,15 @@
                 </table>
                 <div class="d-flex align-end justify-content-end">
                     <div class="d-flex justify-content-end me-2">
-                        <button onclick="printLaporan('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')"
+                        <button
+                            onclick="printLaporan('<?= $deposito->id ?>', '<?= $deposito->nama_nasabah ?? ($nasabah->nama_lengkap ?? '-') ?>')"
                             class="btn btn-warning">
                             Cetak Laporan <i class="fa fa-id-card ms-2"></i>
                         </button>
                     </div>
                     <div class="d-flex justify-content-end gap-2">
-                        <button onclick="printSertifikat('<?= $deposito->id ?>', '<?= $nasabah->nama_lengkap ?>')"
+                        <button
+                            onclick="printSertifikat('<?= $deposito->id ?>', '<?= $deposito->nama_nasabah ?? ($nasabah->nama_lengkap ?? '-') ?>')"
                             class="btn btn-info">
                             Cetak Sertifikat <i class="fa fa-id-card ms-2"></i>
                         </button>

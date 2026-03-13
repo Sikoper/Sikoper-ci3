@@ -50,11 +50,11 @@ class Nasabah extends CI_Controller
                 $row[] = $field->telp;
                 $row[] = $field->alamat;
                 if ($level == 'Admin') {
-                    $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-edit fa-fw'></i></button>
+                    $row[] = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='nasabah/edit/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-edit fa-fw'></i></button>
                             <button class=\"btn btn-danger\" onclick=\"deleteItem('" . $field->id . "', '" . $field->nama_lengkap . "')\"><i class=\"fa fa-trash fa-fw\"></i></button>
-                            <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-info fa-fw'></i></button>";
+                            <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-info fa-fw'></i></button>";
                 } else {
-                    $row[] = " <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->nik) . "'\"><i class='fa fa-info fa-fw'></i></button>";
+                    $row[] = " <button class=\"btn btn-secondary\"onclick=\"window.location='nasabah/detail/" . safe_base64_encode($field->id) . "'\"><i class='fa fa-info fa-fw'></i></button>";
                 }
                 $data[] = $row;
             }
@@ -237,9 +237,9 @@ class Nasabah extends CI_Controller
             return;
         }
 
-        $nik = safe_base64_decode($encoded_nik);
-        ;
-        $nasabah = $this->Nasabah_model->get_data_by_nik($nik);
+        $id = safe_base64_decode($encoded_nik);
+
+        $nasabah = $this->Nasabah_model->get_data_by_id($id);
 
         if (!$nasabah) {
             show_custom_404();
@@ -384,9 +384,9 @@ class Nasabah extends CI_Controller
             return;
         }
 
-        $nik = safe_base64_decode($encoded_nik);
-        ;
-        $nasabah = $this->Nasabah_model->get_data_by_nik($nik);
+        $id = safe_base64_decode($encoded_nik);
+
+        $nasabah = $this->Nasabah_model->get_data_by_id($id);
 
         if (!$nasabah) {
             show_custom_404();
@@ -395,6 +395,8 @@ class Nasabah extends CI_Controller
 
         $data = [
             'nasabah' => $nasabah,
+            'simpanan' => $this->db->get_where('tbsimpanan', ['nasabah_id' => $id])->result(),
+            'deposito' => $this->db->get_where('tbdeposito', ['nasabah_id' => $id])->result(),
             'level' => $this->session->userdata('level'),
         ];
         $parser = [
