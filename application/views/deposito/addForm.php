@@ -365,66 +365,50 @@
             }
 
             let biaya = parseFloat(kategori.biaya_registrasi ?? 0);
-            biaya = biaya % 1 === 0 ? parseInt(biaya) : biaya;
             let simpanan_awal = parseFloat(kategori.simpanan_awal ?? 0);
-            simpanan_awal = simpanan_awal % 1 === 0 ? parseInt(simpanan_awal) : simpanan_awal;
             let pengendapan = parseFloat(kategori.pengendapan ?? 0);
-            pengendapan = pengendapan % 1 === 0 ? parseInt(pengendapan) : pengendapan;
             let jenis_denda = kategori.jenis_denda;
             let jumlah_denda = parseFloat(kategori.jumlah_denda ?? 0);
-            jumlah_denda = jumlah_denda % 1 === 0 ? parseInt(jumlah_denda) : jumlah_denda;
+            let bunga = parseFloat(kategori.bunga ?? 0);
 
-            const bungaAN = new AutoNumeric('#bunga', {
-                digitGroupSeparator: ',',
-                decimalCharacter: '.',
-                decimalPlaces: 2,
-                minimumValue: '0',
-                maximumValue: '100'
-            });
-
-            const biayaAN = new AutoNumeric('#biaya_registrasi', {
-                digitGroupSeparator: '.',
-                decimalCharacter: ',',
-                decimalPlaces: 0
-            });
-
-            const simpananAwalAN = new AutoNumeric('#simpanan_awal', {
-                digitGroupSeparator: '.',
-                decimalCharacter: ',',
-                decimalPlaces: 0
-            });
-
-            const pengendapanAN = new AutoNumeric('#pengendapan', {
-                digitGroupSeparator: '.',
-                decimalCharacter: ',',
-                decimalPlaces: 0
-            });
-
-            let jumlahDendaAN;
-
-            if (jenis_denda === 'Rp') {
-                jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
-                    digitGroupSeparator: '.',
-                    decimalCharacter: ',',
-                    decimalPlaces: 0
-                });
-            } else if (jenis_denda === '%') {
-                jumlahDendaAN = new AutoNumeric('#jumlah_denda', {
-                    digitGroupSeparator: ',',
-                    decimalCharacter: '.',
-                    decimalPlaces: 2,
-                    minimumValue: '0',
-                    maximumValue: '100'
-                });
+            if ($('#bunga').data('autoNumeric')) {
+                $('#bunga').autoNumeric('set', bunga);
+            } else {
+                $('#bunga').val(bunga);
             }
 
-            bungaAN.set(kategori.bunga ?? '');
-            biayaAN.set(biaya ?? '');
-            simpananAwalAN.set(simpanan_awal ?? '');
-            pengendapanAN.set(pengendapan ?? '');
-            $('#jenis_denda').val(kategori.jenis_denda);
-            if (jumlahDendaAN) {
-                jumlahDendaAN.set(jumlah_denda ?? '');
+            if ($('#biaya_registrasi').data('autoNumeric')) {
+                $('#biaya_registrasi').autoNumeric('set', biaya);
+            } else {
+                $('#biaya_registrasi').val(biaya);
+            }
+
+            if (!$('#simpanan_awal').data('autoNumeric')) {
+                $('#simpanan_awal').autoNumeric('init', { aSep: '.', aDec: ',', mDec: '0' });
+            }
+            $('#simpanan_awal').autoNumeric('set', simpanan_awal);
+
+            if (!$('#pengendapan').data('autoNumeric')) {
+                $('#pengendapan').autoNumeric('init', { aSep: '.', aDec: ',', mDec: '0' });
+            }
+            $('#pengendapan').autoNumeric('set', pengendapan);
+
+            $('#jenis_denda').val(jenis_denda);
+
+            if (jenis_denda === 'Rp') {
+                if (!$('#jumlah_denda').data('autoNumeric')) {
+                    $('#jumlah_denda').autoNumeric('init', { aSep: '.', aDec: ',', mDec: '0' });
+                } else {
+                    $('#jumlah_denda').autoNumeric('update', { aSep: '.', aDec: ',', mDec: '0' });
+                }
+                $('#jumlah_denda').autoNumeric('set', jumlah_denda);
+            } else if (jenis_denda === '%') {
+                if (!$('#jumlah_denda').data('autoNumeric')) {
+                    $('#jumlah_denda').autoNumeric('init', { aSep: ',', aDec: '.', mDec: '2', vMin: '0', vMax: '100' });
+                } else {
+                    $('#jumlah_denda').autoNumeric('update', { aSep: ',', aDec: '.', mDec: '2', vMin: '0', vMax: '100' });
+                }
+                $('#jumlah_denda').autoNumeric('set', jumlah_denda);
             }
         }
 

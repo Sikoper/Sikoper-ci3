@@ -110,32 +110,34 @@
             mDec: '0'
         });
 
-        const autoNumericV4OptionsRp = {
-            currencySymbol: '',
-            decimalCharacter: ',',
-            digitGroupSeparator: '.',
-            decimalPlaces: 0,
-            readOnly: true
+        const autoNumericOpts = {
+            aSep: '.',
+            aDec: ',',
+            mDec: '0'
         };
 
-        const saldoAN = new AutoNumeric('#saldo', autoNumericV4OptionsRp);
-        saldoAN.set(0);
+        $('#saldo').autoNumeric('init', autoNumericOpts);
+        $('#saldo').autoNumeric('set', 0);
+        $('#saldo').prop('readonly', true);
 
-        const perkiraanSisaSaldoAN = new AutoNumeric('#perkiraan_sisa_saldo_display', autoNumericV4OptionsRp);
-        perkiraanSisaSaldoAN.set(0);
+        $('#perkiraan_sisa_saldo_display').autoNumeric('init', autoNumericOpts);
+        $('#perkiraan_sisa_saldo_display').autoNumeric('set', 0);
+        $('#perkiraan_sisa_saldo_display').prop('readonly', true);
 
-        const totalDitarikAN = new AutoNumeric('#total_yang_ditarik_display', autoNumericV4OptionsRp);
-        totalDitarikAN.set(0);
+        $('#total_yang_ditarik_display').autoNumeric('init', autoNumericOpts);
+        $('#total_yang_ditarik_display').autoNumeric('set', 0);
+        $('#total_yang_ditarik_display').prop('readonly', true);
 
         function updateTotalYangAkanDitarik() {
             const jumlahPenarikanStr = $('#jumlah_penarikan').autoNumeric('get');
-            const jumlahPenarikanVal = parseFloat(jumlahPenarikanStr.replace(/\./g, '').replace(',', '.')) || 0;
+            // AutoNumeric get already returns standard JS number string format
+            const jumlahPenarikanVal = parseFloat(jumlahPenarikanStr) || 0;
 
-            totalDitarikAN.set(jumlahPenarikanVal);
+            $('#total_yang_ditarik_display').autoNumeric('set', jumlahPenarikanVal);
 
-            const saldoSaatIniVal = saldoAN.getNumber() || 0;
+            const saldoSaatIniVal = parseFloat($('#saldo').autoNumeric('get')) || 0;
             const sisaSaldo = saldoSaatIniVal - jumlahPenarikanVal;
-            perkiraanSisaSaldoAN.set(sisaSaldo);
+            $('#perkiraan_sisa_saldo_display').autoNumeric('set', sisaSaldo);
 
             if (sisaSaldo < 0) {
                 $('#perkiraan_sisa_saldo_display').css('color', 'red');
@@ -196,13 +198,13 @@
                             $('#infoNama').text(response.nama_nasabah || '-');
                             $('#infoJenisTabungan').text(response.jenis_tabungan || '-');
 
-                            saldoAN.set(response.saldo || 0);
+                            $('#saldo').autoNumeric('set', response.saldo || 0);
 
                             updateTotalYangAkanDitarik();
                         }
                     },
                     error: function(xhr, thrownError) {
-                        saldoAN.set(0);
+                        $('#saldo').autoNumeric('set', 0);
                         updateTotalYangAkanDitarik();
                         alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
                     }
@@ -214,8 +216,8 @@
             e.preventDefault();
 
             const noRekNamaText = $('#comboRekening option:selected').text() || 'Belum dipilih';
-            const saldoSaatIniNum = saldoAN.getNumber() || 0;
-            const jumlahPenarikanNum = parseFloat($('#jumlah_penarikan').autoNumeric('get').replace(/\./g, '').replace(',', '.')) || 0;
+            const saldoSaatIniNum = parseFloat($('#saldo').autoNumeric('get')) || 0;
+            const jumlahPenarikanNum = parseFloat($('#jumlah_penarikan').autoNumeric('get')) || 0;
             const perkiraanSisaSaldoNum = saldoSaatIniNum - jumlahPenarikanNum;
             const formatRp = (num) => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
 

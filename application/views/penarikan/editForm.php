@@ -50,18 +50,17 @@
 <script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js"></script>
 <script>
     $(document).ready(function() {
-        autoNumericField = new AutoNumeric('#total_penarikan', {
-            digitGroupSeparator: '.',
-            decimalCharacter: ',',
-            decimalPlaces: 0,
-            modifyValueOnWheel: false
+        $('#total_penarikan').autoNumeric('init', {
+            aSep: '.',
+            aDec: ',',
+            mDec: '0'
         });
 
         $('#tombol_simpan').click(function(e) {
             e.preventDefault();
 
             // Update value numerik ke format asli
-            let formattedValue = AutoNumeric.getNumber('#total_penarikan');
+            let formattedValue = $('#total_penarikan').autoNumeric('get');
             $('#total_penarikan').val(formattedValue);
 
             let form = $('#form_simpan')[0];

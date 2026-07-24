@@ -188,18 +188,18 @@
             }
         });
 
-        const dendaIdrAN = new AutoNumeric('#denda_idr', {
-            digitGroupSeparator: '.',
-            decimalCharacter: ',',
-            decimalPlaces: 0
+        $('#denda_idr').autoNumeric('init', {
+            aSep: '.',
+            aDec: ',',
+            mDec: '0'
         });
 
-        const dendaPersenAN = new AutoNumeric('#denda_persen', {
-            digitGroupSeparator: ',',
-            decimalCharacter: '.',
-            decimalPlaces: 2,
-            minimumValue: '0',
-            maximumValue: '100'
+        $('#denda_persen').autoNumeric('init', {
+            aSep: ',',
+            aDec: '.',
+            mDec: '2',
+            vMin: '0',
+            vMax: '100'
         });
 
         $('#jenis_denda').on('change', function () {
@@ -208,22 +208,22 @@
             const numericValue = parseFloat(dendaValue || 0);
 
             if (value === 'Rp') {
-                dendaPersenAN.clear();
-                dendaPersenAN.node().disabled = true;
+                $('#denda_persen').val('');
+                $('#denda_persen').prop('disabled', true);
 
-                dendaIdrAN.node().disabled = false;
-                dendaIdrAN.set(numericValue);
+                $('#denda_idr').prop('disabled', false);
+                $('#denda_idr').autoNumeric('set', numericValue);
             } else if (value === '%') {
-                dendaIdrAN.clear();
-                dendaIdrAN.node().disabled = true;
+                $('#denda_idr').val('');
+                $('#denda_idr').prop('disabled', true);
 
-                dendaPersenAN.node().disabled = false;
-                dendaPersenAN.set(numericValue);
+                $('#denda_persen').prop('disabled', false);
+                $('#denda_persen').autoNumeric('set', numericValue);
             } else {
-                dendaIdrAN.clear();
-                dendaPersenAN.clear();
-                dendaIdrAN.node().disabled = true;
-                dendaPersenAN.node().disabled = true;
+                $('#denda_idr').val('');
+                $('#denda_persen').val('');
+                $('#denda_idr').prop('disabled', true);
+                $('#denda_persen').prop('disabled', true);
             }
         });
 

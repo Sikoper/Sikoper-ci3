@@ -271,13 +271,14 @@
             allowEscapeKey: false,
             allowEnterKey: false,
             didOpen: () => {
-                new AutoNumeric('#jumlah_setoran', jumlah, {
-                    decimalCharacter: ',',
-                    digitGroupSeparator: '.',
-                    currencySymbol: 'Rp ',
-                    currencySymbolPlacement: 'p',
-                    decimalPlaces: 0
+                $('#jumlah_setoran').autoNumeric('init', {
+                    aDec: ',',
+                    aSep: '.',
+                    aSign: 'Rp ',
+                    pSign: 'p',
+                    mDec: '0'
                 });
+                $('#jumlah_setoran').autoNumeric('set', jumlah);
             }
         }).then((result) => {
             if (result.isConfirmed) {

@@ -70,27 +70,23 @@
     </div>
 </section>
 
-<script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js/dist/autoNumeric.min.js"></script>
+<script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js"></script>
 <script>
     $(document).ready(function() {
-        const anJumlah = new AutoNumeric('#jumlah_penarikan', {
+        const anOpts = {
             aSep: '.',
             aDec: ',',
-            mDec: 0,
-            readOnly: true
-        });
-        const anBungaTersedia = new AutoNumeric('#bunga_tersedia', {
-            aSep: '.',
-            aDec: ',',
-            mDec: 0,
-            readOnly: true
-        });
-        const anSisaBunga = new AutoNumeric('#perkiraan_sisa_bunga', {
-            aSep: '.',
-            aDec: ',',
-            mDec: 0,
-            readOnly: true
-        });
+            mDec: 0
+        };
+
+        $('#jumlah_penarikan').autoNumeric('init', anOpts);
+        $('#jumlah_penarikan').prop('readonly', true);
+        
+        $('#bunga_tersedia').autoNumeric('init', anOpts);
+        $('#bunga_tersedia').prop('readonly', true);
+        
+        $('#perkiraan_sisa_bunga').autoNumeric('init', anOpts);
+        $('#perkiraan_sisa_bunga').prop('readonly', true);
 
         $('#comboRekening').select2({
             placeholder: 'Cari no rekening...',
@@ -131,9 +127,9 @@
                         if (response.status === 'success') {
                             $('#infoNasabah').show();
                             $('#infoNama').text(response.nama_nasabah || '-');
-                            anBungaTersedia.set(response.bunga_tersedia || 0);
-                            anJumlah.set(response.bunga_tersedia || 0);
-                            anSisaBunga.set(0);
+                            $('#bunga_tersedia').autoNumeric('set', response.bunga_tersedia || 0);
+                            $('#jumlah_penarikan').autoNumeric('set', response.bunga_tersedia || 0);
+                            $('#perkiraan_sisa_bunga').autoNumeric('set', 0);
                         } else {
                             Swal.fire('Gagal!', response.message || 'Gagal mengambil detail rekening.', 'error');
                         }
@@ -145,7 +141,7 @@
 
         $('#form_penarikan_bunga').submit(function(e) {
             e.preventDefault();
-            const jumlahDitarik = anJumlah.getNumber() || 0;
+            const jumlahDitarik = parseFloat($('#jumlah_penarikan').autoNumeric('get')) || 0;
             if (jumlahDitarik <= 0) {
                 Swal.fire('Gagal', 'Tidak ada bunga yang tersedia untuk ditarik.', 'error');
                 return;
@@ -153,7 +149,7 @@
 
             Swal.fire({
                 title: 'Konfirmasi Penarikan Bunga',
-                html: `Anda yakin ingin menarik bunga sejumlah <strong>Rp ${anJumlah.getFormatted()}</strong>?`,
+                html: `Anda yakin ingin menarik bunga sejumlah <strong>Rp ${$('#jumlah_penarikan').val()}</strong>?`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
@@ -165,7 +161,7 @@
                     const postData = {
                         tanggal_penarikan: $('#tanggal_penarikan').val(),
                         deposito_id: $('#comboRekening').val(),
-                        jumlah_penarikan: anJumlah.getNumber(),
+                        jumlah_penarikan: $('#jumlah_penarikan').autoNumeric('get'),
                         pegawai_id: $('[name="pegawai_id"]').val()
                     };
 

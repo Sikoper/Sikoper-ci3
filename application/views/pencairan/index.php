@@ -94,12 +94,17 @@
 <script>
 $(document).ready(function() {
     // --- Inisialisasi Awal ---
-    const autoNumericOpts = { digitGroupSeparator: '.', decimalCharacter: ',', decimalPlaces: 0, readOnly: true };
+    const autoNumericOpts = { aSep: '.', aDec: ',', mDec: '0' };
     const formatRp = (num) => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
-    const saldoAN = new AutoNumeric('#saldo', autoNumericOpts);
-    const bungaAN = new AutoNumeric('#bunga_tersedia', autoNumericOpts);
-    const dendaAN = new AutoNumeric('#denda', autoNumericOpts);
-    const totalAN = new AutoNumeric('#total_yang_diterima', autoNumericOpts);
+    
+    $('#saldo').autoNumeric('init', autoNumericOpts);
+    $('#saldo').prop('readonly', true);
+    $('#bunga_tersedia').autoNumeric('init', autoNumericOpts);
+    $('#bunga_tersedia').prop('readonly', true);
+    $('#denda').autoNumeric('init', autoNumericOpts);
+    $('#denda').prop('readonly', true);
+    $('#total_yang_diterima').autoNumeric('init', autoNumericOpts);
+    $('#total_yang_diterima').prop('readonly', true);
 
     /**
      * Fungsi terpusat untuk mengambil detail rekening dan menampilkan di form.
@@ -126,10 +131,10 @@ $(document).ready(function() {
                 const denda = parseFloat(response.calculated_penalty_rp) || 0;
                 const totalDiterima = pokok + bunga - denda;
 
-                saldoAN.set(pokok);
-                bungaAN.set(bunga);
-                dendaAN.set(denda);
-                totalAN.set(totalDiterima);
+                $('#saldo').autoNumeric('set', pokok);
+                $('#bunga_tersedia').autoNumeric('set', bunga);
+                $('#denda').autoNumeric('set', denda);
+                $('#total_yang_diterima').autoNumeric('set', totalDiterima);
                 
                 $('#detail_pencairan').slideDown();
                 
