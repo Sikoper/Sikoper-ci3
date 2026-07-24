@@ -556,21 +556,39 @@ class Deposito extends CI_Controller
         if ($this->input->is_ajax_request()) {
             $id = $this->input->post('id');
 
+            // Check tbpenarikan (tabungan withdrawals linked to this deposito)
             $has_penarikan = $this->db->get_where('tbpenarikan', ['simpanan_id' => $id])->num_rows();
 
-            if ($has_penarikan > 0) {
+            // Check tbpenarikan_deposito (pencairan deposito records)
+            $has_pencairan = $this->db->get_where('tbpenarikan_deposito', ['deposito_id' => $id])->num_rows();
+
+            // Check tb_bunga_deposito_log (bunga calculation logs)
+            $has_bunga_log = $this->db->get_where('tb_bunga_deposito_log', ['deposito_id' => $id])->num_rows();
+
+            if ($has_penarikan > 0 || $has_pencairan > 0) {
                 $msg = [
-                    'error' => 'Data tidak bisa dihapus karena memiliki riwayat setoran atau penarikan.'
+                    'error' => 'Data tidak bisa dihapus karena memiliki riwayat pencairan atau penarikan.'
                 ];
                 echo json_encode($msg);
                 return;
             }
 
+            // Use transaction to also clean up bunga logs if any
+            $this->db->trans_start();
+
+            if ($has_bunga_log > 0) {
+                $this->db->delete('tb_bunga_deposito_log', ['deposito_id' => $id]);
+            }
+
             $this->Deposito_model->delete_data($id);
 
-            $msg = [
-                'success' => 'Data berhasil dihapus'
-            ];
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === FALSE) {
+                $msg = ['error' => 'Gagal menghapus data deposito.'];
+            } else {
+                $msg = ['success' => 'Data berhasil dihapus'];
+            }
 
             echo json_encode($msg);
         }
@@ -1322,15 +1340,7 @@ class Deposito extends CI_Controller
             'nama_pegawai' => $pegawai->nama_lengkap ?? 'N/A',
         ];
 
-        $html = $this->load->view('penarikan_bunga/cetak_kwitansi', $data, true);
-
-        $this->load->library('dompdf_lib');
-        $this->dompdf_lib->loadHtml($html);
-        $this->dompdf_lib->setPaper([0, 0, 793.7, 283.46], 'landscape'); // Similar size to penarikan kwitansi
-        $this->dompdf_lib->render();
-
-        $filename = "Kwitansi_Bunga_" . $deposito->no_rekening . "_" . date('Ymd', strtotime($penarikan->tanggal_penarikan)) . ".pdf";
-        $this->dompdf_lib->stream($filename, false);
+        $this->load->view('penarikan_bunga/cetak_kwitansi', $data);
     }
 
 
@@ -1401,23 +1411,30 @@ class Deposito extends CI_Controller
         $upload_data = $this->upload->data();
         $file_path = $upload_data['full_path'];
 
-        // Get pegawai_id from session, validate it exists in tbpegawai
-        $pegawai_id = $this->session->userdata('pegawai_id');
-        if (!empty($pegawai_id)) {
-            // Verify the pegawai_id still exists in database
-            $pegawai_exists = $this->db->where('id', $pegawai_id)->get('tbpegawai')->row();
-            if (!$pegawai_exists) {
-                $pegawai_id = null; // Reset if pegawai was deleted
-            }
+        // Get pegawai_id for import, prioritize Pemungut Tabungan
+        $pemungut = $this->db->like('jabatan', 'pemungut', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        if (!$pemungut) {
+            $pemungut = $this->db->like('jabatan', 'pembukuan', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
         }
-        if (empty($pegawai_id)) {
-            // Fallback: get first available pegawai from database
-            $first_pegawai = $this->db->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
-            if ($first_pegawai) {
-                $pegawai_id = $first_pegawai->id;
-            } else {
-                echo json_encode(['success' => false, 'errors' => ['Tidak ada data pegawai. Silakan tambah pegawai terlebih dahulu.']]);
-                return;
+        
+        if ($pemungut) {
+            $pegawai_id = $pemungut->id;
+        } else {
+            $pegawai_id = $this->session->userdata('pegawai_id');
+            if (!empty($pegawai_id)) {
+                $pegawai_exists = $this->db->where('id', $pegawai_id)->get('tbpegawai')->row();
+                if (!$pegawai_exists) {
+                    $pegawai_id = null;
+                }
+            }
+            if (empty($pegawai_id)) {
+                $first_pegawai = $this->db->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+                if ($first_pegawai) {
+                    $pegawai_id = $first_pegawai->id;
+                } else {
+                    echo json_encode(['success' => false, 'errors' => ['Tidak ada data pegawai. Silakan tambah pegawai terlebih dahulu.']]);
+                    return;
+                }
             }
         }
 

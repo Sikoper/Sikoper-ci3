@@ -10,7 +10,7 @@
                         <?= form_open('', ['id' => 'form_simpan', 'data-level' => $this->session->userdata('level')]) ?>
 
                         <div class="form-group mb-3" style="height: 80px;">
-                            <label for="tanggal_setoran">Tanggal Penarikan</label>
+                            <label for="tanggal_setoran">Tanggal Setoran</label>
                             <div class="input-group">
                                 <input type="date" class="form-control" id="tanggal_setoran" name="tanggal_setoran" value="<?= date('Y-m-d') ?>">
                             </div>

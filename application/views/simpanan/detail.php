@@ -143,7 +143,7 @@
         </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
+<script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js"></script>
 <script>
     const userLevel = '<?= $this->session->userdata('level') ?>';
     table = $('#detail_tabungan').DataTable({

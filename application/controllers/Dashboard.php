@@ -17,6 +17,9 @@ class Dashboard extends CI_Controller
     public function index()
     {
         $level = $this->session->userdata('level');
+        
+        // Auto-run tabungan interest process once a month
+        $this->Bunga_model->checkAndRunBunga();
 
         if ($level === 'Admin') {
             $content = $this->load->view('home/index', '', TRUE);

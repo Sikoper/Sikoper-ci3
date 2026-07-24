@@ -387,21 +387,51 @@ class Import extends CI_Controller
             return 0.0;
         }
 
-        // Handle Excel errors
         if (is_string($value) && strpos($value, '#') === 0) {
             return 0.0;
         }
 
-        // If already numeric
         if (is_numeric($value)) {
             return floatval($value);
         }
 
-        // Remove currency symbols and formatting
-        $cleaned = str_replace(['$', 'Rp', ',', ' ', '.'], '', (string) $value);
+        $value = (string) $value;
+        $value = str_replace(['Rp.', 'rp.', 'Rp', 'rp', '$', ' ', 'Rs'], '', trim($value));
 
-        if (is_numeric($cleaned)) {
-            return floatval($cleaned);
+        $last_comma = strrpos($value, ',');
+        $last_dot = strrpos($value, '.');
+
+        if ($last_comma !== false && $last_dot !== false) {
+            if ($last_comma > $last_dot) {
+                $value = str_replace('.', '', $value);
+                $value = str_replace(',', '.', $value);
+            } else {
+                $value = str_replace(',', '', $value);
+            }
+        } elseif ($last_comma !== false) {
+            if (substr_count($value, ',') > 1) {
+                $value = str_replace(',', '', $value);
+            } else {
+                $parts = explode(',', $value);
+                if (strlen($parts[1]) == 2) {
+                    $value = str_replace(',', '.', $value);
+                } else {
+                    $value = str_replace(',', '', $value);
+                }
+            }
+        } elseif ($last_dot !== false) {
+            if (substr_count($value, '.') > 1) {
+                $value = str_replace('.', '', $value);
+            } else {
+                $parts = explode('.', $value);
+                if (strlen($parts[1]) == 3) {
+                    $value = str_replace('.', '', $value);
+                }
+            }
+        }
+
+        if (is_numeric($value)) {
+            return floatval($value);
         }
 
         return 0.0;

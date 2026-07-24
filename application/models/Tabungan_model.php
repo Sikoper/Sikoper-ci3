@@ -449,11 +449,13 @@ class Tabungan_model extends CI_Model
 			$month = $month_map[$sheet_name];
 			$rows = $xls->rows($sheet_idx);
 
+			$col_offset = ($sheet_name === 'FEB') ? 2 : 0;
+
 			for ($i = 3; $i < count($rows); $i++) {
 				$row = $rows[$i];
 
-				$no_urut = intval($row[0] ?? 0);
-				$no_tab = intval($row[2] ?? 0);
+				$no_urut = intval($row[$col_offset + 0] ?? 0);
+				$no_tab = intval($row[$col_offset + 2] ?? 0);
 				$no_rekening = $no_tab > 0 ? 'S' . str_pad($no_tab, 4, '0', STR_PAD_LEFT) : 'S' . str_pad($no_urut, 4, '0', STR_PAD_LEFT);
 
 				if (!isset($norek_to_id[$no_rekening]))
@@ -462,7 +464,7 @@ class Tabungan_model extends CI_Model
 
 				// Process daily SETORAN (columns 5-35 for days 1-31)
 				for ($day = 1; $day <= 31; $day++) {
-					$col = 4 + $day; // Column 5 = day 1
+					$col = $col_offset + 4 + $day; // Column 5 = day 1
 					$amount = $this->_parse_amount($row[$col] ?? 0);
 
 					if ($amount > 0) {
@@ -482,7 +484,7 @@ class Tabungan_model extends CI_Model
 
 				// Process daily PENARIKAN (columns 36-66 for days 1-31)
 				for ($day = 1; $day <= 31; $day++) {
-					$col = 35 + $day; // Column 36 = day 1
+					$col = $col_offset + 35 + $day; // Column 36 = day 1
 					$amount = $this->_parse_amount($row[$col] ?? 0);
 
 					if ($amount > 0) {
@@ -543,8 +545,41 @@ class Tabungan_model extends CI_Model
 		if (is_numeric($value))
 			return floatval($value);
 
-		// Remove currency symbols and formatting
-		$value = str_replace(['$', 'Rp', ',', ' '], '', $value);
+		$value = (string) $value;
+		$value = str_replace(['Rp.', 'rp.', 'Rp', 'rp', '$', ' ', 'Rs'], '', trim($value));
+
+		$last_comma = strrpos($value, ',');
+		$last_dot = strrpos($value, '.');
+
+		if ($last_comma !== false && $last_dot !== false) {
+			if ($last_comma > $last_dot) {
+				$value = str_replace('.', '', $value);
+				$value = str_replace(',', '.', $value);
+			} else {
+				$value = str_replace(',', '', $value);
+			}
+		} elseif ($last_comma !== false) {
+			if (substr_count($value, ',') > 1) {
+				$value = str_replace(',', '', $value);
+			} else {
+				$parts = explode(',', $value);
+				if (strlen($parts[1]) == 2) {
+					$value = str_replace(',', '.', $value);
+				} else {
+					$value = str_replace(',', '', $value);
+				}
+			}
+		} elseif ($last_dot !== false) {
+			if (substr_count($value, '.') > 1) {
+				$value = str_replace('.', '', $value);
+			} else {
+				$parts = explode('.', $value);
+				if (strlen($parts[1]) == 3) {
+					$value = str_replace('.', '', $value);
+				}
+			}
+		}
+
 		return floatval($value);
 	}
 
@@ -1246,6 +1281,12 @@ class Tabungan_model extends CI_Model
 				->where('tanggal_penarikan <=', $date_end . ' 23:59:59')
 				->delete('tbdetail_penarikan');
 			$results['deleted']['penarikan'] = $this->db->affected_rows();
+
+			// Delete bunga (tbtransaksi) for this month
+			$this->db->where('tanggal_transaksi >=', $date_start)
+				->where('tanggal_transaksi <=', $date_end)
+				->delete('tbtransaksi');
+			$results['deleted']['bunga'] = $this->db->affected_rows();
 		}
 
 		// Get sheet rows
@@ -1257,6 +1298,7 @@ class Tabungan_model extends CI_Model
 		// OPTIMIZATION: Batch insert arrays
 		$batch_setoran = [];
 		$batch_penarikan = [];
+		$batch_bunga = [];
 		$memory_saldo = [];
 
 		// PHASE 0.5: Build nama mapping from JAN sheet (since some sheets have empty NAMA column)
@@ -1386,12 +1428,24 @@ class Tabungan_model extends CI_Model
 					$results['simpanan']['inserted']++;
 				}
 
+				// Insert saldo_awal as Setoran Awal if new account
+				if (!$existing && $saldo_sebelum > 0) {
+					$batch_setoran[] = [
+						'simpanan_id' => $simpanan_id,
+						'tanggal_setoran' => $year . '-' . $month . '-01 08:00:00',
+						'jumlah_setoran' => $saldo_sebelum,
+						'pegawai_id' => $pegawai_id
+					];
+					$row_total_setoran = $saldo_sebelum; // Include in memory tracking
+				} else {
+					$row_total_setoran = 0;
+				}
+
 				$norek_saldo_awal[$no_rekening] = $saldo_sebelum;
 
 				$norek_to_id[$no_rekening] = $simpanan_id;
 
 				// Process daily SETORAN - batch collect
-				$row_total_setoran = 0;
 				for ($day = 1; $day <= 31; $day++) {
 					$col = $col_offset + 4 + $day;
 					$amount = $this->_parse_amount($row[$col] ?? 0);
@@ -1410,9 +1464,10 @@ class Tabungan_model extends CI_Model
 				}
 
 				// Process daily PENARIKAN - batch collect
+				// FIX: Apply col_offset to penarikan columns too
 				$row_total_penarikan = 0;
 				for ($day = 1; $day <= 31; $day++) {
-					$col = 35 + $day;
+					$col = $col_offset + 35 + $day;
 					$amount = $this->_parse_amount($row[$col] ?? 0);
 
 					if ($amount > 0 && checkdate((int) $month, $day, (int) $year)) {
@@ -1430,19 +1485,22 @@ class Tabungan_model extends CI_Model
 					}
 				}
 
-				// IMPORT BUNGA (Column 101) - batch collect
+				// IMPORT BUNGA (Column 101) - insert to tbtransaksi (NOT tbdetail_simpanan)
+				// FIX: Bunga harus masuk ke tbtransaksi agar rekap bisa menghitung
+				// total_setoran (dari tbdetail_simpanan) + bunga (dari tbtransaksi) dengan benar
 				$bunga_net = $this->_parse_amount($row[101] ?? 0);
 				$row_bunga = 0;
 				if ($bunga_net > 0) {
 					$last_day = date('t', strtotime("$year-$month-01"));
-					$batch_setoran[] = [
+					$batch_bunga[] = [
 						'simpanan_id' => $simpanan_id,
-						'tanggal_setoran' => "$year-$month-$last_day 23:55:00",
-						'jumlah_setoran' => $bunga_net,
-						'pegawai_id' => $pegawai_id
+						'tanggal_transaksi' => "$year-$month-$last_day",
+						'jenis_transaksi' => 'Bunga Bulanan',
+						'jumlah_transaksi' => $bunga_net,
+						'rate_bunga' => 0,
+						'bunga_riil' => $bunga_net
 					];
 					$row_bunga = $bunga_net;
-					$results['setoran']['inserted']++;
 				}
 
 				// Track saldo in memory
@@ -1469,6 +1527,10 @@ class Tabungan_model extends CI_Model
 					$this->db->insert_batch('tbdetail_penarikan', $batch_penarikan);
 					$batch_penarikan = [];
 				}
+				if (count($batch_bunga) >= 500) {
+					$this->db->insert_batch('tbtransaksi', $batch_bunga);
+					$batch_bunga = [];
+				}
 
 			} catch (Exception $e) {
 				$results['simpanan']['errors']++;
@@ -1482,6 +1544,9 @@ class Tabungan_model extends CI_Model
 		}
 		if (!empty($batch_penarikan)) {
 			$this->db->insert_batch('tbdetail_penarikan', $batch_penarikan);
+		}
+		if (!empty($batch_bunga)) {
+			$this->db->insert_batch('tbtransaksi', $batch_bunga);
 		}
 
 		// Update saldo from in-memory calculation
@@ -2058,9 +2123,9 @@ class Tabungan_model extends CI_Model
 		$batch_transaksi = [];
 		$memory_saldo = []; // In-memory saldo: no_rekening => [simpanan_id, saldo_awal, setoran, penarikan, bunga]
 
-		// ALWAYS auto-detect mapping from actual data (frontend values may be stale)
+		// Try to auto-detect for hidden fields (like e_min), but let frontend mapping override
 		$auto_mapping = $this->_detect_column_mapping($rows, $clean_month_code);
-		$mapping = array_merge($mapping, $auto_mapping); // Auto-detected values override frontend
+		$mapping = array_merge($auto_mapping, $mapping); // Frontend values override auto-detected values
 
 		$log_msg .= "Auto-detected mapping: " . json_encode($auto_mapping) . "\n";
 		$log_msg .= "Final mapping: " . json_encode($mapping) . "\n";
@@ -2223,10 +2288,19 @@ class Tabungan_model extends CI_Model
 				}
 
 				// Store saldo_awal for this account (used in final saldo calculation)
-				// saldo_sebelum goes directly to tbsimpanan.jumlah_simpanan, NOT as setoran transaction
 				$norek_saldo_awal[$no_rekening] = $saldo_sebelum;
 
 				$norek_to_id[$no_rekening] = $simpanan_id;
+
+				// Insert saldo_awal as Setoran Awal if new account
+				if (!$existing && $saldo_sebelum > 0) {
+					$batch_setoran[] = [
+						'simpanan_id' => $simpanan_id,
+						'tanggal_setoran' => $year . '-' . $month . '-01 08:00:00',
+						'jumlah_setoran' => $saldo_sebelum,
+						'pegawai_id' => $pegawai_id
+					];
+				}
 
 				// Process SETORAN columns - batch collect instead of individual insert
 				$setoran_cols = $col_setoran_end - $col_setoran_start + 1;
@@ -2291,6 +2365,7 @@ class Tabungan_model extends CI_Model
 						'no_rekening' => $no_rekening,
 						'nama_nasabah' => $nama,
 						'tanggal_transaksi' => "$year-$month-$last_day",
+						'jenis_transaksi' => 'Bunga Bulanan',
 						'jumlah_transaksi' => $bunga_net,
 						'rate_bunga' => $rate_bunga,
 						'bunga_riil' => $bunga_raw

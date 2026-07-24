@@ -183,7 +183,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
+<script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js"></script>
 <script>
     var noRekening = '<?= $deposito->no_rekening ?>';
     const userLevel = '<?= $this->session->userdata('level') ?>';

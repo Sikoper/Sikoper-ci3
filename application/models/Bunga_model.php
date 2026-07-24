@@ -94,8 +94,8 @@ class Bunga_model extends CI_Model
         $year = date('Y');
 
         $exists = $this->db
-            ->where('MONTH(tanggal)', $month)
-            ->where('YEAR(tanggal)', $year)
+            ->where('MONTH(tanggal)', $month, FALSE)
+            ->where('YEAR(tanggal)', $year, FALSE)
             ->get('systems_log')
             ->num_rows();
 
@@ -123,11 +123,12 @@ class Bunga_model extends CI_Model
         $prevMonthEnd = date('Y-m-t', strtotime('-1 month'));
 
         // OPTIMIZED: Use denormalized bunga_rate when available, fallback to JOIN
-        $this->db->select('tbsimpanan.id, tbsimpanan.nasabah_id, tbsimpanan.jumlah_simpanan, tbsimpanan.tanggal_simpanan, 
+        $this->db->select('tbsimpanan.id, tbsimpanan.nasabah_id, tbsimpanan.jumlah_simpanan, tbsimpanan.tanggal_simpanan, tbsimpanan.no_rekening, tbnasabah.nama_lengkap as nama_nasabah, 
             COALESCE(tbsimpanan.bunga_rate, tbjenistabungan.bunga) as bunga');
         $this->db->from('tbsimpanan');
         $this->db->join('tbjenistabungan', 'tbjenistabungan.id = tbsimpanan.jenistabungan_id', 'left');
-        $this->db->where('tbsimpanan.tanggal_simpanan <=', $lastMonth);
+        $this->db->join('tbnasabah', 'tbnasabah.id = tbsimpanan.nasabah_id', 'left');
+        $this->db->where('tbsimpanan.tanggal_simpanan <=', $prevMonthEnd . ' 23:59:59');
         $this->db->where('tbsimpanan.status', 'aktif');
         $this->db->where('(tbsimpanan.bunga_rate > 0 OR tbjenistabungan.bunga > 0)');
         $simpananList = $this->db->get()->result();
@@ -135,11 +136,14 @@ class Bunga_model extends CI_Model
         foreach ($simpananList as $simpanan) {
             $bungaRate = (float) $simpanan->bunga;
 
-            // Check if bunga already processed this month
+            // Check if bunga already processed for the target month (prevMonthEnd)
+            $targetMonth = date('m', strtotime($prevMonthEnd));
+            $targetYear = date('Y', strtotime($prevMonthEnd));
+            
             $alreadyGiven = $this->db
                 ->where('simpanan_id', $simpanan->id)
-                ->where('MONTH(tanggal_transaksi)', date('m'))
-                ->where('YEAR(tanggal_transaksi)', date('Y'))
+                ->where('MONTH(tanggal_transaksi)', $targetMonth)
+                ->where('YEAR(tanggal_transaksi)', $targetYear)
                 ->get('tbtransaksi')
                 ->num_rows();
 
@@ -148,50 +152,49 @@ class Bunga_model extends CI_Model
             }
 
             // FRAUD PREVENTION: Hitung saldo terendah bulan lalu
-            // Ini mencegah nasabah melakukan setoran besar di akhir bulan
-            $minBalanceQuery = $this->db->query("
-                SELECT COALESCE(MIN(running_balance), 0) as min_saldo
+            // Menggunakan query transaksi lengkap sampai akhir bulan lalu untuk mendapatkan saldo yang akurat
+            $prevMonthEndFull = $prevMonthEnd . ' 23:59:59';
+            $historyQuery = $this->db->query("
+                SELECT tipe, jumlah, tanggal
                 FROM (
-                    SELECT 
-                        tanggal,
-                        @running := @running + CASE 
-                            WHEN tipe = 'setor' THEN jumlah 
-                            ELSE -jumlah 
-                        END as running_balance
-                    FROM (
-                        SELECT 'setor' as tipe, jumlah_setoran as jumlah, tanggal_setoran as tanggal
-                        FROM tbdetail_simpanan 
-                        WHERE simpanan_id = ?
-                        AND tanggal_setoran <= ?
-                        
-                        UNION ALL
-                        
-                        SELECT 'tarik' as tipe, jumlah_penarikan as jumlah, tanggal_penarikan as tanggal
-                        FROM tbdetail_penarikan 
-                        WHERE simpanan_id = ? 
-                        AND status = 'disetujui'
-                        AND tanggal_penarikan <= ?
-                    ) transactions, (SELECT @running := 0) r
-                    ORDER BY tanggal, tipe DESC
-                ) daily_balances
-                WHERE DATE(tanggal) BETWEEN ? AND ?
-            ", [
-                $simpanan->id,
-                $prevMonthEnd,
-                $simpanan->id,
-                $prevMonthEnd,
-                $prevMonthStart,
-                $prevMonthEnd
-            ]);
-
-            $minBalance = $minBalanceQuery->row();
-            $saldo = ($minBalance && $minBalance->min_saldo > 0) ? (float) $minBalance->min_saldo : 0;
-
-            // Jika tidak ada data transaksi bulan lalu, gunakan saldo saat ini sebagai fallback
-            // (untuk rekening baru yang belum punya history)
-            if ($saldo <= 0) {
-                $saldo = (float) $simpanan->jumlah_simpanan;
+                    SELECT 'setor' as tipe, jumlah_setoran as jumlah, tanggal_setoran as tanggal
+                    FROM tbdetail_simpanan 
+                    WHERE simpanan_id = ? AND tanggal_setoran <= ?
+                    UNION ALL
+                    SELECT 'tarik' as tipe, jumlah_penarikan as jumlah, tanggal_penarikan as tanggal
+                    FROM tbdetail_penarikan 
+                    WHERE simpanan_id = ? AND status = 'disetujui' AND tanggal_penarikan <= ?
+                ) transactions
+                ORDER BY tanggal ASC
+            ", [$simpanan->id, $prevMonthEndFull, $simpanan->id, $prevMonthEndFull]);
+            
+            $transactions = $historyQuery->result();
+            
+            $runningBalance = 0;
+            $minBalance = null;
+            $prevMonthString = date('Y-m', strtotime($prevMonthStart));
+            
+            foreach ($transactions as $trx) {
+                if ($trx->tipe === 'setor') {
+                    $runningBalance += (float) $trx->jumlah;
+                } else {
+                    $runningBalance -= (float) $trx->jumlah;
+                }
+                
+                // Track min balance only during the previous month
+                if (date('Y-m', strtotime($trx->tanggal)) === $prevMonthString) {
+                    if ($minBalance === null || $runningBalance < $minBalance) {
+                        $minBalance = $runningBalance;
+                    }
+                }
             }
+            
+            // If no transactions happened last month, the minBalance is simply the ending running balance
+            if ($minBalance === null) {
+                $minBalance = $runningBalance;
+            }
+            
+            $saldo = $minBalance > 0 ? $minBalance : 0;
 
             if ($saldo <= 0)
                 continue;
@@ -199,12 +202,17 @@ class Bunga_model extends CI_Model
             $bungaAmount = ($bungaRate / 100) * $saldo;
             $bungaRiil = $this->round_to_nearest_hundred($bungaAmount);
 
-            // Insert bunga transaction
+            if ($bungaAmount <= 0)
+                continue;
+
+            // Insert bunga transaction (using previous month's end date)
             $this->db->insert('tbtransaksi', [
                 'simpanan_id' => $simpanan->id,
-                'tanggal_transaksi' => $today,
-                'jumlah_transaksi' => $bungaAmount,
-                'bunga_riil' => $bungaRiil,
+                'no_rekening' => $simpanan->no_rekening,
+                'nama_nasabah' => $simpanan->nama_nasabah,
+                'tanggal_transaksi' => $prevMonthEnd,
+                'jumlah_transaksi' => $bungaRiil, // Use rounded value for transaction
+                'bunga_riil' => $bungaAmount, // Store exact value as raw
                 'rate_bunga' => $bungaRate
             ]);
 

@@ -226,8 +226,6 @@ class Pencairan_model extends CI_Model
             $denda = round(($penalty_rate / 100) * $deposito->jumlah_deposito);
         }
 
-        $this->db->trans_start();
-
         $data_penarikan = [
             'deposito_id' => $deposito_id,
             'pegawai_id' => $pegawai_id,

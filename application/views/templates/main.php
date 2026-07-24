@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sikoper</title>
 
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <link href="<?= base_url('assets') ?>/vendors/fonts/nunito.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/css/bootstrap.css">
 
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/perfect-scrollbar/perfect-scrollbar.css">
@@ -18,7 +18,7 @@
     <link rel="icon" href="<?= base_url('assets') ?>/images/logo/sikoper.png">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/sweetalert2/sweetalert2.min.css">
     <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/select2/css/select2.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="<?= base_url('assets') ?>/vendors/fontawesome/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <script src="<?= base_url('assets') ?>/vendors/jquery/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="<?= base_url('assets') ?>/vendors/datatables/datatables.min.js"></script>
@@ -266,9 +266,10 @@
         });
     </script>
     <script src="<?= base_url('assets') ?>/js/main.js"></script>
+    <script src="<?= base_url('assets') ?>/js/keyboard-navigation.js"></script>
     <script src="<?= base_url('assets') ?>/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="<?= base_url('assets') ?>/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="<?= base_url('assets') ?>/vendors/fontawesome/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </body>
 
 </html>

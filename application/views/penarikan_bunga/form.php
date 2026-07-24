@@ -70,7 +70,7 @@
     </div>
 </section>
 
-<script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0/dist/autoNumeric.min.js"></script>
+<script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js/dist/autoNumeric.min.js"></script>
 <script>
     $(document).ready(function() {
         const anJumlah = new AutoNumeric('#jumlah_penarikan', {

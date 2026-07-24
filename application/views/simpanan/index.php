@@ -34,7 +34,7 @@
         </div>
     </div>
 </div>
-<script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+<script src="<?= base_url('assets') ?>/vendors/pusher/pusher.min.js"></script>
 <script>
     table = $('#tabel_simpanan').DataTable({
         responsive: true,

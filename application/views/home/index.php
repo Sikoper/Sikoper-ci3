@@ -81,7 +81,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="<?= base_url('assets') ?>/vendors/apexcharts/apexcharts.min.js"></script>
 <script>
     $(document).ready(function() {
         $.ajax({

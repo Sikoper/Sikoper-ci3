@@ -100,21 +100,17 @@
                                 icon: "success"
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    window.location.reload();
+                                    window.location = '<?= base_url('pegawai') ?>';
                                 }
                             });
-                        } else {
+                        } else if (response.error) {
                             Swal.fire({
                                 title: "Error!",
-                                text: response.error,
+                                html: response.error,
                                 allowOutsideClick: false,
                                 allowEscapeKey: false,
                                 allowEnterKey: false,
                                 icon: "error"
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location = '<?= base_url('pegawai') ?>';
-                                }
                             });
                         }
                     },

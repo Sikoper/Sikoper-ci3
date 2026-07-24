@@ -86,8 +86,8 @@ class Setoran extends CI_Controller
         }
 
         $tabungan = $this->input->post('tabungan');
-        $jumlah_setoran = $this->input->post('jumlah_setoran');
-        $pegawai_id = $this->input->post('pegawai_id');
+        $jumlah_setoran = str_replace(['.', ','], ['', '.'], $this->input->post('jumlah_setoran'));
+        $pegawai_id = $this->session->userdata('level') == 'Admin' ? $this->input->post('pegawai_id') : $this->session->userdata('pegawai_id');
 
         if ($this->session->userdata('level') == 'Admin') {
             $this->form_validation->set_rules('pegawai_id', 'Pegawai', 'required', [

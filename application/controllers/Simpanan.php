@@ -823,11 +823,20 @@ class Simpanan extends CI_Controller
         $upload_data = $this->upload->data();
         $file_path = $upload_data['full_path'];
 
-        // Get pegawai_id from session or use first available
-        $pegawai_id = $this->session->userdata('pegawai_id');
-        if (!$pegawai_id) {
-            $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
-            $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+        // Get pegawai_id for import, prioritize Pemungut Tabungan
+        $pemungut = $this->db->like('jabatan', 'pemungut', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        if (!$pemungut) {
+            $pemungut = $this->db->like('jabatan', 'pembukuan', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        }
+        
+        if ($pemungut) {
+            $pegawai_id = $pemungut->id;
+        } else {
+            $pegawai_id = $this->session->userdata('pegawai_id');
+            if (!$pegawai_id) {
+                $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
+                $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+            }
         }
 
         // Get jenistabungan_id for Tabungan
@@ -879,11 +888,20 @@ class Simpanan extends CI_Controller
         $upload_data = $this->upload->data();
         $file_path = $upload_data['full_path'];
 
-        // Get pegawai_id from session or use first available
-        $pegawai_id = $this->session->userdata('pegawai_id');
-        if (!$pegawai_id) {
-            $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
-            $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+        // Get pegawai_id for import, prioritize Pemungut Tabungan
+        $pemungut = $this->db->like('jabatan', 'pemungut', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        if (!$pemungut) {
+            $pemungut = $this->db->like('jabatan', 'pembukuan', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        }
+        
+        if ($pemungut) {
+            $pegawai_id = $pemungut->id;
+        } else {
+            $pegawai_id = $this->session->userdata('pegawai_id');
+            if (!$pegawai_id) {
+                $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
+                $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+            }
         }
 
         // Get jenistabungan_id for Tabungan
@@ -947,11 +965,20 @@ class Simpanan extends CI_Controller
         $upload_data = $this->upload->data();
         $file_path = $upload_data['full_path'];
 
-        // Get pegawai_id from session or use first available
-        $pegawai_id = $this->session->userdata('pegawai_id');
-        if (!$pegawai_id) {
-            $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
-            $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+        // Get pegawai_id for import, prioritize Pemungut Tabungan
+        $pemungut = $this->db->like('jabatan', 'pemungut', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        if (!$pemungut) {
+            $pemungut = $this->db->like('jabatan', 'pembukuan', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        }
+        
+        if ($pemungut) {
+            $pegawai_id = $pemungut->id;
+        } else {
+            $pegawai_id = $this->session->userdata('pegawai_id');
+            if (!$pegawai_id) {
+                $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
+                $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+            }
         }
 
         // Get jenistabungan_id for Tabungan
@@ -1322,11 +1349,20 @@ class Simpanan extends CI_Controller
         $year = $this->input->post('year') ?: '2026';
         $delete_existing = $this->input->post('delete_existing') !== 'false';
 
-        // Get pegawai_id from session or use first available
-        $pegawai_id = $this->session->userdata('pegawai_id');
-        if (!$pegawai_id) {
-            $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
-            $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+        // Get pegawai_id for import, prioritize Pemungut Tabungan
+        $pemungut = $this->db->like('jabatan', 'pemungut', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        if (!$pemungut) {
+            $pemungut = $this->db->like('jabatan', 'pembukuan', 'both')->order_by('id', 'ASC')->limit(1)->get('tbpegawai')->row();
+        }
+        
+        if ($pemungut) {
+            $pegawai_id = $pemungut->id;
+        } else {
+            $pegawai_id = $this->session->userdata('pegawai_id');
+            if (!$pegawai_id) {
+                $first_pegawai = $this->db->select('id')->limit(1)->get('tbpegawai')->row();
+                $pegawai_id = $first_pegawai ? $first_pegawai->id : 0;
+            }
         }
 
         // Get jenistabungan_id for Tabungan

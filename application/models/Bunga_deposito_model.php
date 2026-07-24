@@ -80,6 +80,13 @@ class Bunga_deposito_model extends CI_Model
                     'tanggal_perhitungan' => $tanggalPerhitungan,
                     'status_penarikan' => 'belum_ditarik'
                 ];
+                
+                // Update denormalized totals in tbdeposito
+                $this->db->set('bunga_belum_ditarik', 'bunga_belum_ditarik + ' . (float) $bungaAmount, FALSE);
+                $this->db->set('total_bunga_akumulasi', 'total_bunga_akumulasi + ' . (float) $bungaAmount, FALSE);
+                $this->db->where('id', $deposito->id);
+                $this->db->update('tbdeposito');
+                
                 $processedAny = true;
             }
         }

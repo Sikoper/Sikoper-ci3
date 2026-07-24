@@ -32,6 +32,19 @@
             padding: 8px 15px;
             display: flex;
             flex-direction: column;
+            position: relative;
+            margin: 15px auto;
+        }
+
+        .kwitansi-container::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            bottom: -15px;
+            left: -15px;
+            right: -15px;
+            border: 1px dashed #999;
+            pointer-events: none;
         }
 
         .kwitansi-header {
@@ -190,11 +203,17 @@
         }
 
         @media print {
+            @page {
+                margin: 0;
+            }
+
             .print-button {
                 display: none;
             }
+
             body {
                 padding: 0;
+                margin: 0;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
@@ -209,8 +228,6 @@
                 <img src="<?= base_url('assets/images/logo/sikoper.png') ?>" alt="Logo">
             </div>
             <div class="header-text">
-                <h2>Koperasi Simpan Pinjam</h2>
-                <h3>Jl. Contoh Alamat No. 123, Kota | Telp: (0411) 123-4567</h3>
             </div>
             <div class="kwitansi-number">
                 <strong>BUKTI PENARIKAN</strong><br>

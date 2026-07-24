@@ -45,8 +45,7 @@ class Pegawai extends CI_Controller
                 $buttons = "<button class=\"btn btn-secondary\" onclick=\"window.location='pegawai/detail/$encodedId'\"><i class='fa fa-info fa-fw'></i></button>";
 
                 if ($level !== 'Direktur') {
-                    $buttons = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='pegawai/edit/$encodedId'\"><i class='fa fa-edit fa-fw'></i></button>
-                            <button class=\"btn btn-danger\" onclick=\"deleteItem('{$field->id}', '{$field->nama_lengkap}')\"><i class=\"fa fa-trash fa-fw\"></i></button> " . $buttons;
+                    $buttons = "<button type=\"button\" class=\"btn btn-success\" onclick=\"window.location='pegawai/edit/$encodedId'\"><i class='fa fa-edit fa-fw'></i></button> " . $buttons;
                 }
 
                 $row[] = $buttons;
@@ -201,7 +200,16 @@ class Pegawai extends CI_Controller
 
             $id = $this->input->post('id');
 
-            if ($this->Pegawai_model->delete_data($id)) {
+            $result = $this->Pegawai_model->delete_data($id);
+            if (is_array($result) && $result['status'] === true) {
+                $msg = [
+                    'success' => $result['message']
+                ];
+            } else if (is_array($result) && $result['status'] === false) {
+                $msg = [
+                    'error' => $result['message']
+                ];
+            } else if ($result) {
                 $msg = [
                     'success' => 'Data berhasil dihapus'
                 ];

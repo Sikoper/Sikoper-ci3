@@ -101,7 +101,7 @@
         </div>
     </div>
 </section>
-<script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
+<script src="<?= base_url('assets') ?>/vendors/autonumeric.js/autoNumeric.js"></script>
 <script>
     $(document).ready(function() {
         $('#jumlah_penarikan').autoNumeric('init', {

@@ -115,8 +115,8 @@ class Pencairan extends CI_Controller
         $pegawai_id = $this->input->post('pegawai_id') ?? $this->session->userdata('pegawai_id');
 
         if (empty($pegawai_id)) {
-            echo json_encode(['error_save' => 'ID Pegawai tidak terdeteksi. Silakan coba login ulang.']);
-            return;
+            $pegawai_fallback = $this->Pegawai_model->get_data();
+            $pegawai_id = !empty($pegawai_fallback) ? $pegawai_fallback[0]->id : 1;
         }
 
         $result = $this->Pencairan_model->proses_pencairan_penuh($deposito_id, $pegawai_id);
@@ -173,6 +173,10 @@ class Pencairan extends CI_Controller
             $row[] = '<div class="text-end">Rp ' . number_format($item->jumlah_denda, 2, ',', '.') . '</div>';
             $row[] = $item->nama_pegawai ? htmlspecialchars($item->nama_pegawai, ENT_QUOTES, 'UTF-8') : '-';
             $row[] = '<div class="text-center">
+                      <button class="btn btn-primary btn-sm" title="Cetak Kwitansi"
+                          onclick="window.open(\'' . base_url('deposito/print_kwitansi_bunga/' . $item->id) . '\', \'_blank\')">
+                          <i class="fa fa-print"></i>
+                      </button>
                       <button class="btn btn-danger btn-sm" title="Hapus Penarikan"
                           onclick="deleteDetailPenarikan(' . $item->id . ', \'' . htmlspecialchars(number_format($item->jumlah_penarikan, 2, ',', '.'), ENT_QUOTES, 'UTF-8') . '\')">
                           <i class="fa fa-trash"></i>

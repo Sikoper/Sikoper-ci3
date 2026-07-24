@@ -72,24 +72,35 @@ class Pegawai_model extends CI_Model
 
     public function delete_data($id)
     {
-        // Check if pegawai has related records in simpanan
-        $this->db->where('pegawai_id', $id);
-        $simpanan_exists = $this->db->get('tbsimpanan')->num_rows() > 0;
+        $relations = [];
+        $check_tables = [
+            'tbsimpanan' => 'Simpanan',
+            'tbdeposito' => 'Deposito',
+            'tbuser' => 'Akun Pengguna',
+            'tbnasabah' => 'Nasabah',
+            'tbdetail_simpanan' => 'Transaksi Setoran Simpanan',
+            'tbdetail_penarikan' => 'Transaksi Penarikan Simpanan',
+            'tbpenarikan' => 'Data Penarikan Tambahan',
+            'tbpenarikan_deposito' => 'Transaksi Penarikan Deposito',
+            'tb_bunga_deposito_log' => 'Log Bunga Deposito'
+        ];
 
-        // Check if pegawai has related records in deposito
-        $this->db->where('pegawai_id', $id);
-        $deposito_exists = $this->db->get('tbdeposito')->num_rows() > 0;
-
-        // Check if pegawai has a user account
-        $this->db->where('pegawai_id', $id);
-        $user_exists = $this->db->get('tbuser')->num_rows() > 0;
-
-        // Block deletion if any related records exist
-        if ($simpanan_exists || $deposito_exists || $user_exists) {
-            return false;
+        foreach ($check_tables as $table => $name) {
+            $this->db->where('pegawai_id', $id);
+            if ($this->db->get($table)->num_rows() > 0) {
+                $relations[] = $name;
+            }
         }
 
-        return $this->db->delete('tbpegawai', ['id' => $id]);
+        // Block deletion if any related records exist
+        if (!empty($relations)) {
+            return ['status' => false, 'message' => 'Data Pegawai gagal dihapus karena masih terikat sebagai pendata pada: ' . implode(', ', $relations) . '.'];
+        }
+
+        if ($this->db->delete('tbpegawai', ['id' => $id])) {
+            return ['status' => true, 'message' => 'Data berhasil dihapus'];
+        }
+        return ['status' => false, 'message' => 'Data Pegawai gagal dihapus.'];
     }
 
 

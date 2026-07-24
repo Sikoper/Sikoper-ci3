@@ -82,50 +82,6 @@
         ],
     });
 
-    function deleteItem(id, nama) {
-        Swal.fire({
-            title: "Hapus data ini?",
-            html: `Yakin ingin menghapus data dari <strong>${nama}</strong>?`,
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes!",
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            allowEnterKey: false,
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    type: "POST",
-                    url: "<?= base_url('pegawai/delete') ?>",
-                    data: {
-                        id: id
-                    },
-                    dataType: "json",
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: "Success!",
-                                text: response.success,
-                                allowOutsideClick: false,
-                                allowEscapeKey: false,
-                                allowEnterKey: false,
-                                icon: "success"
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.reload();
-                                }
-                            });
-                        }
-                    },
-                    error: function(xhr, thrownError) {
-                        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError);
-                    }
-                });
-            }
-        });
-    }
 
     function detail(id) {
 
