@@ -6,48 +6,67 @@ document.addEventListener('DOMContentLoaded', function() {
     // We target inputs, selects, and textareas inside forms.
     // Exclude hidden inputs and disabled elements.
     const getFocusableElements = () => {
-        return Array.from(document.querySelectorAll('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button[type="submit"]:not([disabled])'))
-            .filter(el => {
-                // Ensure it's visible
-                return el.offsetWidth > 0 || el.offsetHeight > 0;
-            });
+        // Find visible inputs, textareas, buttons, and Select2 containers
+        const elements = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled]), button[type="submit"]:not([disabled]), .select2-selection[tabindex]'));
+        
+        return elements.filter(el => {
+            // Include select2
+            if (el.classList.contains('select2-selection')) return true;
+            // Native select is usually hidden if select2 is applied on it, so we skip hidden native selects
+            return el.offsetWidth > 0 || el.offsetHeight > 0;
+        });
     };
 
     document.addEventListener('keydown', function(e) {
-        // Only trigger on form elements
-        const activeTag = document.activeElement.tagName.toLowerCase();
-        const isFormElement = ['input', 'select', 'textarea', 'button'].includes(activeTag);
+        let activeEl = document.activeElement;
+        
+        // If inside select2, active element might be the selection span or the search input
+        if (activeEl.classList.contains('select2-search__field')) {
+            // Let select2 handle its own arrows if it's open
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') return; 
+        }
+
+        const isSelect2 = activeEl.closest('.select2-container') !== null;
+        if (isSelect2) {
+            // normalize active element to the selection span for indexing
+            const selectionSpan = activeEl.closest('.select2-container').querySelector('.select2-selection');
+            if (selectionSpan) activeEl = selectionSpan;
+        }
+
+        const activeTag = activeEl.tagName.toLowerCase();
+        const isFormElement = ['input', 'select', 'textarea', 'button'].includes(activeTag) || isSelect2;
         
         if (!isFormElement) return;
 
-        // If it's a textarea and Enter/Up/Down is pressed, let it act normally
         if (activeTag === 'textarea' && (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-            return;
+            return; // Let textarea behave normally
         }
 
-        // Specifically for AutoNumeric inputs (which often use text type)
-        // If they press Enter, ArrowDown, ArrowUp, we navigate. 
-        // For ArrowLeft/Right we only navigate if cursor is at bounds.
-        
         const elements = getFocusableElements();
-        const currentIndex = elements.indexOf(document.activeElement);
+        const currentIndex = elements.indexOf(activeEl);
 
         if (currentIndex > -1) {
             let nextIndex = null;
 
-            if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                e.preventDefault();
+            // Handle space key navigation (only if not typing in text field)
+            const isTextInput = activeTag === 'input' && ['text', 'password', 'email', 'search', 'tel', 'url', 'number'].includes(activeEl.type);
+            const isSpaceKey = e.key === ' ' || e.key === 'Spacebar';
+            
+            if (e.key === 'Enter' || e.key === 'ArrowDown' || (isSpaceKey && !isTextInput && activeTag !== 'textarea')) {
+                // Do not prevent default for space on select2 or buttons as they use it to open/click
+                if (!(isSpaceKey && (isSelect2 || activeTag === 'button'))) {
+                    e.preventDefault();
+                }
                 nextIndex = currentIndex + 1;
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 nextIndex = currentIndex - 1;
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                // Don't override left/right if the user is editing text inside an input
-                // Only move if cursor is at the very beginning/end
-                if (activeTag === 'input' && (document.activeElement.type === 'text' || document.activeElement.type === 'number')) {
-                    if (e.key === 'ArrowLeft' && document.activeElement.selectionStart > 0) return;
-                    if (e.key === 'ArrowRight' && document.activeElement.selectionEnd < document.activeElement.value.length) return;
+                if (isTextInput) {
+                    if (e.key === 'ArrowLeft' && activeEl.selectionStart > 0) return;
+                    if (e.key === 'ArrowRight' && activeEl.selectionEnd < activeEl.value.length) return;
                 }
+                if (isSelect2) return; // Let select2 handle left/right if needed
                 
                 e.preventDefault();
                 nextIndex = e.key === 'ArrowRight' ? currentIndex + 1 : currentIndex - 1;
@@ -59,11 +78,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 const nextElement = elements[nextIndex];
-                nextElement.focus();
                 
-                // Select text if it's an input so typing replaces immediately (like MYOB)
-                if (nextElement.tagName.toLowerCase() === 'input' && ['text', 'number', 'tel', 'email'].includes(nextElement.type)) {
-                    nextElement.select();
+                // If the next element is a native select but it has select2, focus the select2 instead
+                if (nextElement.tagName.toLowerCase() === 'select' && $(nextElement).hasClass('select2-hidden-accessible')) {
+                    const s2 = $(nextElement).next('.select2-container').find('.select2-selection');
+                    if (s2.length) s2.focus();
+                } else {
+                    nextElement.focus();
+                    if (nextElement.tagName.toLowerCase() === 'input' && ['text', 'number', 'tel', 'email'].includes(nextElement.type)) {
+                        nextElement.select();
+                    }
                 }
             }
         }
