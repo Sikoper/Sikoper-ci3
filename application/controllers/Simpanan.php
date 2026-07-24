@@ -223,72 +223,35 @@ class Simpanan extends CI_Controller
                 ];
             } else {
 
+                $quick_add_data = null;
                 if ($quick_add_mode == '1') {
-                    // Auto-create Nasabah
-                    $nama_baru = $this->input->post('nama_langsung', true);
-                    $telepon_baru = $this->input->post('telepon_langsung', true);
-                    $alamat_baru = $this->input->post('alamat_langsung', true);
-
-                    $data_nasabah = [
-                        'nik' => '-',  // Quick add - can be filled later
-                        'nama_lengkap' => $nama_baru,
-                        'jenis_kelamin' => '?',  // Unknown - can be updated later
+                    $quick_add_data = [
+                        'nik' => '-',  
+                        'nama_lengkap' => $this->input->post('nama_langsung', true),
+                        'jenis_kelamin' => '?',  
                         'tempat_lahir' => '',
                         'tanggal_lahir' => null,
                         'agama' => '',
-                        'alamat' => $alamat_baru ?: '',
+                        'alamat' => $this->input->post('alamat_langsung', true) ?: '',
                         'pekerjaan' => '',
-                        'telp' => $telepon_baru,
+                        'telp' => $this->input->post('telepon_langsung', true),
                         'nama_ibu_kandung' => '',
-                        'pegawai_id' => $pegawai  // Required foreign key
+                        'pegawai_id' => $pegawai  
                     ];
-
-                    $this->db->insert('tbnasabah', $data_nasabah);
-                    $nasabah_id_final = $this->db->insert_id();
-
-                    if (!$nasabah_id_final) {
-                        $msg = ['error' => ['errorGeneral' => 'Gagal membuat data nasabah baru.']];
-                        echo json_encode($msg);
-                        return;
-                    }
-                } else {
-                    $nasabah_id_final = $nasabah;
                 }
 
                 $data = [
                     'tanggal_simpanan' => $tanggal_simpanan,
                     'no_rekening' => $no_rekening,
-                    'nasabah_id' => $nasabah_id_final,
+                    'nasabah_id' => $nasabah,
                     'pegawai_id' => $pegawai,
                     'jenistabungan_id' => $jenis_tabungan,
                     'jumlah_simpanan' => $jumlah_simpanan,
                 ];
 
-                // echo '<pre>';
-                // print_r($data);
-                // exit;
+                $success = $this->Simpanan_model->save_simpanan_full($data, $quick_add_data);
 
-                $this->db->trans_start();
-
-                // Insert main simpanan
-                $inserted = $this->Simpanan_model->insert_data($data);
-
-                if ($inserted) {
-                    $simpanan_id = $this->db->insert_id();
-
-                    $detail_setoran = [
-                        'simpanan_id' => $simpanan_id,
-                        'tanggal_setoran' => $tanggal_simpanan,
-                        'jumlah_setoran' => $jumlah_simpanan,
-                        'pegawai_id' => $pegawai,
-                    ];
-
-                    $this->db->insert('tbdetail_simpanan', $detail_setoran);
-                }
-
-                $this->db->trans_complete();
-
-                if ($this->db->trans_status() === FALSE) {
+                if (!$success) {
                     $msg = ['error' => 'Gagal menyimpan data tabungan simpanan dan detail.'];
                 } else {
                     $msg = ['success' => 'Data tabungan berhasil ditambahkan.'];

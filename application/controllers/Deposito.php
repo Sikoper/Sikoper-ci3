@@ -268,52 +268,29 @@ class Deposito extends CI_Controller
                 ];
             } else {
 
-                $total_bunga_didapat = ($jumlah_deposito * ($rate_bunga / 100)) * $durasi;
-                $hutang_bunga = $total_bunga_didapat;
+                $withdrawal_mode = $this->input->post('status_bunga_lampau') === 'ditarik';
 
-                // echo '<pre>';
-                // print_r($total_bunga_didapat);
-                // exit;
-
-                $this->db->trans_start();
-
+                $quick_add_data = null;
                 if ($quick_add_mode == '1') {
-                    // Auto-create Nasabah
-                    $nama_baru = $this->input->post('nama_langsung', true);
-                    $telepon_baru = $this->input->post('telepon_langsung', true);
-                    $alamat_baru = $this->input->post('alamat_langsung', true);
-
-                    $data_nasabah = [
-                        'nik' => '-',  // Quick add - can be filled later
-                        'nama_lengkap' => $nama_baru,
-                        'jenis_kelamin' => '?',  // Unknown - can be updated later
+                    $quick_add_data = [
+                        'nik' => '-',  
+                        'nama_lengkap' => $this->input->post('nama_langsung', true),
+                        'jenis_kelamin' => '?',  
                         'tempat_lahir' => '',
                         'tanggal_lahir' => null,
                         'agama' => '',
-                        'alamat' => $alamat_baru ?: '',
+                        'alamat' => $this->input->post('alamat_langsung', true) ?: '',
                         'pekerjaan' => '',
-                        'telp' => $telepon_baru,
+                        'telp' => $this->input->post('telepon_langsung', true),
                         'nama_ibu_kandung' => '',
-                        'pegawai_id' => $pegawai  // Required foreign key
+                        'pegawai_id' => $pegawai  
                     ];
-
-                    $this->db->insert('tbnasabah', $data_nasabah);
-                    $nasabah_id_final = $this->db->insert_id();
-
-                    if (!$nasabah_id_final) {
-                        $this->db->trans_rollback();
-                        $msg = ['error' => ['errorGeneral' => 'Gagal membuat data nasabah baru.']];
-                        echo json_encode($msg);
-                        return;
-                    }
-                } else {
-                    $nasabah_id_final = $nasabah;
                 }
 
                 $data = [
                     'tanggal_deposito' => $tanggal_deposito,
                     'no_rekening' => $no_rekening,
-                    'nasabah_id' => $nasabah_id_final, // Use the determined ID
+                    'nasabah_id' => $nasabah, // will be replaced if quick_add_mode is 1
                     'pegawai_id' => $pegawai,
                     'jenistabungan_id' => $jenis_tabungan,
                     'jumlah_deposito' => str_replace(['.', ','], ['', '.'], $jumlah_deposito),
@@ -324,100 +301,9 @@ class Deposito extends CI_Controller
                     'hubungan_ahli_waris' => $hubungan_ahli_waris,
                 ];
 
-                $this->Deposito_model->insert_data($data);
-                $deposito_id = $this->db->insert_id();
+                $success = $this->Deposito_model->save_deposito_with_logs($data, $quick_add_data, $withdrawal_mode, $this->session->userdata('pegawai_id'));
 
-                // === BACKDATE LOGIC ===
-                // If tanggal_deposito is in the past, generate bunga logs
-                $tgl_deposito = new DateTime($tanggal_deposito);
-                $today = new DateTime();
-
-                // Reset time to compare dates only
-                $tgl_deposito->setTime(0, 0, 0);
-                $today->setTime(0, 0, 0);
-
-                if ($tgl_deposito < $today && $deposito_id) {
-                    $start_date = clone $tgl_deposito;
-
-                    // Logic: Get months difference
-                    $interval = DateInterval::createFromDateString('1 month');
-                    $period = new DatePeriod($start_date, $interval, $today);
-
-                    $total_accumulated = 0;
-                    $bunga_logs = [];
-                    // Check user choice: 'akumulasi' (default) or 'ditarik'
-                    $withdrawal_mode = $this->input->post('status_bunga_lampau') === 'ditarik';
-
-                    foreach ($period as $dt) {
-                        // Skip the start date itself if it exactly matches loop start (DatePeriod behavior varies slightly)
-                        if ($dt == $tgl_deposito)
-                            continue;
-
-                        // Calculate Monthly Bunga: (Amount * Rate / 100) / 12
-                        $amt = floatval(str_replace(['.', ','], ['', '.'], $jumlah_deposito));
-                        $bg_rate = floatval($rate_bunga);
-
-                        $bunga_bulanan = ($amt * $bg_rate / 100) / 12;
-                        $bunga_bulanan_rounded = round($bunga_bulanan);
-
-                        // Date for calculation log (e.g. 15th of the month)
-                        $log_date = $dt->format('Y-m-15');
-
-                        // Determine status based on user choice
-                        $status_penarikan = $withdrawal_mode ? 'sudah_ditarik' : 'belum_ditarik';
-
-                        // Get actual nasabah name for log
-                        $nasabah_data = $this->Nasabah_model->get_data_by_id($nasabah_id_final);
-                        $nama_nasabah_log = $nasabah_data ? $nasabah_data->nama_lengkap : 'Unknown';
-
-                        $bunga_logs[] = [
-                            'deposito_id' => $deposito_id,
-                            'no_rekening' => $no_rekening,
-                            'nama_nasabah' => $nama_nasabah_log, // Now uses actual name instead of ID
-                            'jumlah_bunga' => $bunga_bulanan_rounded,
-                            'rate_bunga' => $bg_rate,
-                            'tanggal_perhitungan' => $log_date,
-                            'status_penarikan' => $status_penarikan,
-                            'input_method' => 'auto',
-                            'pegawai_id' => $this->session->userdata('pegawai_id'),
-                            'keterangan' => 'Bunga otomatis (' . ($withdrawal_mode ? 'Riwayat' : 'Akumulasi') . ') ' . $dt->format('F Y')
-                        ];
-
-                        $total_accumulated += $bunga_bulanan_rounded;
-
-                        if ($withdrawal_mode) {
-                            // Create actual withdrawal record in tbpenarikan
-                            $this->db->insert('tbpenarikan', [
-                                'simpanan_id' => $deposito_id,
-                                'no_rekening' => $no_rekening,
-                                // 'nama_nasabah' => $nasabah, // Need to verify if table uses ID or Name. Usually ID if integer.
-                                'tanggal_penarikan' => $log_date,
-                                'jumlah_penarikan' => $bunga_bulanan_rounded,
-                                'pegawai_id' => $this->session->userdata('pegawai_id'),
-                                'keterangan' => 'Riwayat penarikan bunga ' . $dt->format('F Y'),
-                                'jenis_penarikan' => 'Bunga Deposito' // Adjust if column requires specific enum
-                            ]);
-                        }
-                    }
-
-                    if (!empty($bunga_logs)) {
-                        $this->db->insert_batch('tb_bunga_deposito_log', $bunga_logs);
-
-                        // Update Deposito Totals
-                        // If withdrawn: total_accumulated increases as a record of earnings, but bunga_belum_ditarik stays 0
-                        $bunga_belum_ditarik = $withdrawal_mode ? 0 : $total_accumulated;
-
-                        $this->db->where('id', $deposito_id);
-                        $this->db->update('tbdeposito', [
-                            'total_bunga_akumulasi' => $total_accumulated,
-                            'bunga_belum_ditarik' => $bunga_belum_ditarik
-                        ]);
-                    }
-                }
-
-                $this->db->trans_complete();
-
-                if ($this->db->trans_status() === FALSE) {
+                if (!$success) {
                     $msg = ['error' => 'Gagal menyimpan data deposito.'];
                 } else {
                     $msg = ['success' => 'Data deposito berhasil ditambahkan.'];

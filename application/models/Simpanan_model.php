@@ -109,6 +109,41 @@ class Simpanan_model extends CI_Model
         return $this->db->insert('tbsimpanan', $data);
     }
 
+    public function save_simpanan_full($data, $quick_add_data = null)
+    {
+        $this->db->trans_start();
+
+        if ($quick_add_data !== null) {
+            $this->db->insert('tbnasabah', $quick_add_data);
+            $nasabah_id_final = $this->db->insert_id();
+
+            if (!$nasabah_id_final) {
+                $this->db->trans_rollback();
+                return false;
+            }
+            $data['nasabah_id'] = $nasabah_id_final;
+        }
+
+        $inserted = $this->insert_data($data);
+
+        if ($inserted) {
+            $simpanan_id = $this->db->insert_id();
+
+            $detail_setoran = [
+                'simpanan_id' => $simpanan_id,
+                'tanggal_setoran' => $data['tanggal_simpanan'],
+                'jumlah_setoran' => $data['jumlah_simpanan'],
+                'pegawai_id' => $data['pegawai_id'],
+            ];
+
+            $this->db->insert('tbdetail_simpanan', $detail_setoran);
+        }
+
+        $this->db->trans_complete();
+
+        return $this->db->trans_status();
+    }
+
     /**
      * DENORMALIZED: Update total_setoran after a deposit is made
      */
