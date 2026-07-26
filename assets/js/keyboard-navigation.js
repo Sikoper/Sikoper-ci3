@@ -7,12 +7,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Exclude hidden inputs and disabled elements.
     const getFocusableElements = () => {
         // Find visible inputs, textareas, buttons, and Select2 containers
-        const elements = Array.from(new Set(document.querySelectorAll('input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled]), button[type="submit"]:not([disabled]), button#tombol_simpan:not([disabled]), button#tombol_simpan_setoran:not([disabled]), button.btn-success:not([disabled]), button.btn-primary:not([disabled]), .select2-selection[tabindex]')));
+        const elements = Array.from(new Set(document.querySelectorAll('input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled]), button[type="submit"]:not([disabled]), button#tombol_simpan:not([disabled]), button#tombol_simpan_setoran:not([disabled]), button.btn-success:not([disabled]), button.btn-primary:not([disabled]), .select2-selection')));
         
         return elements.filter(el => {
-            // Include select2
+            // Include select2-selection spans
             if (el.classList.contains('select2-selection')) return true;
             // Native select is usually hidden if select2 is applied on it, so we skip hidden native selects
+            if (el.classList.contains('select2-hidden-accessible')) return false;
             return el.offsetWidth > 0 || el.offsetHeight > 0;
         });
     };
@@ -52,9 +53,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') return; 
         }
 
-        const isSelect2 = activeEl.closest('.select2-container') !== null;
-        if (isSelect2) {
-            // normalize active element to the selection span for indexing
+        let isSelect2 = false;
+        if (activeEl.classList.contains('select2-hidden-accessible')) {
+            isSelect2 = true;
+            let selectionSpan = null;
+            const nextContainer = activeEl.nextElementSibling;
+            if (nextContainer && nextContainer.classList.contains('select2-container')) {
+                selectionSpan = nextContainer.querySelector('.select2-selection');
+            } else {
+                selectionSpan = $(activeEl).next('.select2-container').find('.select2-selection')[0];
+            }
+            if (selectionSpan) activeEl = selectionSpan;
+        } else if (activeEl.closest('.select2-container') !== null) {
+            isSelect2 = true;
             const selectionSpan = activeEl.closest('.select2-container').querySelector('.select2-selection');
             if (selectionSpan) activeEl = selectionSpan;
         }
@@ -135,10 +146,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Do not prevent default for space on select2 or buttons as they use it to open/click
                 if (!(isSpaceKey && (isSelect2 || activeTag === 'button'))) {
                     e.preventDefault();
+                    if (e.key === 'ArrowDown' || (isSelect2 && e.key === 'Enter')) {
+                        e.stopPropagation();
+                    }
                 }
                 nextIndex = currentIndex + 1;
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
+                e.stopPropagation();
                 nextIndex = currentIndex - 1;
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                 if (isTextInput) {
@@ -170,5 +185,5 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-    });
+    }, true);
 });
