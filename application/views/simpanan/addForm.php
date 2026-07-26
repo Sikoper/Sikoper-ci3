@@ -499,6 +499,7 @@
                 return {
                     results: data
                 };
+            },
             cache: true
         }
     });
