@@ -167,7 +167,6 @@
 
     var channel = pusher.subscribe('simpanan-channel');
     channel.bind('simpanan-event', function (data) {
-        console.log("Received update:", data);
         table.ajax.reload(null, false);
     });
 </script>

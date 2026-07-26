@@ -195,7 +195,6 @@
 
     var channel = pusher.subscribe('deposito-channel');
     channel.bind('deposito-event', function (data) {
-        console.log("Received update:", data);
         table.ajax.reload(null, false);
     });
 </script>
