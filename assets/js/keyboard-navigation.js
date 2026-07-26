@@ -75,6 +75,60 @@ document.addEventListener('DOMContentLoaded', function() {
             return; // Let textarea behave normally
         }
 
+        // 4. Handle native <select> elements (like #pegawai_id, #jenis_rekening, etc.)
+        if (activeTag === 'select' && !isSelect2) {
+            // Let ArrowDown, ArrowUp, and Space work natively to navigate options or open dropdown
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Spacebar') {
+                return;
+            }
+            // If Enter is pressed on a select:
+            if (e.key === 'Enter') {
+                // If value is empty (unselected, like "-- Pilih Pegawai --") and browser supports showPicker, open it!
+                if (activeEl.value === '' && typeof activeEl.showPicker === 'function') {
+                    e.preventDefault();
+                    try {
+                        activeEl.showPicker();
+                        return;
+                    } catch (err) {
+                        // fallback to moving to next index if showPicker fails
+                    }
+                }
+                // Otherwise move focus to next element
+                e.preventDefault();
+                const elements = getFocusableElements();
+                const currentIndex = elements.indexOf(activeEl);
+                if (currentIndex > -1 && currentIndex + 1 < elements.length) {
+                    const nextElement = elements[currentIndex + 1];
+                    nextElement.focus();
+                    if (nextElement.tagName.toLowerCase() === 'input' && ['text', 'number', 'tel', 'email'].includes(nextElement.type)) {
+                        nextElement.select();
+                    }
+                }
+                return;
+            }
+        }
+
+        // 5. Handle Select2 elements
+        if (isSelect2) {
+            // Let ArrowDown, ArrowUp, and Space open or navigate select2 natively
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Spacebar') {
+                return;
+            }
+            // If Enter is pressed on select2 selection span:
+            if (e.key === 'Enter') {
+                const selectEl = activeEl.closest('.select2-container').previousElementSibling;
+                if (selectEl && (selectEl.value === '' || selectEl.value === '0')) {
+                    e.preventDefault();
+                    try {
+                        $(selectEl).select2('open');
+                        return;
+                    } catch (err) {
+                        // ignore and fall through
+                    }
+                }
+            }
+        }
+
         const elements = getFocusableElements();
         const currentIndex = elements.indexOf(activeEl);
 
