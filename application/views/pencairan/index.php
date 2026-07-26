@@ -66,7 +66,7 @@
                     <?php if ($this->session->userdata('level') == 'Admin') : ?>
                         <div class="form-group mb-3">
                             <label for="pegawai_id">Pegawai</label>
-                            <select id="pegawai_id" name="pegawai_id" class="form-control">
+                            <select id="pegawai_id" name="pegawai_id" class="form-control" style="width: 100%;">
                                 <option value=""> -- Pilih Pegawai -- </option>
                                 <?php foreach ($pegawai as $item) : ?>
                                     <option value="<?= $item->id ?>"><?= $item->nama_lengkap ?></option>
@@ -178,6 +178,12 @@ $(document).ready(function() {
                 };
             }
         }
+    });
+
+    $('#pegawai_id').select2({
+        placeholder: '-- Pilih Pegawai --',
+        allowClear: true,
+        width: '100%'
     });
 
     $('#comboRekening').on('select2:select', function(e) {
