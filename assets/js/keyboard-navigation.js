@@ -47,10 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // If inside select2, active element might be the selection span or the search input
-        if (activeEl.classList.contains('select2-search__field')) {
-            // Let select2 handle its own arrows if it's open
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') return; 
+        // If inside select2 search box or open dropdown, let select2 handle ALL keyboard events (Enter to select, arrows to navigate list, Escape to close)
+        if (activeEl.classList.contains('select2-search__field') || activeEl.closest('.select2-dropdown') !== null) {
+            return; 
         }
 
         let isSelect2 = false;
