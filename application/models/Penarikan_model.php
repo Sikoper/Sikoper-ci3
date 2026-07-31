@@ -268,7 +268,7 @@ class Penarikan_model extends CI_Model
 
     public function get_combo_rekening_nasabah($search = null)
     {
-        $this->db->select('tbsimpanan.id, tbsimpanan.no_rekening');
+        $this->db->select('tbsimpanan.id, tbsimpanan.no_rekening, tbnasabah.nama_lengkap, tbjenistabungan.nama as jenis_tabungan');
         $this->db->from('tbsimpanan');
         $this->db->join('tbnasabah', 'tbsimpanan.nasabah_id = tbnasabah.id');
         $this->db->join('tbjenistabungan', 'tbsimpanan.jenistabungan_id = tbjenistabungan.id');
@@ -288,7 +288,7 @@ class Penarikan_model extends CI_Model
         foreach ($query->result() as $row) {
             $result[] = [
                 'id' => $row->id,
-                'text' => $row->no_rekening
+                'text' => $row->no_rekening . ' - ' . $row->nama_lengkap . ' (' . $row->jenis_tabungan . ')'
             ];
         }
         return $result;

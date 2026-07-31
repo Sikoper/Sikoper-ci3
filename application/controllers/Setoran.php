@@ -329,7 +329,7 @@ class Setoran extends CI_Controller
         foreach ($result as $row) {
             $data[] = [
                 'id' => $row->id,
-                'text' => $row->no_rekening
+                'text' => $row->no_rekening . ' - ' . $row->nama_lengkap . ' (' . $row->jenis_tabungan . ')'
             ];
         }
 

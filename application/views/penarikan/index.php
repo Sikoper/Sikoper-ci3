@@ -113,7 +113,9 @@
         const autoNumericOpts = {
             aSep: '.',
             aDec: ',',
-            mDec: '0'
+            mDec: '0',
+            vMin: '-9999999999999',
+            vMax: '9999999999999'
         };
 
         $('#saldo').autoNumeric('init', autoNumericOpts);

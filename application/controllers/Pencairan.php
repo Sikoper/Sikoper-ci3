@@ -210,7 +210,7 @@ class Pencairan extends CI_Controller
         foreach ($data as $row) {
             $result[] = [
                 'id' => $row->id,
-                'text' => $row->no_rekening,
+                'text' => $row->no_rekening . ' - ' . $row->nama_lengkap,
                 'nama_nasabah' => $row->nama_lengkap
             ];
         }
