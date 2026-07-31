@@ -73,8 +73,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const activeTag = activeEl.tagName.toLowerCase();
-        const isFormElement = ['input', 'select', 'textarea', 'button'].includes(activeTag) || isSelect2;
+        const isFormElement = ['input', 'select', 'textarea', 'button', 'a'].includes(activeTag) || isSelect2;
         
+        // 3. Smart Error Recovery & Button/Body Navigation:
+        // When ArrowUp or ArrowDown is pressed while focused on a button (#tombol_simpan, Batal, etc.) OR when focus was lost (!isFormElement):
+        // If there is any validation error field (.is-invalid), jump directly to that invalid field!
+        if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && (!isFormElement || activeTag === 'button' || activeTag === 'a' || ['submit', 'button', 'reset'].includes(activeEl.type) || activeEl.id === 'tombol_simpan' || activeEl.classList.contains('btn'))) {
+            const invalidEl = document.querySelector('.is-invalid, .error, [aria-invalid="true"]');
+            if (invalidEl) {
+                e.preventDefault();
+                e.stopPropagation();
+                let targetToFocus = invalidEl;
+                if (invalidEl.tagName && invalidEl.tagName.toLowerCase() === 'select' && $(invalidEl).hasClass('select2-hidden-accessible')) {
+                    const s2 = $(invalidEl).next('.select2-container').find('.select2-selection');
+                    if (s2.length) targetToFocus = s2[0];
+                }
+                targetToFocus.focus();
+                if (targetToFocus.tagName && targetToFocus.tagName.toLowerCase() === 'input' && ['text', 'number', 'tel', 'email'].includes(targetToFocus.type)) {
+                    targetToFocus.select();
+                }
+                return;
+            }
+            // If no error field is visible, but focus was lost (!isFormElement), let ArrowUp return to the last form element
+            if (!isFormElement) {
+                const elements = getFocusableElements();
+                if (elements.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetEl = e.key === 'ArrowUp' ? elements[elements.length - 1] : elements[0];
+                    targetEl.focus();
+                    if (targetEl.tagName && targetEl.tagName.toLowerCase() === 'input' && ['text', 'number', 'tel', 'email'].includes(targetEl.type)) {
+                        targetEl.select();
+                    }
+                }
+                return;
+            }
+        }
+
         if (!isFormElement) return;
 
         // 3. If Enter or Space is pressed on a button (like #tombol_simpan or submit), execute click!
