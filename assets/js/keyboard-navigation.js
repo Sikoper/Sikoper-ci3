@@ -47,8 +47,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // If inside select2 search box or open dropdown, let select2 handle ALL keyboard events (Enter to select, arrows to navigate list, Escape to close)
-        if (activeEl.classList.contains('select2-search__field') || activeEl.closest('.select2-dropdown') !== null) {
+        // If ANY Select2 dropdown menu is currently OPEN on the page, let Select2 handle ALL keyboard events!
+        if (document.querySelector('.select2-container--open') !== null || 
+            activeEl.classList.contains('select2-search__field') || 
+            activeEl.closest('.select2-dropdown') !== null ||
+            (e.target && ((e.target.classList && e.target.classList.contains('select2-search__field')) || (e.target.closest && e.target.closest('.select2-dropdown') !== null)))) {
             return; 
         }
 
