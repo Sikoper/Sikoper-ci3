@@ -115,7 +115,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Let Space open select2
             if (e.key === ' ' || e.key === 'Spacebar') {
                 e.preventDefault();
-                const selectEl = activeEl.closest('.select2-container').previousElementSibling;
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                const container = activeEl.closest('.select2-container');
+                const selectEl = container ? (container.previousElementSibling || $(container).prev('select')[0]) : null;
                 if (selectEl) {
                     try { $(selectEl).select2('open'); } catch (err) {}
                 }
@@ -123,9 +126,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             // If Enter is pressed on select2 selection span that is empty, open it
             if (e.key === 'Enter') {
-                const selectEl = activeEl.closest('.select2-container').previousElementSibling;
+                const container = activeEl.closest('.select2-container');
+                const selectEl = container ? (container.previousElementSibling || $(container).prev('select')[0]) : null;
                 if (selectEl && (selectEl.value === '' || selectEl.value === '0' || !selectEl.value)) {
                     e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
                     try {
                         $(selectEl).select2('open');
                         return;
