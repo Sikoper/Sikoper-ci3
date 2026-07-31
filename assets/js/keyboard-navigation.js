@@ -18,18 +18,89 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
+    // Observer to automatically highlight and style the active button whenever a SweetAlert2 popup opens
+    const swalObserver = new MutationObserver(function() {
+        const swalModal = document.querySelector('.swal2-popup, .swal-modal');
+        if (swalModal && (swalModal.offsetWidth > 0 || swalModal.offsetHeight > 0)) {
+            const buttons = Array.from(swalModal.querySelectorAll('.swal2-actions button:not([disabled]):not(.swal2-close), .swal-footer button:not([disabled])')).filter(btn => {
+                return btn.offsetWidth > 0 || btn.offsetHeight > 0 || window.getComputedStyle(btn).display !== 'none';
+            });
+            if (buttons.length > 0) {
+                const confirmBtn = swalModal.querySelector('.swal2-confirm') || swalModal.querySelector('.swal-button--confirm') || buttons[0];
+                let activeBtn = buttons.find(b => b === document.activeElement) || confirmBtn;
+                if (activeBtn && !activeBtn.dataset.swalFocused) {
+                    buttons.forEach(b => {
+                        b.style.outline = '';
+                        b.style.boxShadow = '';
+                        b.style.transform = '';
+                        delete b.dataset.swalFocused;
+                    });
+                    activeBtn.focus();
+                    activeBtn.style.outline = '3px solid #0d6efd';
+                    activeBtn.style.boxShadow = '0 0 0 4px rgba(13, 110, 253, 0.35)';
+                    activeBtn.style.transform = 'scale(1.04)';
+                    activeBtn.dataset.swalFocused = 'true';
+                }
+            }
+        }
+    });
+    swalObserver.observe(document.body, { childList: true, subtree: true });
+
     document.addEventListener('keydown', function(e) {
-        // 1. SweetAlert2 support: if a SweetAlert modal is open, let Enter close/confirm it!
-        const swalModal = document.querySelector('.swal2-popup');
-        if (swalModal && swalModal.offsetWidth > 0) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const confirmBtn = swalModal.querySelector('.swal2-confirm');
-                const closeBtn = swalModal.querySelector('.swal2-close');
-                if (confirmBtn && confirmBtn.offsetWidth > 0 && !confirmBtn.disabled) {
-                    confirmBtn.click();
-                } else if (closeBtn && closeBtn.offsetWidth > 0) {
-                    closeBtn.click();
+        // 1. SweetAlert2 / SweetAlert modal keyboard arrow navigation & selection support
+        const swalModal = document.querySelector('.swal2-popup, .swal-modal');
+        if (swalModal && (swalModal.offsetWidth > 0 || swalModal.offsetHeight > 0)) {
+            const buttons = Array.from(swalModal.querySelectorAll('.swal2-actions button:not([disabled]):not(.swal2-close), .swal-footer button:not([disabled])')).filter(btn => {
+                return btn.offsetWidth > 0 || btn.offsetHeight > 0 || window.getComputedStyle(btn).display !== 'none';
+            });
+            if (buttons.length > 0) {
+                const updateSwalFocus = (btn) => {
+                    buttons.forEach(b => {
+                        b.style.outline = '';
+                        b.style.boxShadow = '';
+                        b.style.transform = '';
+                        delete b.dataset.swalFocused;
+                    });
+                    btn.focus();
+                    btn.style.outline = '3px solid #0d6efd';
+                    btn.style.boxShadow = '0 0 0 4px rgba(13, 110, 253, 0.35)';
+                    btn.style.transform = 'scale(1.04)';
+                    btn.dataset.swalFocused = 'true';
+                };
+
+                // Left / Right / Up / Down / Tab arrow navigation between SweetAlert buttons
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'].includes(e.key)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    let currentIdx = buttons.indexOf(document.activeElement);
+                    let nextIdx = 0;
+                    if (currentIdx === -1) {
+                        nextIdx = (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) ? Math.min(1, buttons.length - 1) : 0;
+                    } else {
+                        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+                            nextIdx = (currentIdx + 1) % buttons.length;
+                        } else {
+                            nextIdx = (currentIdx - 1 + buttons.length) % buttons.length;
+                        }
+                    }
+                    updateSwalFocus(buttons[nextIdx]);
+                    return;
+                }
+
+                // Enter / Space key activates the focused SweetAlert button
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    let targetBtn = buttons.find(b => b === document.activeElement);
+                    if (!targetBtn) {
+                        targetBtn = swalModal.querySelector('.swal2-confirm') || buttons[0];
+                    }
+                    if (targetBtn) {
+                        targetBtn.click();
+                    }
+                    return;
                 }
             }
             return;
