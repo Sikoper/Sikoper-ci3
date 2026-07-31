@@ -231,30 +231,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true);
 
     // -------------------------------------------------------------------------
-    // FITUR 2 & 3: AUTO-FOCUS PERTAMA & BANNER PETUNJUK KEYBOARD KASIR
+    // BANNER PETUNJUK KEYBOARD KASIR
     // -------------------------------------------------------------------------
     setTimeout(function() {
-        // A. Auto-Focus pada elemen form pertama saat halaman baru terbuka
-        const existingFocus = document.activeElement;
-        const isBodyOrNull = !existingFocus || existingFocus === document.body || existingFocus.tagName.toLowerCase() === 'html';
-        if (isBodyOrNull) {
-            const elements = getFocusableElements();
-            const firstInputEl = elements.find(el => {
-                const tag = el.tagName.toLowerCase();
-                return (tag === 'input' || tag === 'select' || tag === 'textarea' || el.classList.contains('select2-selection')) && 
-                       el.type !== 'submit' && el.type !== 'button' && el.type !== 'reset';
-            });
-            if (firstInputEl) {
-                try {
-                    firstInputEl.focus();
-                    if (firstInputEl.tagName && firstInputEl.tagName.toLowerCase() === 'input' && ['text', 'number', 'tel', 'email'].includes(firstInputEl.type)) {
-                        firstInputEl.select();
-                    }
-                } catch (err) {}
-            }
-        }
-
-        // B. Sisipkan Keyboard Shortcuts Banner di bawah tombol Simpan/Submit
+        // Sisipkan Keyboard Shortcuts Banner di bawah tombol Simpan/Submit
         const saveBtn = document.querySelector('#tombol_simpan, #tombol_simpan_setoran, button[type="submit"]');
         if (saveBtn && !document.getElementById('sikoper-keyboard-banner')) {
             const btnContainer = saveBtn.closest('.text-center') || saveBtn.parentElement;
