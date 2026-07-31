@@ -229,4 +229,48 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }, true);
+
+    // -------------------------------------------------------------------------
+    // FITUR 2 & 3: AUTO-FOCUS PERTAMA & BANNER PETUNJUK KEYBOARD KASIR
+    // -------------------------------------------------------------------------
+    setTimeout(function() {
+        // A. Auto-Focus pada elemen form pertama saat halaman baru terbuka
+        const existingFocus = document.activeElement;
+        const isBodyOrNull = !existingFocus || existingFocus === document.body || existingFocus.tagName.toLowerCase() === 'html';
+        if (isBodyOrNull) {
+            const elements = getFocusableElements();
+            const firstInputEl = elements.find(el => {
+                const tag = el.tagName.toLowerCase();
+                return (tag === 'input' || tag === 'select' || tag === 'textarea' || el.classList.contains('select2-selection')) && 
+                       el.type !== 'submit' && el.type !== 'button' && el.type !== 'reset';
+            });
+            if (firstInputEl) {
+                try {
+                    firstInputEl.focus();
+                    if (firstInputEl.tagName && firstInputEl.tagName.toLowerCase() === 'input' && ['text', 'number', 'tel', 'email'].includes(firstInputEl.type)) {
+                        firstInputEl.select();
+                    }
+                } catch (err) {}
+            }
+        }
+
+        // B. Sisipkan Keyboard Shortcuts Banner di bawah tombol Simpan/Submit
+        const saveBtn = document.querySelector('#tombol_simpan, #tombol_simpan_setoran, button[type="submit"]');
+        if (saveBtn && !document.getElementById('sikoper-keyboard-banner')) {
+            const btnContainer = saveBtn.closest('.text-center') || saveBtn.parentElement;
+            if (btnContainer) {
+                const bannerHtml = `
+                <div id="sikoper-keyboard-banner" class="alert alert-light border shadow-sm mt-3 mb-2 py-2 px-3 text-center" style="border-radius: 8px; font-size: 0.85rem; background-color: #f8f9fa; border-color: #e9ecef !important;">
+                    <i class="fa fa-keyboard text-primary me-1"></i>
+                    <strong>Tip Kasir:</strong>
+                    <span class="text-muted ms-1">
+                        Gunakan <kbd class="bg-primary text-white px-1 py-0" style="font-size: 0.75rem;">Enter</kbd> / <kbd class="bg-primary text-white px-1 py-0" style="font-size: 0.75rem;">↑ ↓</kbd> untuk pindah kolom &bull;
+                        <kbd class="bg-primary text-white px-1 py-0" style="font-size: 0.75rem;">Spasi</kbd> buka pilihan &bull;
+                        <kbd class="bg-success text-white px-1 py-0" style="font-size: 0.75rem;">Ctrl + Enter</kbd> langsung Simpan
+                    </span>
+                </div>`;
+                $(btnContainer).after(bannerHtml);
+            }
+        }
+    }, 150);
 });
