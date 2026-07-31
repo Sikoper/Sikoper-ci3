@@ -25,7 +25,7 @@
                             <option value="">-- Pilih No. Rekening --</option>
                             <?php foreach ($nasabah as $n): ?>
                                 <option value="<?= $n->id_tabungan ?>">
-                                    <?= $n->no_rekening ?>
+                                    <?= $n->no_rekening ?> - <?= $n->nama_lengkap ?> (<?= $n->jenis_tabungan ?>)
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -179,9 +179,9 @@
         $('#comboRekening').on('change', function() {
             $('#jumlah_penarikan').autoNumeric('set', '');
             $('#infoNasabah').hide();
-            saldoAN.set(0);
-            totalDitarikAN.set(0);
-            perkiraanSisaSaldoAN.set(0);
+            $('#saldo').autoNumeric('set', 0);
+            $('#total_yang_ditarik_display').autoNumeric('set', 0);
+            $('#perkiraan_sisa_saldo_display').autoNumeric('set', 0);
 
             <?php if ($level == 'Admin'): ?>
                 $('#pegawai_id').val('').trigger('change');
