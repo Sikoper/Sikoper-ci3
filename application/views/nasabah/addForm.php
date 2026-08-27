@@ -270,21 +270,6 @@
         });
     });
 </script>
-<script>
-    $('#btn-generate').click(function() {
-        $.ajax({
-            url: '<?= base_url("nasabah/generate_norek") ?>',
-            type: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                $('#nomor_rekening').val(data.norek);
-            },
-            error: function() {
-                alert("Gagal generate nomor rekening.");
-            }
-        });
-    });
-</script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

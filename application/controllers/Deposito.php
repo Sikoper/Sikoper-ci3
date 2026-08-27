@@ -799,10 +799,13 @@ class Deposito extends CI_Controller
             show_error('Data deposito tidak ditemukan.');
         }
 
+        $this->load->model('Kategori_model');
+        $this->load->model('Penarikan_model');
+
         $nasabah = $this->Nasabah_model->get_data_by_id($deposito->nasabah_id);
-        $pegawai = $this->Pegawai_model->get_data_by_id($deposito->pegawai_id);
-        $jenis_tabungan = $this->Jenis_tabungan_model->get_data_by_id($deposito->jenis_id);
-        $akumulasi_data_penarikan = $this->Deposito_model->get_akumulasi_data_penarikan($id);
+        $pegawai = $this->Pegawai_model->get_data_by_id($deposito->pegawai_id ?? null);
+        $jenis_tabungan = isset($deposito->jenistabungan_id) ? $this->Kategori_model->get_data_by_id($deposito->jenistabungan_id) : null;
+        $akumulasi_data_penarikan = $this->Penarikan_model->get_akumulasi_penarikan_by_simpanan($id);
 
         $data = [
             'deposito' => $deposito,
@@ -815,7 +818,11 @@ class Deposito extends CI_Controller
             'total_akumulasi_denda' => $akumulasi_data_penarikan->total_akumulasi_denda ?? 0,
         ];
 
-        $this->load->view('deposito/partials/data_deposito', $data);
+        if (file_exists(APPPATH . 'views/deposito/partials/data_deposito.php')) {
+            $this->load->view('deposito/partials/data_deposito', $data);
+        } else {
+            $this->load->view('deposito/detail', $data);
+        }
     }
 
     public function getJenisData()

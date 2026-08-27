@@ -511,6 +511,11 @@ class Deposito_model extends CI_Model
         return $this->db->trans_status() ? $penarikan_id : false;
     }
 
+    public function tarik_bunga($deposito_id, $jumlah_penarikan = 0, $pegawai_id = null, $tanggal_penarikan = null)
+    {
+        return $this->tarik_bunga_deposito($deposito_id, $pegawai_id);
+    }
+
 
     public function get_bunga_tersedia_from_log($deposito_id)
     {

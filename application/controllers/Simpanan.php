@@ -807,7 +807,8 @@ class Simpanan extends CI_Controller
         $jenistabungan_id = $jenis ? $jenis->id : 1;
 
         // Run full import (all 12 sheets with daily transactions)
-        $results = $this->Tabungan_model->import_full_migration($file_path, $pegawai_id, $jenistabungan_id);
+        $year = $this->input->post('year') ?: date('Y');
+        $results = $this->Tabungan_model->import_full_migration($file_path, $pegawai_id, $jenistabungan_id, null, $year);
 
         echo json_encode($results);
     }
@@ -872,7 +873,8 @@ class Simpanan extends CI_Controller
         $jenistabungan_id = $jenis ? $jenis->id : 1;
 
         // Run December only import (with delete existing = true)
-        $results = $this->Tabungan_model->import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, true);
+        $year = $this->input->post('year') ?: date('Y');
+        $results = $this->Tabungan_model->import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, true, $year);
 
         echo json_encode($results);
     }
@@ -1343,8 +1345,8 @@ class Simpanan extends CI_Controller
             $delete_existing
         );
 
-        // Clear session file path
-        $this->session->unset_userdata('import_file_path');
+        // Do NOT clear session file path here, because batch import needs to reuse it for other months
+        // $this->session->unset_userdata('import_file_path');
 
         echo json_encode($results);
     }

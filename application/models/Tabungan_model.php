@@ -287,19 +287,19 @@ class Tabungan_model extends CI_Model
 	}
 
 
-	public function import_full_migration($file_path, $pegawai_id, $jenistabungan_id, $sheets_to_import = null) {
-		$this->load->library('tabungan_import_service');
-		return $this->tabungan_import_service->import_full_migration($file_path, $pegawai_id, $jenistabungan_id, $sheets_to_import);
+	public function import_full_migration($file_path, $pegawai_id, $jenistabungan_id, $sheets_to_import = null, $year = null) {
+		$this->load->library('Tabungan_import_service');
+		return $this->tabungan_import_service->import_full_migration($file_path, $pegawai_id, $jenistabungan_id, $sheets_to_import, $year);
 	}
 
-	public function import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true) {
-		$this->load->library('tabungan_import_service');
-		return $this->tabungan_import_service->import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, $delete_existing);
+	public function import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true, $year = null) {
+		$this->load->library('Tabungan_import_service');
+		return $this->tabungan_import_service->import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, $delete_existing, $year);
 	}
 
-	public function import_with_rekap_bunga($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true) {
-		$this->load->library('tabungan_import_service');
-		return $this->tabungan_import_service->import_with_rekap_bunga($file_path, $pegawai_id, $jenistabungan_id, $delete_existing);
+	public function import_with_rekap_bunga($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true, $year = null) {
+		$this->load->library('Tabungan_import_service');
+		return $this->tabungan_import_service->import_with_rekap_bunga($file_path, $pegawai_id, $jenistabungan_id, $delete_existing, $year);
 	}
 
 	public function import_by_month($file_path, $month_code, $year, $pegawai_id, $jenistabungan_id, $delete_month = true) {

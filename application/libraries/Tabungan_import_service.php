@@ -20,11 +20,12 @@ class Tabungan_import_service
 	 * @param int $jenistabungan_id Savings type ID
 	 * @return array Import results with details
 	 */
-	public function import_full_migration($file_path, $pegawai_id, $jenistabungan_id, $sheets_to_import = null)
+	public function import_full_migration($file_path, $pegawai_id, $jenistabungan_id, $sheets_to_import = null, $year = null)
 	{
+		if (!$year) $year = date('Y');
 		require_once APPPATH . 'third_party/SimpleXLS.php';
 		ini_set('memory_limit', '2048M');
-		ini_set('max_execution_time', 600); // 10 minutes
+		ini_set('max_execution_time', 1200); // 20 minutes for full import
 
 		$results = [
 			'success' => false,
@@ -33,33 +34,22 @@ class Tabungan_import_service
 			'nasabah' => ['created' => 0, 'found' => 0],
 			'setoran' => ['inserted' => 0],
 			'penarikan' => ['inserted' => 0],
+            'bunga' => ['inserted' => 0],
 			'details' => [],
 			'errors' => []
 		];
 
-		// Check if file exists
 		if (!file_exists($file_path)) {
 			$results['errors'][] = 'File tidak ditemukan: ' . $file_path;
 			return $results;
 		}
 
-		// Month mapping for date construction
 		$month_map = [
-			'JAN' => '01',
-			'FEB' => '02',
-			'MAR' => '03',
-			'APR' => '04',
-			'MEI' => '05',
-			'JUNI' => '06',
-			'JULI' => '07',
-			'AGS' => '08',
-			'SEP' => '09',
-			'OKT' => '10',
-			'NOP' => '11',
-			'DES' => '12'
+			'JAN' => '01', 'FEB' => '02', 'MAR' => '03', 'APR' => '04',
+			'MEI' => '05', 'JUNI' => '06', 'JULI' => '07', 'AGS' => '08',
+			'SEP' => '09', 'OKT' => '10', 'NOP' => '11', 'DES' => '12'
 		];
 
-		// Parse Excel file
 		$xls = \Shuchkin\SimpleXLS::parse($file_path);
 		if (!$xls) {
 			$results['errors'][] = 'Gagal membaca file Excel: ' . \Shuchkin\SimpleXLS::parseError();
@@ -69,56 +59,90 @@ class Tabungan_import_service
 		$sheets = $xls->sheetNames();
 		$results['sheets_found'] = $sheets;
 
-		// Track no_rekening to simpanan_id mapping
 		$norek_to_id = [];
-		// Track nama to nasabah_id mapping for deduplication
 		$nama_to_nasabah = [];
 
 		$this->CI->db->trans_start();
+        $this->CI->db->query('SET FOREIGN_KEY_CHECKS=0');
 
-		// PHASE 1: Process JAN sheet first to create master data
-		$jan_rows = $xls->rows(0);
-		$results['importing_sheet'] = 'ALL (JAN-DES)';
-
+		// Extract mapping names from JAN
+		$jan_index = array_search('JAN', $sheets);
+		if ($jan_index === false) $jan_index = 0;
+		$noTab_to_nama = [];
+		$jan_rows = $xls->rows($jan_index);
 		for ($i = 3; $i < count($jan_rows); $i++) {
-			$row = $jan_rows[$i];
+			$jan_no_tab = intval($jan_rows[$i][2] ?? 0);
+			$jan_nama = trim($jan_rows[$i][1] ?? '');
+			$jan_alamat = trim($jan_rows[$i][3] ?? '-');
+			if ($jan_no_tab > 0 && !empty($jan_nama)) {
+				$noTab_to_nama[$jan_no_tab] = ['nama' => $jan_nama, 'alamat' => $jan_alamat];
+			}
+		}
 
-			$nama = trim($row[1] ?? '');
-			if (empty($nama))
-				continue;
-			if (stripos($nama, 'JUMLAH') !== false || stripos($nama, 'TOTAL') !== false)
-				continue;
+        $batch_setoran = [];
+        $batch_penarikan = [];
+        $batch_transaksi = [];
 
-			try {
-				$no_urut = intval($row[0] ?? 0);
-				$no_tab = intval($row[2] ?? 0);
-				$alamat = trim($row[3] ?? '-');
+		// Loop over all sheets
+		for ($sheet_idx = 0; $sheet_idx < 12; $sheet_idx++) {
+			if (!isset($sheets[$sheet_idx])) continue;
+			$sheet_name = strtoupper($sheets[$sheet_idx]);
+			if (!isset($month_map[$sheet_name])) continue;
 
-				// Generate no_rekening
-				$no_rekening = $no_tab > 0 ? 'S' . str_pad($no_tab, 4, '0', STR_PAD_LEFT) : 'S' . str_pad($no_urut, 4, '0', STR_PAD_LEFT);
+			$month = $month_map[$sheet_name];
+			$rows = $xls->rows($sheet_idx);
+			$col_offset = ($sheet_name === 'FEB') ? 2 : 0;
 
-				// Find or create nasabah (deduplicate by name)
-				$nama_lower = strtolower(trim($nama));
-				if (isset($nama_to_nasabah[$nama_lower])) {
-					$nasabah_id = $nama_to_nasabah[$nama_lower];
-					$results['nasabah']['found']++;
+			for ($i = 3; $i < count($rows); $i++) {
+				$row = $rows[$i];
+				$no_urut = intval($row[$col_offset + 0] ?? 0);
+				$no_tab = intval($row[$col_offset + 2] ?? 0);
+				if ($no_urut <= 0 && $no_tab <= 0) continue;
+
+				$norek_num = $no_tab > 0 ? $no_tab : $no_urut;
+				$no_rekening = 'T' . str_pad($norek_num, 3, '0', STR_PAD_LEFT);
+
+				if (isset($noTab_to_nama[$norek_num])) {
+					$nama = $noTab_to_nama[$norek_num]['nama'];
+					$alamat = $noTab_to_nama[$norek_num]['alamat'];
 				} else {
-					$nasabah = $this->_find_nasabah_by_name($nama);
-					if ($nasabah) {
-						$nasabah_id = $nasabah->id;
-						$results['nasabah']['found']++;
-					} else {
-						$nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
-						$results['nasabah']['created']++;
-					}
-					$nama_to_nasabah[$nama_lower] = $nasabah_id;
+					$nama = trim($row[$col_offset + 1] ?? '');
+					$alamat = trim($row[$col_offset + 3] ?? '-');
+					if (empty($nama)) $nama = 'Nasabah ' . $no_rekening;
 				}
 
-				// Check if simpanan exists by no_rekening
+				if (stripos($nama, 'JUMLAH') !== false || stripos($nama, 'TOTAL') !== false) continue;
+
 				$existing = $this->CI->db->where('no_rekening', $no_rekening)->get('tbsimpanan')->row();
 
-				if (!$existing) {
-					// Create simpanan master record
+				if ($existing) {
+					$simpanan_id = $existing->id;
+					$nasabah_id = $existing->nasabah_id;
+                    if ($month === '01') {
+                        $results['simpanan']['updated']++;
+                        $is_placeholder = (strpos($nama, 'Nasabah T') === 0);
+                        if (!$is_placeholder) {
+                            $this->CI->db->where('id', $simpanan_id)->update('tbsimpanan', ['nama_nasabah' => $nama]);
+                            $this->CI->db->where('id', $nasabah_id)->update('tbnasabah', ['nama_lengkap' => $nama, 'alamat' => $alamat ?: '-']);
+                        }
+                    }
+				} else {
+                    if ($month !== '01') continue; // Only create new accounts in JAN
+					if (isset($nama_to_nasabah[$no_rekening])) {
+						$nasabah_id = $nama_to_nasabah[$no_rekening];
+						$results['nasabah']['found']++;
+					} else {
+						$nasabah = $this->_find_nasabah_by_name($nama);
+						if ($nasabah) {
+							$nasabah_id = $nasabah->id;
+							$results['nasabah']['found']++;
+						} else {
+							$nasabah_id = $this->_create_nasabah_from_import($nama, $alamat, '-', $pegawai_id);
+							$results['nasabah']['created']++;
+						}
+						$nama_to_nasabah[$no_rekening] = $nasabah_id;
+					}
+
 					$simpanan_data = [
 						'no_rekening' => $no_rekening,
 						'nasabah_id' => $nasabah_id,
@@ -127,138 +151,127 @@ class Tabungan_import_service
 						'nama_nasabah' => $nama,
 						'jumlah_simpanan' => 0,
 						'jumlah_bunga' => 0,
-						'tanggal_simpanan' => '2025-01-01', // Start of the year
+						'tanggal_simpanan' => $year . '-01-01',
 						'status' => 'aktif'
 					];
 					$this->CI->db->insert('tbsimpanan', $simpanan_data);
 					$simpanan_id = $this->CI->db->insert_id();
 					$results['simpanan']['inserted']++;
-				} else {
-					$simpanan_id = $existing->id;
-					$results['simpanan']['updated']++;
 				}
 
 				$norek_to_id[$no_rekening] = $simpanan_id;
 
-				// INSERT SALDO AWAL (JAN) AS INITIAL DEPOSIT
-				$saldo_awal = $this->_parse_amount($row[4] ?? 0);
-				if ($saldo_awal > 0) {
-					$this->CI->db->insert('tbdetail_simpanan', [
-						'simpanan_id' => $simpanan_id,
-						'tanggal_setoran' => '2025-01-01 00:00:01',
-						'jumlah_setoran' => $saldo_awal,
-						'pegawai_id' => $pegawai_id
-					]);
-					$results['setoran']['inserted']++;
-				}
-
-				$results['details'][] = ['row' => $i + 1, 'nama' => $nama, 'no_rekening' => $no_rekening, 'action' => 'master'];
-
-			} catch (Exception $e) {
-				$results['simpanan']['errors']++;
-				$results['errors'][] = "JAN Row " . ($i + 1) . ": " . $e->getMessage();
-			}
-		}
-
-		// PHASE 2: Process ALL monthly sheets for transactions
-		$year = '2025'; // Adjust based on file name if needed
-
-		for ($sheet_idx = 0; $sheet_idx < 12; $sheet_idx++) {
-			if (!isset($sheets[$sheet_idx]))
-				continue;
-
-			$sheet_name = strtoupper($sheets[$sheet_idx]);
-			if (!isset($month_map[$sheet_name]))
-				continue;
-
-			$month = $month_map[$sheet_name];
-			$rows = $xls->rows($sheet_idx);
-
-			$col_offset = ($sheet_name === 'FEB') ? 2 : 0;
-
-			for ($i = 3; $i < count($rows); $i++) {
-				$row = $rows[$i];
-
-				$no_urut = intval($row[$col_offset + 0] ?? 0);
-				$no_tab = intval($row[$col_offset + 2] ?? 0);
-				$no_rekening = $no_tab > 0 ? 'S' . str_pad($no_tab, 4, '0', STR_PAD_LEFT) : 'S' . str_pad($no_urut, 4, '0', STR_PAD_LEFT);
-
-				if (!isset($norek_to_id[$no_rekening]))
-					continue;
-				$simpanan_id = $norek_to_id[$no_rekening];
-
-				// Process daily SETORAN (columns 5-35 for days 1-31)
-				for ($day = 1; $day <= 31; $day++) {
-					$col = $col_offset + 4 + $day; // Column 5 = day 1
-					$amount = $this->_parse_amount($row[$col] ?? 0);
-
-					if ($amount > 0) {
-						$date = sprintf('%s-%s-%02d', $year, $month, $day);
-						// Validate date
-						if (checkdate((int) $month, $day, (int) $year)) {
-							$this->CI->db->insert('tbdetail_simpanan', [
-								'simpanan_id' => $simpanan_id,
-								'tanggal_setoran' => $date . ' 12:00:00',
-								'jumlah_setoran' => $amount,
-								'pegawai_id' => $pegawai_id
-							]);
-							$results['setoran']['inserted']++;
-						}
+				if ($month === '01') {
+					$saldo_awal = $this->_parse_amount($row[$col_offset + 4] ?? 0);
+					if ($saldo_awal > 0) {
+                        $batch_setoran[] = [
+                            'simpanan_id' => $simpanan_id,
+                            'tanggal_setoran' => $year . '-01-01 08:00:00',
+                            'jumlah_setoran' => $saldo_awal,
+                            'pegawai_id' => $pegawai_id
+                        ];
 					}
 				}
 
-				// Process daily PENARIKAN (columns 36-66 for days 1-31)
 				for ($day = 1; $day <= 31; $day++) {
-					$col = $col_offset + 35 + $day; // Column 36 = day 1
+					$col = $col_offset + 4 + $day;
 					$amount = $this->_parse_amount($row[$col] ?? 0);
-
-					if ($amount > 0) {
+					if ($amount > 0 && checkdate((int)$month, $day, (int)$year)) {
 						$date = sprintf('%s-%s-%02d', $year, $month, $day);
-						// Validate date
-						if (checkdate((int) $month, $day, (int) $year)) {
-							$this->CI->db->insert('tbdetail_penarikan', [
-								'simpanan_id' => $simpanan_id,
-								'penarikan_id' => 0, // No parent penarikan record
-								'tanggal_penarikan' => $date . ' 12:00:00',
-								'jumlah_penarikan' => $amount,
-								'pegawai_id' => $pegawai_id,
-								'status' => 'disetujui'
-							]);
-							$results['penarikan']['inserted']++;
-						}
+						$batch_setoran[] = [
+                            'simpanan_id' => $simpanan_id,
+                            'tanggal_setoran' => $date . ' 12:00:00',
+                            'jumlah_setoran' => $amount,
+                            'pegawai_id' => $pegawai_id
+                        ];
+						$results['setoran']['inserted']++;
 					}
 				}
+
+				for ($day = 1; $day <= 31; $day++) {
+					$col = $col_offset + 35 + $day;
+					$amount = $this->_parse_amount($row[$col] ?? 0);
+					if ($amount > 0 && checkdate((int)$month, $day, (int)$year)) {
+						$date = sprintf('%s-%s-%02d', $year, $month, $day);
+						$batch_penarikan[] = [
+                            'simpanan_id' => $simpanan_id,
+                            'penarikan_id' => 0,
+                            'tanggal_penarikan' => $date . ' 12:00:00',
+                            'jumlah_penarikan' => $amount,
+                            'pegawai_id' => $pegawai_id,
+                            'status' => 'disetujui'
+                        ];
+						$results['penarikan']['inserted']++;
+					}
+				}
+
+                $bunga = $this->_parse_amount($row[$col_offset + 101] ?? $row[$col_offset + 99] ?? 0);
+                if ($bunga > 0) {
+                    $last_day = date('t', strtotime("$year-$month-01"));
+                    $batch_transaksi[] = [
+                        'simpanan_id' => $simpanan_id,
+                        'no_rekening' => $no_rekening,
+                        'nama_nasabah' => $nama,
+                        'tanggal_transaksi' => "$year-$month-$last_day",
+                        'jumlah_transaksi' => $bunga,
+                        'rate_bunga' => 0,
+                        'bunga_riil' => $bunga
+                    ];
+                    $results['bunga']['inserted']++;
+                }
+
+                if (count($batch_setoran) >= 500) {
+                    $this->CI->db->insert_batch('tbdetail_simpanan', $batch_setoran);
+                    $batch_setoran = [];
+                }
+                if (count($batch_penarikan) >= 500) {
+                    $this->CI->db->insert_batch('tbdetail_penarikan', $batch_penarikan);
+                    $batch_penarikan = [];
+                }
+                if (count($batch_transaksi) >= 500) {
+                    $this->CI->db->insert_batch('tbtransaksi', $batch_transaksi);
+                    $batch_transaksi = [];
+                }
 			}
 		}
 
-		// PHASE 3: Update final balances from DES sheet
-		$des_rows = $xls->rows(11);
-		for ($i = 3; $i < count($des_rows); $i++) {
-			$row = $des_rows[$i];
-			$no_urut = intval($row[0] ?? 0);
-			$no_tab = intval($row[2] ?? 0);
-			$no_rekening = $no_tab > 0 ? 'S' . str_pad($no_tab, 4, '0', STR_PAD_LEFT) : 'S' . str_pad($no_urut, 4, '0', STR_PAD_LEFT);
+        if (!empty($batch_setoran)) {
+            $this->CI->db->insert_batch('tbdetail_simpanan', $batch_setoran);
+        }
+        if (!empty($batch_penarikan)) {
+            $this->CI->db->insert_batch('tbdetail_penarikan', $batch_penarikan);
+        }
+        if (!empty($batch_transaksi)) {
+            $this->CI->db->insert_batch('tbtransaksi', $batch_transaksi);
+        }
 
-			if (!isset($norek_to_id[$no_rekening]))
-				continue;
+        try {
+            $this->CI->db->query("
+                UPDATE tbsimpanan s
+                SET 
+                    jumlah_bunga = COALESCE((
+                        SELECT COALESCE(SUM(jumlah_transaksi), 0) FROM tbtransaksi WHERE simpanan_id = s.id
+                    ), 0),
+                    jumlah_simpanan = COALESCE((
+                        SELECT COALESCE(SUM(jumlah_setoran), 0) FROM tbdetail_simpanan WHERE simpanan_id = s.id
+                    ), 0) - COALESCE((
+                        SELECT COALESCE(SUM(jumlah_penarikan), 0) FROM tbdetail_penarikan WHERE simpanan_id = s.id AND status = 'disetujui'
+                    ), 0) + COALESCE((
+                        SELECT COALESCE(SUM(jumlah_transaksi), 0) FROM tbtransaksi WHERE simpanan_id = s.id
+                    ), 0)
+            ");
+        } catch (Exception $e) {
+            $results['errors'][] = "Mass saldo update error: " . $e->getMessage();
+        }
 
-			$saldo_akhir = $this->_parse_amount($row[102] ?? $row[103] ?? 0);
-			$bunga = $this->_parse_amount($row[99] ?? 0);
-
-			$this->CI->db->where('id', $norek_to_id[$no_rekening])
-				->update('tbsimpanan', [
-					'jumlah_simpanan' => $saldo_akhir,
-					'jumlah_bunga' => $bunga
-				]);
-		}
-
+        $this->CI->db->query('SET FOREIGN_KEY_CHECKS=1');
 		$this->CI->db->trans_complete();
-
 		$results['success'] = $this->CI->db->trans_status();
 		$results['total_processed'] = count($norek_to_id);
-
 		return $results;
 	}
+
+
 
 	/**
 	 * Helper: Parse amount from Excel cell
@@ -360,8 +373,9 @@ class Tabungan_import_service
 	 * @param bool $delete_existing Delete existing data before import
 	 * @return array Import results with details
 	 */
-	public function import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true)
+	public function import_saldo_akhir_tahun($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true, $year = null)
 	{
+		if (!$year) $year = date('Y');
 		ini_set('memory_limit', '2048M');
 		ini_set('max_execution_time', 600);
 
@@ -418,8 +432,7 @@ class Tabungan_import_service
 			return $results;
 		}
 
-		$results['importing_sheet'] = 'DES (Desember 2025)';
-		$year = '2025';
+		$results['importing_sheet'] = 'DES (Desember ' . $year . ')';
 		$month = '12';
 
 		$this->CI->db->trans_start();
@@ -657,8 +670,9 @@ class Tabungan_import_service
 	 * @param bool $delete_existing Delete existing data first
 	 * @return array Results
 	 */
-	public function import_with_rekap_bunga($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true)
+	public function import_with_rekap_bunga($file_path, $pegawai_id, $jenistabungan_id, $delete_existing = true, $year = null)
 	{
+		if (!$year) $year = date('Y');
 		ini_set('memory_limit', '2048M');
 		ini_set('max_execution_time', 600);
 
@@ -742,7 +756,7 @@ class Tabungan_import_service
 
 		$nama_to_nasabah = [];
 		$norek_to_id = [];
-		$year = '2025'; // Data is for 2025
+		// $year is now passed as argument
 
 		// PHASE 0.5: Build nama mapping from JAN sheet (since DES sheet has empty NAMA column)
 		$jan_index = array_search('JAN', $sheets);
@@ -862,7 +876,6 @@ class Tabungan_import_service
 					$this->CI->db->insert('tbtransaksi', [
 						'simpanan_id' => $simpanan_id,
 						'tanggal_transaksi' => $year . '-12-31',
-						'jenis_transaksi' => 'Bunga Tahunan',
 						'jumlah_transaksi' => $bunga,
 						'rate_bunga' => 0,
 						'bunga_riil' => $bunga
@@ -1153,8 +1166,8 @@ class Tabungan_import_service
 					$results['simpanan']['inserted']++;
 				}
 
-				// Insert saldo_awal as Setoran Awal if new account
-				if (!$existing && $saldo_sebelum > 0) {
+				// Insert saldo_awal as Setoran Awal if new account or if it's the January sheet (which contains the starting balances for the year)
+				if ((!$existing || $month === '01') && $saldo_sebelum > 0) {
 					$batch_setoran[] = [
 						'simpanan_id' => $simpanan_id,
 						'tanggal_setoran' => $year . '-' . $month . '-01 08:00:00',
@@ -1220,7 +1233,6 @@ class Tabungan_import_service
 					$batch_bunga[] = [
 						'simpanan_id' => $simpanan_id,
 						'tanggal_transaksi' => "$year-$month-$last_day",
-						'jenis_transaksi' => 'Bunga Bulanan',
 						'jumlah_transaksi' => $bunga_net,
 						'rate_bunga' => 0,
 						'bunga_riil' => $bunga_net
@@ -1252,9 +1264,9 @@ class Tabungan_import_service
 					$this->CI->db->insert_batch('tbdetail_penarikan', $batch_penarikan);
 					$batch_penarikan = [];
 				}
-				if (count($batch_bunga) >= 500) {
-					$this->CI->db->insert_batch('tbtransaksi', $batch_bunga);
-					$batch_bunga = [];
+				if (count($batch_transaksi) >= 500) {
+					$this->CI->db->insert_batch('tbtransaksi', $batch_transaksi);
+					$batch_transaksi = [];
 				}
 
 			} catch (Exception $e) {
@@ -1274,15 +1286,24 @@ class Tabungan_import_service
 			$this->CI->db->insert_batch('tbtransaksi', $batch_bunga);
 		}
 
-		// Update saldo from in-memory calculation
-		foreach ($memory_saldo as $no_rekening => $data) {
-			try {
-				$saldo = $data['saldo_awal'] + $data['setoran'] - $data['penarikan'];
-				$this->CI->db->where('id', $data['simpanan_id'])
-					->update('tbsimpanan', ['jumlah_simpanan' => $saldo]);
-			} catch (Exception $e) {
-				$results['errors'][] = "Saldo update error for $no_rekening: " . $e->getMessage();
-			}
+		// Calculate precise real-time balance directly from DB transactions
+		try {
+			$this->CI->db->query("
+				UPDATE tbsimpanan s
+				SET 
+					jumlah_bunga = COALESCE((
+						SELECT COALESCE(SUM(jumlah_transaksi), 0) FROM tbtransaksi WHERE simpanan_id = s.id
+					), 0),
+					jumlah_simpanan = COALESCE((
+						SELECT COALESCE(SUM(jumlah_setoran), 0) FROM tbdetail_simpanan WHERE simpanan_id = s.id
+					), 0) - COALESCE((
+						SELECT COALESCE(SUM(jumlah_penarikan), 0) FROM tbdetail_penarikan WHERE simpanan_id = s.id AND status = 'disetujui'
+					), 0) + COALESCE((
+						SELECT COALESCE(SUM(jumlah_transaksi), 0) FROM tbtransaksi WHERE simpanan_id = s.id
+					), 0)
+			");
+		} catch (Exception $e) {
+			$results['errors'][] = "Mass saldo update error: " . $e->getMessage();
 		}
 
 		// Re-enable FK checks
@@ -1573,51 +1594,54 @@ class Tabungan_import_service
 	 * Cols 67-97: SALDO HARIAN (daily balances)
 	 * Col 98: E-MIN, Col 99: BUNGA RAW, Col 100: BULAT, Col 101: BUNGA RIIL, Col 102: SALDO AKHIR
 	 */
-	private function _detect_column_mapping($rows, $month_code = '')
+	private function _detect_column_mapping($rows, $month_code = '', $default_mapping = null)
 	{
-		// ALL months share the SAME column structure
-		// (Non-JAN months just have empty NAMA/ALAMAT columns)
-		$mapping = [
-			'no_urut' => 0,
-			'nama' => 1,
-			'no_tab' => 2,
-			'alamat' => 3,
-			'saldo_awal' => 4,
-			'setoran_start' => 5,
-			'setoran_end' => 35,
-			'penarikan_start' => 36,
-			'penarikan_end' => 66,
-			'e_min' => 98,
-			'bunga_raw' => 99,
-			'bunga' => 101       // BUNGA RIIL (col 101), NOT col 97 (which is SALDO HARIAN day 31)
-		];
+		// Use provided defaults if any, otherwise standard defaults
+		if (is_array($default_mapping)) {
+			$mapping = $default_mapping;
+		} else {
+			// ALL months share the SAME column structure
+			// (Non-JAN months just have empty NAMA/ALAMAT columns)
+			$mapping = [
+				'no_urut' => 0,
+				'nama' => 1,
+				'no_tab' => 2,
+				'alamat' => 3,
+				'saldo_awal' => 4,
+				'setoran_start' => 5,
+				'setoran_end' => 35,
+				'penarikan_start' => 36,
+				'penarikan_end' => 66,
+				'e_min' => 98,
+				'bunga_raw' => 99,
+				'bunga' => 101       // BUNGA RIIL (col 101), NOT col 97 (which is SALDO HARIAN day 31)
+			];
+		}
 
 		// Try to auto-detect from headers to verify/adjust
 		// Check both header rows (row 1 = merge headers, row 2 = sub-headers)
 		$headers_row1 = isset($rows[1]) ? $rows[1] : [];
 		$headers_row2 = isset($rows[2]) ? $rows[2] : [];
 
-		// Combine both header rows for scanning
 		$saldo_awal_idx = null;
-		$penarikan_header_idx = null;
 		$setoran_header_idx = null;
+		$penarikan_header_idx = null;
+		$saldo_harian_idx = null;
+		$bunga_raw_idx = null;
+		$bunga_riil_idx = null;
 
 		// Scan header rows for key section markers
-		foreach ([$headers_row1, $headers_row2] as $headers) {
+		foreach ([$headers_row1, $headers_row2] as $row_idx => $headers) {
 			foreach ($headers as $idx => $header) {
 				$h = strtoupper(trim((string) $header));
 
 				// Find SALDO BULAN LALU position
-				if ($saldo_awal_idx === null && (strpos($h, 'BULAN LALU') !== false)) {
-					$saldo_awal_idx = $idx;
-				}
-				// Also try simpler "SALDO" match but only in sub-header row and only for single word
-				if ($saldo_awal_idx === null && $h === 'SALDO') {
+				if ($saldo_awal_idx === null && (strpos($h, 'BULAN LALU') !== false || ($row_idx == 1 && $h === 'SALDO'))) {
 					$saldo_awal_idx = $idx;
 				}
 
-				// Find SETORAN section header
-				if ($setoran_header_idx === null && $h === 'SETORAN') {
+				// Find SETORAN section header (PENYETORAN / SETORAN)
+				if ($setoran_header_idx === null && (strpos($h, 'SETORAN') !== false || strpos($h, 'PENYETORAN') !== false)) {
 					$setoran_header_idx = $idx;
 				}
 
@@ -1625,43 +1649,46 @@ class Tabungan_import_service
 				if ($penarikan_header_idx === null && (strpos($h, 'PENARIKAN') !== false || strpos($h, 'PENGAMBILAN') !== false)) {
 					$penarikan_header_idx = $idx;
 				}
+
+				// Find SALDO HARIAN / SALDO TABUNGAN section header
+				if ($saldo_harian_idx === null && (strpos($h, 'SALDO TABUNGAN') !== false || strpos($h, 'SALDO HARIAN') !== false)) {
+					$saldo_harian_idx = $idx;
+				}
+
+				// Find BUNGA (avoid matching TABUNGAN)
+				if (preg_match('/\bBUNGA\b/', $h)) {
+					// There are usually two Bunga columns. Let's capture the last two.
+					if ($bunga_raw_idx === null) {
+						$bunga_raw_idx = $idx;
+					} else if ($bunga_riil_idx === null && $idx > $bunga_raw_idx) {
+						$bunga_riil_idx = $idx;
+					}
+				}
+				
+				if (strpos($h, 'RIIL') !== false) {
+					$bunga_riil_idx = $idx;
+				}
 			}
 		}
 
 		// Apply detected positions
 		if ($saldo_awal_idx !== null) {
 			$mapping['saldo_awal'] = $saldo_awal_idx;
-			$mapping['setoran_start'] = $saldo_awal_idx + 1;
-			$mapping['setoran_end'] = $saldo_awal_idx + 31;
+		}
+		
+		if ($setoran_header_idx !== null && $penarikan_header_idx !== null) {
+			$mapping['setoran_start'] = $setoran_header_idx;
+			$mapping['setoran_end'] = $penarikan_header_idx - 1;
 		}
 
 		// If we found PENARIKAN header, use it for accurate positioning
 		if ($penarikan_header_idx !== null) {
 			$mapping['penarikan_start'] = $penarikan_header_idx;
-			$mapping['penarikan_end'] = $penarikan_header_idx + 30;
-
-			// Recalculate bunga positions from penarikan_end
-			// After penarikan (31 cols) comes saldo harian (31 cols), then E-MIN, BUNGA_RAW, BULAT, BUNGA_RIIL
-			$mapping['e_min'] = $penarikan_header_idx + 62;  // +31 (saldo harian) +31 (this section end)
-			$mapping['bunga_raw'] = $penarikan_header_idx + 63;
-			$mapping['bunga'] = $penarikan_header_idx + 65;  // BUNGA RIIL
-		} else if ($saldo_awal_idx !== null) {
-			// Fallback: use offset from saldo_awal (works for standard layout)
-			$mapping['penarikan_start'] = $saldo_awal_idx + 32;
-			$mapping['penarikan_end'] = $saldo_awal_idx + 62;
-			$mapping['e_min'] = $saldo_awal_idx + 94;
-			$mapping['bunga_raw'] = $saldo_awal_idx + 95;
-			$mapping['bunga'] = $saldo_awal_idx + 97;
 		}
 
-		// Also refine setoran_end if PENARIKAN was found
-		if ($penarikan_header_idx !== null && $saldo_awal_idx !== null) {
-			// Setoran ends just before penarikan (possibly with a JUMLAH column in between)
-			$mapping['setoran_end'] = $penarikan_header_idx - 2; // -1 for gap, -1 more for 0-indexing
-			// Ensure at least 28 setoran columns
-			if ($mapping['setoran_end'] - $mapping['setoran_start'] < 27) {
-				$mapping['setoran_end'] = $mapping['setoran_start'] + 30; // default 31 cols
-			}
+		// If we found SALDO HARIAN header, use it to bound PENARIKAN
+		if ($penarikan_header_idx !== null && $saldo_harian_idx !== null) {
+			$mapping['penarikan_end'] = $saldo_harian_idx - 1;
 		}
 
 		// Find "RIIL" header to pinpoint exact bunga column (most reliable)
@@ -1848,11 +1875,10 @@ class Tabungan_import_service
 		$batch_transaksi = [];
 		$memory_saldo = []; // In-memory saldo: no_rekening => [simpanan_id, saldo_awal, setoran, penarikan, bunga]
 
-		// Try to auto-detect for hidden fields (like e_min), but let frontend mapping override
-		$auto_mapping = $this->_detect_column_mapping($rows, $clean_month_code);
-		$mapping = array_merge($auto_mapping, $mapping); // Frontend values override auto-detected values
+		// Try to auto-detect for hidden fields (like e_min), using frontend mapping as base
+		$mapping = $this->_detect_column_mapping($rows, $clean_month_code, $mapping);
 
-		$log_msg .= "Auto-detected mapping: " . json_encode($auto_mapping) . "\n";
+		// Log mappings for debugging
 		$log_msg .= "Final mapping: " . json_encode($mapping) . "\n";
 		// Log header rows for debugging column detection
 		if (isset($rows[1])) {
@@ -2017,8 +2043,8 @@ class Tabungan_import_service
 
 				$norek_to_id[$no_rekening] = $simpanan_id;
 
-				// Insert saldo_awal as Setoran Awal if new account
-				if (!$existing && $saldo_sebelum > 0) {
+				// Insert saldo_awal as Setoran Awal if new account or if it's the January sheet (which contains the starting balances for the year)
+				if ((!$existing || $month === '01') && $saldo_sebelum > 0) {
 					$batch_setoran[] = [
 						'simpanan_id' => $simpanan_id,
 						'tanggal_setoran' => $year . '-' . $month . '-01 08:00:00',
@@ -2083,6 +2109,12 @@ class Tabungan_import_service
 
 				$row_bunga = 0;
 				$is_valid_bunga = ($bunga_net > 0 && $bunga_net != $saldo_sebelum);
+                
+                // Debug the first valid bunga
+                if ($row_index <= 5) {
+                    file_put_contents(FCPATH . 'debug_bunga.txt', "Row $row_index: raw=$bunga_raw, net=$bunga_net, col=$col_bunga, valid=" . ($is_valid_bunga ? 1 : 0) . "\n", FILE_APPEND);
+                }
+
 				if ($is_valid_bunga) {
 					$last_day = date('t', strtotime("$year-$month-01"));
 					$batch_transaksi[] = [
@@ -2090,7 +2122,6 @@ class Tabungan_import_service
 						'no_rekening' => $no_rekening,
 						'nama_nasabah' => $nama,
 						'tanggal_transaksi' => "$year-$month-$last_day",
-						'jenis_transaksi' => 'Bunga Bulanan',
 						'jumlah_transaksi' => $bunga_net,
 						'rate_bunga' => $rate_bunga,
 						'bunga_riil' => $bunga_raw
@@ -2141,21 +2172,32 @@ class Tabungan_import_service
 			$this->CI->db->insert_batch('tbdetail_penarikan', $batch_penarikan);
 		}
 		if (!empty($batch_transaksi)) {
-			$this->CI->db->insert_batch('tbtransaksi', $batch_transaksi);
+			if (!$this->CI->db->insert_batch('tbtransaksi', $batch_transaksi)) {
+                // Fallback: row by row if batch fails
+                foreach ($batch_transaksi as $row_trx) {
+                    $this->CI->db->insert('tbtransaksi', $row_trx);
+                }
+            }
 		}
 
-		// Update saldo from in-memory calculation (eliminates ~1,500 DB queries)
-		foreach ($memory_saldo as $no_rekening => $data) {
-			try {
-				$saldo = $data['saldo_awal'] + $data['setoran'] - $data['penarikan'] + $data['bunga'];
-				$update_data = ['jumlah_simpanan' => $saldo];
-				if ($data['bunga'] > 0) {
-					$update_data['jumlah_bunga'] = $data['bunga'];
-				}
-				$this->CI->db->where('id', $data['simpanan_id'])->update('tbsimpanan', $update_data);
-			} catch (Exception $e) {
-				$results['errors'][] = "Saldo update error for $no_rekening: " . $e->getMessage();
-			}
+		// Calculate precise real-time balance directly from DB transactions
+		try {
+			$this->CI->db->query("
+				UPDATE tbsimpanan s
+				SET 
+					jumlah_bunga = COALESCE((
+						SELECT COALESCE(SUM(jumlah_transaksi), 0) FROM tbtransaksi WHERE simpanan_id = s.id
+					), 0),
+					jumlah_simpanan = COALESCE((
+						SELECT COALESCE(SUM(jumlah_setoran), 0) FROM tbdetail_simpanan WHERE simpanan_id = s.id
+					), 0) - COALESCE((
+						SELECT COALESCE(SUM(jumlah_penarikan), 0) FROM tbdetail_penarikan WHERE simpanan_id = s.id AND status = 'disetujui'
+					), 0) + COALESCE((
+						SELECT COALESCE(SUM(jumlah_transaksi), 0) FROM tbtransaksi WHERE simpanan_id = s.id
+					), 0)
+			");
+		} catch (Exception $e) {
+			$results['errors'][] = "Mass saldo update error: " . $e->getMessage();
 		}
 
 		$log_msg = "IMPORT COMPLETE. Results: " . json_encode($results) . "\n";

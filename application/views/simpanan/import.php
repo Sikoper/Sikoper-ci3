@@ -55,6 +55,12 @@
                         <div class="col-md-5">
                             <label class="form-label"><strong>Pilih Sheet</strong></label>
                             <select class="form-select" id="sheet_select" name="sheet_select"></select>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="batch_import_all">
+                                <label class="form-check-label text-primary" for="batch_import_all">
+                                    <strong>Import Semua Bulan Sekaligus (Batch)</strong>
+                                </label>
+                            </div>
                         </div>
                         <div class="col-md-4">
                             <button type="button" class="btn btn-info btn-lg w-100" id="btn-preview">
@@ -135,7 +141,7 @@
                                                 id="col_setoran_start"></select>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small">Akhir (H29)</label>
+                                            <label class="form-label small">Akhir (Hari Terakhir)</label>
                                             <select class="form-select form-select-sm column-mapping"
                                                 id="col_setoran_end"></select>
                                         </div>
@@ -154,7 +160,7 @@
                                                 id="col_penarikan_start"></select>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small">Akhir (H29)</label>
+                                            <label class="form-label small">Akhir (Hari Terakhir)</label>
                                             <select class="form-select form-select-sm column-mapping"
                                                 id="col_penarikan_end"></select>
                                         </div>
@@ -169,7 +175,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="delete_existing" checked>
                                     <label class="form-check-label text-danger" for="delete_existing">
-                                        <strong>Hapus data bulan ini sebelum import</strong>
+                                        <strong>Hapus data sebelum import (Timpa data lama)</strong>
                                     </label>
                                 </div>
                             </div>
@@ -652,139 +658,201 @@
             updateMappedPreview();
         });
 
+        function getBatchSheets() {
+            var validPrefixes = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AG', 'SEP', 'OKT', 'NOP', 'NOV', 'DES'];
+            var sheets = [];
+            $('#sheet_select option').each(function() {
+                var val = $(this).val().toUpperCase();
+                var isValid = false;
+                for (var i = 0; i < validPrefixes.length; i++) {
+                    if (val.indexOf(validPrefixes[i]) === 0) {
+                        isValid = true;
+                        break;
+                    }
+                }
+                if (isValid) sheets.push($(this).val());
+            });
+            return sheets;
+        }
+
         // Import with mapping
         $('#btn-import-mapped').on('click', function () {
-            if (!selectedSheet) {
-                alert('Pilih sheet!');
-                return;
+            var isBatch = $('#batch_import_all').is(':checked');
+            var sheetsToProcess = [];
+
+            if (isBatch) {
+                sheetsToProcess = getBatchSheets();
+                if (sheetsToProcess.length === 0) {
+                    alert('Tidak ditemukan sheet bulan yang valid!');
+                    return;
+                }
+                var msg = 'PERHATIAN: Anda akan meng-import ' + sheetsToProcess.length + ' bulan sekaligus secara berurutan (' + sheetsToProcess.join(', ') + '). Proses ini akan memakan waktu. Lanjutkan?';
+                if (!confirm(msg)) return;
+            } else {
+                if (!selectedSheet) {
+                    alert('Pilih sheet!');
+                    return;
+                }
+                var deleteChecked = $('#delete_existing').is(':checked');
+                var msg = deleteChecked
+                    ? 'PERHATIAN: Data transaksi sheet ' + selectedSheet + ' akan DIHAPUS dan diganti. Lanjutkan?'
+                    : 'Data baru akan ditambahkan. Lanjutkan?';
+                if (!confirm(msg)) return;
+                sheetsToProcess.push(selectedSheet);
             }
 
             var deleteChecked = $('#delete_existing').is(':checked');
-
-            var msg = deleteChecked
-                ? 'PERHATIAN: Data transaksi sheet ' + selectedSheet + ' akan DIHAPUS dan diganti. Lanjutkan?'
-                : 'Data baru akan ditambahkan. Lanjutkan?';
-
-            if (!confirm(msg)) return;
-
-            var formData = new FormData();
-            formData.append('month_code', selectedSheet);
-            formData.append('col_no_urut', $('#col_no_urut').val());
-            formData.append('col_nama', $('#col_nama').val());
-            formData.append('col_no_tab', $('#col_no_tab').val());
-            formData.append('col_alamat', $('#col_alamat').val());
-            formData.append('col_saldo_awal', $('#col_saldo_awal').val());
-            formData.append('col_setoran_start', $('#col_setoran_start').val());
-            formData.append('col_setoran_end', $('#col_setoran_end').val());
-            formData.append('col_penarikan_start', $('#col_penarikan_start').val());
-            formData.append('col_penarikan_end', $('#col_penarikan_end').val());
-            formData.append('col_bunga', $('#col_bunga').val());
-            formData.append('delete_existing', deleteChecked ? 'true' : 'false');
+            var totalSheets = sheetsToProcess.length;
 
             $('#btn-import-mapped').hide();
             $('#btn-import-loading').show();
             $('#import-progress').show();
             $('#import-results').hide();
+            $('#results-content').html(''); // Clear previous results
 
-            // Reset progress UI
-            var progress = 0;
-            var progressBar = $('.progress-bar');
-            progressBar.css('width', '0%').text('0%').addClass('progress-bar-animated');
-            $('#import-status-text').text('Memproses import data...');
-            $('#import-substatus').text('Mengirim data ke server...');
-            $('#elapsed-time').text('00:00');
-            $('#import-tip').text('File besar bisa memakan waktu 2-5 menit');
-
-            var startTime = Date.now();
-            var statusMessages = [
-                'Mengirim data ke server...',
-                'Membaca file Excel...',
-                'Menguraikan data nasabah...',
-                'Memproses data setoran...',
-                'Memproses data penarikan...',
-                'Menghitung bunga...',
-                'Menyimpan ke database...',
-                'Memverifikasi data...',
-                'Hampir selesai...'
-            ];
-            var statusIndex = 0;
-
-            // Elapsed time counter - updates every second
-            var elapsedInterval = setInterval(function () {
-                var elapsed = Math.floor((Date.now() - startTime) / 1000);
+            var globalStartTime = Date.now();
+            var globalElapsedInterval = setInterval(function () {
+                var elapsed = Math.floor((Date.now() - globalStartTime) / 1000);
                 var min = String(Math.floor(elapsed / 60)).padStart(2, '0');
                 var sec = String(elapsed % 60).padStart(2, '0');
                 $('#elapsed-time').text(min + ':' + sec);
-
-                if (elapsed > 180) {
-                    $('#import-tip').html('<i class="fa fa-info-circle"></i> Masih berjalan... file sangat besar membutuhkan waktu lebih lama');
-                } else if (elapsed > 60) {
-                    $('#import-tip').html('<i class="fa fa-info-circle"></i> Proses masih berjalan, harap tunggu...');
-                }
             }, 1000);
 
-            // Progress bar animation + rotating status messages
-            var progressInterval = setInterval(function () {
-                if (progress < 90) {
-                    progress += Math.random() * 5 + 1;
-                    progress = Math.min(progress, 90);
-                    progressBar.css('width', progress + '%').text(Math.round(progress) + '%');
-                }
-                if (statusIndex < statusMessages.length - 1) {
-                    statusIndex++;
-                    $('#import-substatus').text(statusMessages[statusIndex]);
-                }
-            }, 3000);
+            var batchResultsHtml = '';
+            var hasError = false;
 
-            $.ajax({
-                url: '<?= base_url("simpanan/proses_import_with_mapping") ?>',
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                dataType: 'json',
-                timeout: 600000,
-                success: function (response) {
-                    clearInterval(progressInterval);
-                    clearInterval(elapsedInterval);
+            function processNextSheet(index) {
+                if (index >= totalSheets || hasError) {
+                    // FINISHED ALL!
+                    clearInterval(globalElapsedInterval);
+                    var progressBar = $('.progress-bar');
                     progressBar.css('width', '100%').text('100%').removeClass('progress-bar-animated');
-                    $('#import-status-text').text('Import selesai!');
-                    $('#import-substatus').text('Menampilkan hasil...');
-
+                    
+                    if (!hasError) {
+                        $('#import-status-text').text('Batch Import Selesai!');
+                        $('#import-substatus').text('Berhasil memproses ' + totalSheets + ' bulan.');
+                        $('#results-content').html(batchResultsHtml);
+                    }
+                    
                     setTimeout(function () {
                         $('#btn-import-mapped').show();
                         $('#btn-import-loading').hide();
                         $('#import-progress').hide();
                         $('#import-results').show();
-                        renderResults(response);
                     }, 500);
-                },
-                error: function (xhr, status, error) {
-                    clearInterval(progressInterval);
-                    clearInterval(elapsedInterval);
-                    $('#btn-import-mapped').show();
-                    $('#btn-import-loading').hide();
-                    $('#import-progress').hide();
-                    $('#import-results').show();
-
-                    var elapsed = Math.floor((Date.now() - startTime) / 1000);
-                    var errorMsg = '';
-                    if (status === 'timeout') {
-                        errorMsg = '<div class="alert alert-danger">' +
-                            '<strong><i class="fa fa-times-circle"></i> Timeout!</strong><br>' +
-                            'Proses import memakan waktu lebih dari 10 menit dan dibatalkan oleh browser. ' +
-                            'Kemungkinan file terlalu besar. Coba import per sheet yang lebih kecil.' +
-                            '</div>';
-                    } else {
-                        errorMsg = '<div class="alert alert-danger">' +
-                            '<strong><i class="fa fa-times-circle"></i> Error!</strong><br>' +
-                            'Terjadi kesalahan setelah ' + Math.floor(elapsed / 60) + ' menit ' + (elapsed % 60) + ' detik.<br>' +
-                            'Detail: ' + (error || 'Server tidak merespons') +
-                            '</div>';
-                    }
-                    $('#results-content').html(errorMsg);
+                    return;
                 }
-            });
+
+                var currentSheet = sheetsToProcess[index];
+                var progress = 0;
+                var progressBar = $('.progress-bar');
+                progressBar.css('width', '0%').text('0%').addClass('progress-bar-animated');
+                
+                $('#import-status-text').text('Memproses ' + currentSheet + ' (' + (index + 1) + '/' + totalSheets + ')...');
+                $('#import-substatus').text('Mengirim data ke server...');
+                $('#import-tip').text(isBatch ? 'Mohon tunggu, memproses satu per satu agar server tidak kewalahan.' : 'File besar bisa memakan waktu 2-5 menit');
+
+                var statusMessages = [
+                    'Mengirim data ke server...',
+                    'Membaca file Excel...',
+                    'Menguraikan data nasabah...',
+                    'Memproses data setoran...',
+                    'Memproses data penarikan...',
+                    'Menghitung bunga...',
+                    'Menyimpan ke database...',
+                    'Memverifikasi data...',
+                    'Hampir selesai...'
+                ];
+                var statusIndex = 0;
+
+                var progressInterval = setInterval(function () {
+                    if (progress < 90) {
+                        progress += Math.random() * 5 + 1;
+                        progress = Math.min(progress, 90);
+                        progressBar.css('width', progress + '%').text(Math.round(progress) + '%');
+                    }
+                    if (statusIndex < statusMessages.length - 1) {
+                        statusIndex++;
+                        $('#import-substatus').text(statusMessages[statusIndex]);
+                    }
+                }, 3000);
+
+                var formData = new FormData();
+                formData.append('month_code', currentSheet);
+                formData.append('col_no_urut', $('#col_no_urut').val());
+                formData.append('col_nama', $('#col_nama').val());
+                formData.append('col_no_tab', $('#col_no_tab').val());
+                formData.append('col_alamat', $('#col_alamat').val());
+                formData.append('col_saldo_awal', $('#col_saldo_awal').val());
+                formData.append('col_setoran_start', $('#col_setoran_start').val());
+                formData.append('col_setoran_end', $('#col_setoran_end').val());
+                formData.append('col_penarikan_start', $('#col_penarikan_start').val());
+                formData.append('col_penarikan_end', $('#col_penarikan_end').val());
+                formData.append('col_bunga', $('#col_bunga').val());
+                formData.append('delete_existing', deleteChecked ? 'true' : 'false');
+
+                $.ajax({
+                    url: '<?= base_url("simpanan/proses_import_with_mapping") ?>',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    timeout: 600000,
+                    success: function (response) {
+                        clearInterval(progressInterval);
+                        
+                        if (!response.success) {
+                            hasError = true;
+                            var errorMsg = '<div class="alert alert-danger mb-3">';
+                            errorMsg += '<h5><i class="fa fa-times-circle"></i> Error pada sheet: ' + currentSheet + '</h5>';
+                            errorMsg += 'Detail: ' + (response.errors ? response.errors.join(', ') : 'Server mengembalikan error');
+                            errorMsg += '</div>';
+                            
+                            batchResultsHtml += errorMsg;
+                            $('#results-content').html(batchResultsHtml);
+                            processNextSheet(index);
+                            return;
+                        }
+
+                        // Append success result for this sheet
+                        batchResultsHtml += '<div class="alert alert-success mb-3">';
+                        batchResultsHtml += '<h5><i class="fa fa-check-circle"></i> Hasil Import: ' + currentSheet + '</h5>';
+                        batchResultsHtml += '<ul>';
+                        if (response.results) {
+                            batchResultsHtml += '<li><strong>Setoran:</strong> ' + (response.results.setoran.inserted || 0) + ' transaksi diimport</li>';
+                            batchResultsHtml += '<li><strong>Penarikan:</strong> ' + (response.results.penarikan.inserted || 0) + ' transaksi diimport</li>';
+                            batchResultsHtml += '<li><strong>Bunga:</strong> ' + (response.results.bunga.inserted || 0) + ' transaksi diimport</li>';
+                            batchResultsHtml += '<li><strong>Saldo Nasabah:</strong> ' + (response.results.simpanan.updated || 0) + ' rekening diperbarui</li>';
+                        }
+                        batchResultsHtml += '</ul></div>';
+                        
+                        // Process next sheet
+                        processNextSheet(index + 1);
+                    },
+                    error: function (xhr, status, error) {
+                        clearInterval(progressInterval);
+                        hasError = true;
+                        
+                        var elapsed = Math.floor((Date.now() - globalStartTime) / 1000);
+                        var errorMsg = '<div class="alert alert-danger mb-3">';
+                        errorMsg += '<h5><i class="fa fa-times-circle"></i> Error pada sheet: ' + currentSheet + '</h5>';
+                        if (status === 'timeout') {
+                            errorMsg += 'Timeout! Proses import memakan waktu terlalu lama.';
+                        } else {
+                            errorMsg += 'Detail: ' + (error || 'Server tidak merespons');
+                        }
+                        errorMsg += '</div>';
+                        
+                        batchResultsHtml += errorMsg;
+                        $('#results-content').html(batchResultsHtml);
+                        processNextSheet(index); // This will trigger the finish block
+                    }
+                });
+            }
+
+            // Start the batch process
+            processNextSheet(0);
         });
 
         // Render import results

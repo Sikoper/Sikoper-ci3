@@ -164,9 +164,13 @@ class Bunga_model extends CI_Model
                     SELECT 'tarik' as tipe, jumlah_penarikan as jumlah, tanggal_penarikan as tanggal
                     FROM tbdetail_penarikan 
                     WHERE simpanan_id = ? AND status = 'disetujui' AND tanggal_penarikan <= ?
+                    UNION ALL
+                    SELECT 'bunga' as tipe, jumlah_transaksi as jumlah, tanggal_transaksi as tanggal
+                    FROM tbtransaksi 
+                    WHERE simpanan_id = ? AND tanggal_transaksi <= ?
                 ) transactions
                 ORDER BY tanggal ASC
-            ", [$simpanan->id, $prevMonthEndFull, $simpanan->id, $prevMonthEndFull]);
+            ", [$simpanan->id, $prevMonthEndFull, $simpanan->id, $prevMonthEndFull, $simpanan->id, $prevMonthEndFull]);
             
             $transactions = $historyQuery->result();
             
@@ -175,7 +179,7 @@ class Bunga_model extends CI_Model
             $prevMonthString = date('Y-m', strtotime($prevMonthStart));
             
             foreach ($transactions as $trx) {
-                if ($trx->tipe === 'setor') {
+                if ($trx->tipe === 'setor' || $trx->tipe === 'bunga') {
                     $runningBalance += (float) $trx->jumlah;
                 } else {
                     $runningBalance -= (float) $trx->jumlah;
@@ -217,7 +221,7 @@ class Bunga_model extends CI_Model
             ]);
 
             // Update saldo (atomic update)
-            $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaAmount, false);
+            $this->db->set('jumlah_simpanan', 'jumlah_simpanan + ' . $bungaRiil, false);
             $this->db->where('id', $simpanan->id);
             $this->db->update('tbsimpanan');
         }

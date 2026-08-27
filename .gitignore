@@ -35,4 +35,5 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 *.xls
 *.sql
 sync_saldo.php
+cookies.txt
 uploads/import/*

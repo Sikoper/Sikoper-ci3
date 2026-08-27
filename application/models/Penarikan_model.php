@@ -360,4 +360,30 @@ class Penarikan_model extends CI_Model
         $this->db->update('tbtransaksi', ['penarikan_id' => NULL]);
         return $this->db->affected_rows() > 0;
     }
+
+    public function getById($id)
+    {
+        return $this->get_data_by_id($id);
+    }
+
+    public function update($id, $data)
+    {
+        $this->db->where('id', $id);
+        return $this->db->update($this->_table_penarikan_header, $data);
+    }
+
+    public function get_datatables()
+    {
+        return $this->get_datatables_detail_penarikan(null);
+    }
+
+    public function count_all()
+    {
+        return $this->count_all_detail_penarikan(null);
+    }
+
+    public function count_filtered()
+    {
+        return $this->count_filtered_detail_penarikan(null);
+    }
 }
